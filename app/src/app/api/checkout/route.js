@@ -76,6 +76,7 @@ export async function POST(req) {
   }
 
   const base = urlBase(req);
+  const modoTeste = process.env.MP_MODO_TESTE === "1";
 
   try {
     const mp = new MercadoPagoConfig({ accessToken: token });
@@ -90,7 +91,13 @@ export async function POST(req) {
             unit_price: PRECO_CENTAVOS / 100,
           },
         ],
-        payer: { email: user.email },
+        // O e-mail só vai quando não estamos testando. O Mercado Pago proíbe
+        // pagar para si mesmo, e no ambiente de teste o e-mail da conta do
+        // site costuma ser o mesmo da conta que vende — o checkout abre e
+        // recusa com "não foi possível processar seu pagamento", sem dizer
+        // por quê. Sem o campo, quem paga é o usuário de teste logado no
+        // próprio Mercado Pago, que é o fluxo que se quer exercitar.
+        ...(modoTeste ? {} : { payer: { email: user.email } }),
         // external_reference é o fio que liga o pagamento no Mercado Pago à
         // linha aqui. É por ele que o webhook sabe qual licença ativar.
         external_reference: pagamento.id,

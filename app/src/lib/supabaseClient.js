@@ -5,9 +5,19 @@ const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
 if (!url || !key) {
-  throw new Error(
-    "Faltam NEXT_PUBLIC_SUPABASE_URL e NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY no .env.local"
-  );
+  const faltando = [
+    !url && "NEXT_PUBLIC_SUPABASE_URL",
+    !key && "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
+  ].filter(Boolean);
+
+  // Quem lê este erro está em um de dois lugares, e a correção é diferente
+  // em cada um. A mensagem antiga mandava todo mundo para o .env.local, que
+  // no build da Vercel não existe — e o erro parecia um bug do código.
+  const onde = process.env.VERCEL
+    ? "Cadastre em Settings > Environment Variables e refaça o deploy."
+    : "Defina no arquivo .env.local (veja .env.example).";
+
+  throw new Error(`Falta ${faltando.join(" e ")}. ${onde}`);
 }
 
 /**

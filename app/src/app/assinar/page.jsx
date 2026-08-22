@@ -1,8 +1,9 @@
 "use client";
 import React, { Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { Button, Card } from "@/design-system";
 import { supabase } from "@/lib/supabaseClient";
+import { irPara } from "@/lib/navegar";
 import { PRECO_CENTAVOS, reais } from "@/lib/produto";
 
 const INCLUI = [
@@ -15,7 +16,6 @@ const INCLUI = [
 ];
 
 function Conteudo() {
-  const router = useRouter();
   const params = useSearchParams();
   const retorno = params.get("retorno");
 
@@ -38,8 +38,7 @@ function Conteudo() {
       const { data } = await supabase.from("licencas").select("status").maybeSingle();
       if (!vivo) return;
       if (data?.status === "ativa") {
-        router.refresh();
-        router.push("/");
+        irPara("/");
         return;
       }
       if (++tentativas >= 15) {
@@ -56,7 +55,7 @@ function Conteudo() {
     return () => {
       vivo = false;
     };
-  }, [retorno, router]);
+  }, [retorno]);
 
   async function comprar() {
     setErro(null);
@@ -74,8 +73,7 @@ function Conteudo() {
 
   async function sair() {
     await supabase.auth.signOut();
-    router.refresh();
-    router.push("/entrar");
+    irPara("/entrar");
   }
 
   if (conferindo) {

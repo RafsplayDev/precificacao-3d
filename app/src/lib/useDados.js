@@ -6,10 +6,15 @@ const TABELAS = [
   ["impressoras", "nome"],
   ["filamentos", "nome"],
   ["marketplaces", "nome"],
+  ["insumos", "nome"],
+  ["maos_obra", "nome"],
+  ["configuracoes", "id"],
   ["bens_depreciacao", "bem"],
   ["produtos", "nome"],
   ["pecas", "numero"],
   ["custos_adicionais", "created_at"],
+  ["produto_trabalhos", "created_at"],
+  ["faixas_atacado", "qtd_min"],
   ["concorrentes", "created_at"],
 ];
 
@@ -40,7 +45,27 @@ export function useDados() {
 
   React.useEffect(() => { carregar(); }, [carregar]);
 
-  return { ...dados, carregando, erro, recarregar: carregar };
+  /** Insere ou substitui uma linha só, sem reler o banco inteiro. */
+  const aplicar = React.useCallback((tabela, registro) => {
+    if (!registro?.id) return;
+    setDados((atual) => {
+      const linhas = atual[tabela] || [];
+      const existe = linhas.some((l) => l.id === registro.id);
+      return {
+        ...atual,
+        [tabela]: existe
+          ? linhas.map((l) => (l.id === registro.id ? { ...l, ...registro } : l))
+          : [...linhas, registro],
+      };
+    });
+  }, []);
+
+  /** Tira uma linha da memória, sem reler o banco inteiro. */
+  const remover = React.useCallback((tabela, id) => {
+    setDados((atual) => ({ ...atual, [tabela]: (atual[tabela] || []).filter((l) => l.id !== id) }));
+  }, []);
+
+  return { ...dados, carregando, erro, recarregar: carregar, aplicar, remover };
 }
 
 /** Escreve uma linha e devolve o registro atualizado. */
@@ -60,3 +85,40 @@ export async function removerLinha(tabela, id) {
   const { error } = await supabase.from(tabela).delete().eq("id", id);
   if (error) throw error;
 }
+
+export function tratarMensagemErro(e, tabela) {
+  if (!e) return "Ocorreu um erro inesperado.";
+  const code = e.code;
+  const msg = String(e.message || e);
+
+  const isUnique = code === "23505" || msg.includes("unique constraint") || msg.includes("duplicate key");
+  if (isUnique) {
+    return "Já existe um registro cadastrado com este nome. Escolha um nome diferente.";
+  }
+
+  const isFK = code === "23503" || msg.includes("foreign key constraint") || msg.includes("violates foreign key");
+
+  if (isFK) {
+    switch (tabela) {
+      case "impressoras":
+        return "Esta impressora não pode ser removida pois está vinculada a uma ou mais peças de produtos.";
+      case "filamentos":
+        return "Este filamento não pode ser removido pois está vinculado a uma ou mais peças de produtos.";
+      case "maos_obra":
+        return "Este tipo de trabalho não pode ser removido pois está sendo usado no custo de algum produto.";
+      case "insumos":
+        return "Este insumo não pode ser removido pois está sendo usado em custos adicionais de algum produto.";
+      case "marketplaces":
+        return "Este canal de venda não pode ser removido pois está associado a um ou mais produtos.";
+      case "produtos":
+        return "Este produto não pode ser removido pois possui peças ou custos vinculados.";
+      case "bens_depreciacao":
+        return "Este bem não pode ser removido pois possui registros associados.";
+      default:
+        return "Não foi possível remover este registro pois ele está em uso por outros cadastros.";
+    }
+  }
+
+  return e.message || "Não foi possível concluir a operação.";
+}
+

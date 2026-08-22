@@ -27,7 +27,11 @@ export default function Concorrentes() {
 
           const c = custosProduto({
             produto, pecas, impressoras: d.impressoras, filamentos: d.filamentos,
-            adicionais, bens: d.bens_depreciacao,
+            adicionais, insumos: d.insumos,
+            trabalhos: d.produto_trabalhos.filter((t) => t.produto_id === produto.id),
+            maosObra: d.maos_obra,
+            bens: d.bens_depreciacao,
+            tarifaKwh: d.configuracoes[0]?.tarifa_kwh ?? 0,
           });
           const meuPreco =
             produto.usar_preco === "Final" ? toNum(produto.preco_final_varejo) : c.sugerido_varejo;
@@ -74,13 +78,16 @@ export default function Concorrentes() {
 
               <TabelaEditavel
                 tabela="concorrentes"
+              rotulo="concorrente"
                 colunas={[
                   { key: "nome", label: "Concorrente", tipo: "texto" },
                   { key: "link", label: "Link ou descrição", tipo: "texto" },
-                  { key: "preco", label: "Preço (R$)", tipo: "numero" },
+                  { key: "preco", label: "Preço (R$)", tipo: "moeda" },
                 ]}
                 linhas={lista}
                 recarregar={d.recarregar}
+            aplicar={d.aplicar}
+            remover={d.remover}
                 vazio="Nenhum concorrente mapeado para este produto."
                 novoRegistro={() => ({
                   produto_id: produto.id,

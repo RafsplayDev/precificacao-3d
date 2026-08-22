@@ -1,7 +1,9 @@
 :root{
   --font-display:"Outfit","Helvetica Neue",Helvetica,sans-serif;
   --font-body:"DM Sans","Helvetica Neue",Helvetica,sans-serif;
-  --font-mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  /* "mono" aqui é o papel, não o desenho: números e rótulos técnicos.
+     Usa a própria sans com algarismos tabulares — alinha em coluna sem cara de código. */
+  --font-mono:"DM Sans","Helvetica Neue",Helvetica,sans-serif;
 
   --text-display-1:64px; --lh-display-1:1.0; /* @kind other */  --ls-display-1:-.022em; /* @kind other */
   --text-display-2:48px; --lh-display-2:1.04; /* @kind other */ --ls-display-2:-.02em; /* @kind other */

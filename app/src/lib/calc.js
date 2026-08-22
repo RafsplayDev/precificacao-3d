@@ -19,9 +19,15 @@ export function depreciacaoTotal(bens = []) {
   return bens.reduce((acc, b) => acc + div(b.valor_aquisicao, b.vida_util_meses), 0);
 }
 
-/** Os 7 custos de produção de uma peça (colunas AC:AI da aba Listas). */
-export function custosPeca(peca, impressora, filamento, deprTotal) {
+/**
+ * Os 7 custos de produção de uma peça (colunas AC:AI da aba Listas).
+ * Tempo, peso e comprimento são os da impressão inteira; quando mais de uma
+ * unidade sai na mesma mesa (`unidades_por_impressao`), os custos são
+ * divididos por ela e o resultado é o custo de UMA unidade.
+ */
+export function custosPeca(peca, impressora, filamento, deprTotal, tarifaKwh) {
   const horas = n(peca.tempo_impressao_horas);
+  const unidades = Math.max(1, n(peca.unidades_por_impressao) || 1);
   const custoPorGrama = div(filamento?.custo_brl, n(filamento?.peso_carretel_kg) * 1000);
   const custo_material = custoPorGrama * n(peca.peso_gr);
 
@@ -31,7 +37,7 @@ export function custosPeca(peca, impressora, filamento, deprTotal) {
 
   const c = {
     custo_material,
-    custo_energia: horas * n(impressora?.potencia_kw) * n(peca.tarifa_kwh),
+    custo_energia: horas * n(impressora?.potencia_kw) * n(tarifaKwh),
     custo_manutencao:
       div(n(impressora?.valor_maquina) * desgaste(impressora?.nivel_uso), hrAno) * horas,
     custo_falhas: custo_material * n(impressora?.percent_falhas),
@@ -39,6 +45,8 @@ export function custosPeca(peca, impressora, filamento, deprTotal) {
     retorno_investimento: div(impressora?.valor_maquina, usoAnual) * horas,
     custo_depreciacao: div(usoAnual, deprTotal),
   };
+  for (const k of Object.keys(c)) c[k] = c[k] / unidades;
+  c.unidades_por_impressao = unidades;
   c.custo_peca =
     c.custo_material + c.custo_energia + c.custo_manutencao + c.custo_falhas +
     c.custo_acabamento + c.retorno_investimento + c.custo_depreciacao;
@@ -56,8 +64,32 @@ export const LINHAS_CUSTO = [
   { key: "custo_depreciacao", label: "Custo de depreciação", cor: "var(--fil-violet)" },
 ];
 
+/**
+ * Valor de um custo adicional. Quando ele aponta para um insumo cadastrado,
+ * o valor é o custo unitário do insumo (valor pago ÷ peças) vezes a quantidade.
+ */
+export function valorAdicional(custo, insumos = []) {
+  if (!custo?.insumo_id) return n(custo?.valor);
+  const ins = insumos.find((i) => i.id === custo.insumo_id);
+  if (!ins) return 0;
+  const unit = div(ins.valor_pago, ins.qtd_pecas);
+  return unit * n(custo.quantidade ?? 1);
+}
+
+/**
+ * Valor de um trabalho do produto: custo/hora do tipo × minutos ÷ 60.
+ * Quando os minutos são de um lote (`unidades` > 1) o valor é dividido por
+ * ele — o resultado é sempre o custo de UMA unidade.
+ */
+export function valorTrabalho(trabalho, maosObra = []) {
+  const mo = maosObra.find((m) => m.id === trabalho?.mao_obra_id);
+  if (!mo) return 0;
+  const unidades = Math.max(1, n(trabalho.unidades) || 1);
+  return div(n(mo.custo_hora) * n(trabalho.minutos), 60) / unidades;
+}
+
 /** Consolidado de um produto: custos, markup e preços sugeridos. */
-export function custosProduto({ produto, pecas = [], impressoras = [], filamentos = [], adicionais = [], bens = [] }) {
+export function custosProduto({ produto, pecas = [], impressoras = [], filamentos = [], adicionais = [], insumos = [], trabalhos = [], maosObra = [], bens = [], tarifaKwh = 0 }) {
   const deprTotal = depreciacaoTotal(bens);
   const byId = (arr) => Object.fromEntries(arr.map((x) => [x.id, x]));
   const imp = byId(impressoras);
@@ -65,15 +97,16 @@ export function custosProduto({ produto, pecas = [], impressoras = [], filamento
 
   const detalhes = pecas.map((p) => ({
     peca: p,
-    ...custosPeca(p, imp[p.impressora_id], fil[p.filamento_id], deprTotal),
+    ...custosPeca(p, imp[p.impressora_id], fil[p.filamento_id], deprTotal, tarifaKwh),
   }));
 
   const soma = (k) => detalhes.reduce((a, d) => a + d[k], 0);
   const linhas = Object.fromEntries(LINHAS_CUSTO.map((l) => [l.key, soma(l.key)]));
 
   const custos_producao = soma("custo_peca");
-  const custos_hora = n(produto?.hrs_trabalhadas) * n(produto?.custo_hora);
-  const custos_adicionais = adicionais.reduce((a, c) => a + n(c.valor), 0);
+  const custos_trabalho = trabalhos.reduce((a, t) => a + valorTrabalho(t, maosObra), 0);
+  const custos_hora = custos_trabalho;
+  const custos_adicionais = adicionais.reduce((a, c) => a + valorAdicional(c, insumos), 0);
   const custos_totais = custos_producao + custos_hora + custos_adicionais;
 
   return {
@@ -81,6 +114,7 @@ export function custosProduto({ produto, pecas = [], impressoras = [], filamento
     ...linhas,
     custos_producao,
     custos_hora,
+    custos_trabalho,
     custos_adicionais,
     custos_totais,
     sugerido_atacado: custos_totais * n(produto?.markup_atacado),

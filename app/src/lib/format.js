@@ -14,3 +14,27 @@ export const toNum = (v) => {
   const n = Number(String(v).replace(",", "."));
   return Number.isFinite(n) ? n : 0;
 };
+
+/**
+ * Máscara de dinheiro no estilo caixa de banco: os dígitos entram pela direita,
+ * o primeiro vira centavo, o segundo dezena de centavo, e assim por diante.
+ */
+export function mascaraMoeda(entrada) {
+  const digitos = String(entrada ?? "").replace(/\D/g, "").slice(0, 15);
+  return (Number(digitos || 0) / 100).toLocaleString("pt-BR", {
+    minimumFractionDigits: 2, maximumFractionDigits: 2,
+  });
+}
+
+/** O número por trás da máscara. */
+export function moedaParaNumero(texto) {
+  const digitos = String(texto ?? "").replace(/\D/g, "").slice(0, 15);
+  return Number(digitos || 0) / 100;
+}
+
+/** Número do banco → texto mascarado (2 casas, sem símbolo). */
+export function numeroParaMoeda(valor) {
+  return (Number(valor) || 0).toLocaleString("pt-BR", {
+    minimumFractionDigits: 2, maximumFractionDigits: 2,
+  });
+}

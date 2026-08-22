@@ -25,8 +25,11 @@ function iconNode(name) {
 
 /** Thin wrapper around the Lucide icon set (loaded from CDN as `window.lucide`). */
 export function Icon({ name, size = 18, strokeWidth = 1.75, color = "currentColor", style, ...rest }) {
+  const [mounted, setMounted] = React.useState(false);
   const [, tick] = React.useState(0);
+
   React.useEffect(() => {
+    setMounted(true);
     if (iconNode(name)) return;
     let n = 0;
     const t = setInterval(() => {
@@ -36,7 +39,7 @@ export function Icon({ name, size = 18, strokeWidth = 1.75, color = "currentColo
     return () => clearInterval(t);
   }, [name]);
 
-  const node = iconNode(name);
+  const node = mounted ? iconNode(name) : null;
   const svgProps = {
     width: size, height: size, viewBox: "0 0 24 24", fill: "none",
     stroke: color, strokeWidth, strokeLinecap: "round", strokeLinejoin: "round",
@@ -48,3 +51,4 @@ export function Icon({ name, size = 18, strokeWidth = 1.75, color = "currentColo
     node.map(([tag, attrs], i) => React.createElement(tag, { key: i, ...attrs }))
   );
 }
+

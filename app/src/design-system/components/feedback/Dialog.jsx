@@ -19,7 +19,7 @@ export function Dialog({ open = true, title, description, footer, onClose, width
       onClose ? React.createElement(IconButton, { key: "x", label: "Fechar", size: "sm", onClick: onClose },
         React.createElement(Icon, { name: "x", size: 16 })) : null,
     ]),
-    children ? React.createElement("div", { key: "c", style: { marginTop: "var(--space-5)" } }, children) : null,
+    children ? React.createElement("div", { key: "c", className: "dc-dialog__body" }, children) : null,
     footer ? React.createElement("div", { key: "f", className: "dc-dialog__foot" }, footer) : null,
   ]));
 }

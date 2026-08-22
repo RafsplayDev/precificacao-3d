@@ -11,10 +11,16 @@ export const dynamic = "force-dynamic";
  *
  * Este endpoint é público — precisa ser, o Mercado Pago não faz login. Sem
  * esta checagem, qualquer pessoa poderia dar um POST aqui dizendo "pagamento
- * aprovado" e liberar o acesso de graça. O manifesto é montado exatamente na
- * ordem que a documentação define; qualquer campo fora de lugar muda o hash.
+ * aprovado" e liberar o acesso de graça.
+ *
+ * O manifesto assinado varia conforme a origem do aviso: o id pode ser o da
+ * query string ou o do corpo, e o request-id às vezes não entra na conta.
+ * Como não dá para saber de fora qual combinação o Mercado Pago usou, todas
+ * as plausíveis são testadas. Isso não afrouxa nada: cada tentativa continua
+ * exigindo o HMAC correto do segredo, que só o Mercado Pago tem. Sem ele
+ * nenhuma combinação fecha, e um forjador não ganha nada com a variedade.
  */
-function assinaturaConfere(req, idRecurso) {
+function assinaturaConfere(req, ids) {
   const segredo = process.env.MP_WEBHOOK_SECRET;
   if (!segredo) return { ok: false, motivo: "MP_WEBHOOK_SECRET não configurado" };
 
@@ -32,21 +38,42 @@ function assinaturaConfere(req, idRecurso) {
   const v1 = partes.v1;
   if (!ts || !v1) return { ok: false, motivo: "x-signature incompleto" };
 
-  const manifesto =
-    `id:${String(idRecurso).toLowerCase()};` +
-    (idRequisicao ? `request-id:${idRequisicao};` : "") +
-    `ts:${ts};`;
+  const recebido = Buffer.from(v1, "hex");
 
-  const esperado = crypto.createHmac("sha256", segredo).update(manifesto).digest("hex");
-
-  // timingSafeEqual em vez de === : a comparação normal termina no primeiro
-  // byte diferente, e esse tempo vaza o hash correto byte a byte.
-  const a = Buffer.from(esperado, "hex");
-  const b = Buffer.from(v1, "hex");
-  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
-    return { ok: false, motivo: "assinatura não confere" };
+  const candidatos = [];
+  for (const id of [...new Set(ids.filter(Boolean).map(String))]) {
+    for (const comRequestId of idRequisicao ? [true, false] : [false]) {
+      candidatos.push({
+        rotulo: `id=${id}${comRequestId ? "+request-id" : ""}`,
+        manifesto:
+          `id:${id.toLowerCase()};` +
+          (comRequestId ? `request-id:${idRequisicao};` : "") +
+          `ts:${ts};`,
+      });
+    }
   }
-  return { ok: true };
+
+  for (const c of candidatos) {
+    const esperado = crypto.createHmac("sha256", segredo).update(c.manifesto).digest("hex");
+    const a = Buffer.from(esperado, "hex");
+    // timingSafeEqual em vez de === : a comparação normal termina no primeiro
+    // byte diferente, e esse tempo vaza o hash correto byte a byte.
+    if (a.length === recebido.length && crypto.timingSafeEqual(a, recebido)) {
+      return { ok: true, rotulo: c.rotulo };
+    }
+  }
+
+  // Nenhuma fechou. Os rótulos e os primeiros bytes dos hashes vão para o log
+  // porque é com eles que se descobre a causa: se um dos candidatos chegasse
+  // perto, seria formato; nenhum chegando perto aponta para o segredo trocado.
+  // O segredo em si nunca aparece, e prefixo de hash não o revela.
+  return {
+    ok: false,
+    motivo: "assinatura não confere",
+    detalhe:
+      `tentou [${candidatos.map((c) => c.rotulo).join(", ")}]` +
+      ` | v1 recebido: ${v1.slice(0, 8)}…`,
+  };
 }
 
 /** Vocabulário do Mercado Pago traduzido para o check da tabela pagamentos. */
@@ -95,19 +122,16 @@ export async function POST(req) {
     return NextResponse.json({ ignorado: true });
   }
 
-  const conferencia = assinaturaConfere(req, idPagamento);
+  const conferencia = assinaturaConfere(req, [idPagamento, corpo?.data?.id]);
   if (!conferencia.ok) {
-    // O id e o request-id entram no log porque são justamente as peças do
-    // manifesto: com elas dá para ver, sem expor o segredo, se o que
-    // chegou é o que se esperava assinar.
     console.warn(
       "[webhook] recusado:",
       conferencia.motivo,
-      "| id:", idPagamento,
-      "| request-id:", req.headers.get("x-request-id") || "(ausente)"
+      conferencia.detalhe || ""
     );
     return NextResponse.json({ erro: "assinatura inválida" }, { status: 401 });
   }
+  console.log("[webhook] assinatura ok:", conferencia.rotulo, "| id:", idPagamento);
 
   const token = process.env.MP_ACCESS_TOKEN;
   if (!token) return NextResponse.json({ erro: "sem token" }, { status: 500 });

@@ -73,7 +73,22 @@ export async function POST(req) {
   } catch {}
 
   const tipo = corpo?.type || corpo?.topic;
-  const idPagamento = corpo?.data?.id || corpo?.resource;
+
+  // ------------------------------------------------------------------
+  // De onde sai o id
+  //
+  // A assinatura do Mercado Pago é calculada sobre o `data.id` da QUERY
+  // STRING, não sobre o que vem no corpo. Os dois costumam ser o mesmo
+  // número, mas no formato antigo (IPN) o corpo traz `resource` como uma
+  // URL inteira — e aí o manifesto sai diferente do que foi assinado, e
+  // todo aviso é recusado com "assinatura não confere". Por isso a query
+  // manda, e o corpo é só o plano B.
+  // ------------------------------------------------------------------
+  const idPagamento =
+    req.nextUrl.searchParams.get("data.id") ||
+    req.nextUrl.searchParams.get("id") ||
+    corpo?.data?.id ||
+    null;
 
   // O Mercado Pago manda vários tipos de aviso no mesmo endpoint.
   if (tipo !== "payment" || !idPagamento) {
@@ -82,7 +97,15 @@ export async function POST(req) {
 
   const conferencia = assinaturaConfere(req, idPagamento);
   if (!conferencia.ok) {
-    console.warn("[webhook] recusado:", conferencia.motivo);
+    // O id e o request-id entram no log porque são justamente as peças do
+    // manifesto: com elas dá para ver, sem expor o segredo, se o que
+    // chegou é o que se esperava assinar.
+    console.warn(
+      "[webhook] recusado:",
+      conferencia.motivo,
+      "| id:", idPagamento,
+      "| request-id:", req.headers.get("x-request-id") || "(ausente)"
+    );
     return NextResponse.json({ erro: "assinatura inválida" }, { status: 401 });
   }
 

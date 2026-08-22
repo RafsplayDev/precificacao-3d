@@ -1,0 +1,60 @@
+:root{
+  /* --- Ink (brand core: the logo is a single-weight black outline) --- */
+  --ink-950:#08090B; --ink-900:#0E0F12; --ink-800:#15171B; --ink-700:#1C1E23;
+  --ink-600:#2A2D34; --ink-500:#3A3E46; --ink-400:#5C616B; --ink-300:#8A9099;
+  --ink-200:#B9BEC6; --ink-150:#D9DCE1; --ink-100:#E8EAEE; --ink-50:#F2F3F6;
+  --paper:#F6F7F9; --white:#FFFFFF;
+
+  /* --- Filament spectrum (the "Color" in Drop Color) --- */
+  --fil-magenta:#FF2D6F; --fil-coral:#FF5A3C; --fil-orange:#FF7A18;
+  --fil-yellow:#FFCA1A; --fil-mint:#0FD9A0; --fil-cyan:#16C0F0;
+  --fil-violet:#7B5BFF;
+
+  /* tints for surfaces built on the spectrum */
+  --fil-magenta-soft:#FFE7EE; --fil-cyan-soft:#E2F5FD;
+  --fil-mint-soft:#DEF9F0; --fil-yellow-soft:#FFF6DB; --fil-violet-soft:#EEE9FF;
+
+  /* --- Semantic: text --- */
+  --text-strong:var(--ink-950);
+  --text-body:var(--ink-700);
+  --text-muted:var(--ink-400);
+  --text-faint:var(--ink-300);
+  --text-inverse:var(--white);
+  --text-accent:var(--fil-magenta);
+  --text-link:var(--fil-magenta);
+  --text-link-hover:#D91354;
+
+  /* --- Semantic: surfaces --- */
+  --surface-page:var(--paper);
+  --surface-card:var(--white);
+  --surface-sunken:var(--ink-50);
+  --surface-inverse:var(--ink-900);
+  --surface-inverse-2:var(--ink-800);
+  --surface-accent:var(--fil-magenta);
+  --surface-accent-soft:var(--fil-magenta-soft);
+
+  /* --- Semantic: borders --- */
+  --border-hairline:var(--ink-100);
+  --border-default:var(--ink-150);
+  --border-strong:var(--ink-900);
+  --border-inverse:rgba(255,255,255,.14);
+  --border-focus:var(--fil-magenta);
+
+  /* --- Semantic: interaction --- */
+  --action-primary:var(--ink-900);
+  --action-primary-hover:var(--ink-700);
+  --action-primary-press:var(--ink-950);
+  --action-accent:var(--fil-magenta);
+  --action-accent-hover:#E81F5F;
+  --action-accent-press:#C9134D;
+
+  /* --- Semantic: status --- */
+  --status-success:#0BA46F; --status-success-soft:var(--fil-mint-soft);
+  --status-warning:#B27B00; --status-warning-soft:var(--fil-yellow-soft);
+  --status-danger:#D6224B;  --status-danger-soft:var(--fil-magenta-soft);
+  --status-info:#0C86B4;    --status-info-soft:var(--fil-cyan-soft);
+
+  /* --- Print-bed grid, used as a background motif --- */
+  --grid-line:rgba(14,15,18,.06);
+  --grid-line-inverse:rgba(255,255,255,.07);
+}

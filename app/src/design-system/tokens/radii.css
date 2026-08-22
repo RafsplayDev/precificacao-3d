@@ -1,0 +1,8 @@
+:root{
+  --radius-xs:4px; --radius-sm:8px; --radius-md:12px; --radius-lg:18px;
+  --radius-xl:26px; --radius-pill:999px;
+  --radius-card:var(--radius-lg);
+  --radius-control:var(--radius-pill);
+  --radius-input:var(--radius-sm);
+  --border-w:1px; /* @kind other */ --border-w-strong:2px; /* @kind other */
+}

@@ -143,9 +143,27 @@ export async function POST(req) {
     const mp = new MercadoPagoConfig({ accessToken: token });
     pago = await new Payment(mp).get({ id: idPagamento });
   } catch (e) {
-    console.error("[webhook] falha ao consultar o pagamento:", e);
-    // 500 faz o Mercado Pago tentar de novo mais tarde, que é o desejado
-    // quando a falha é nossa (rede, indisponibilidade).
+    // O objeto de erro do SDK não imprime nada de útil quando cai no log:
+    // sai "[object Object]" e o motivo se perde. Os campos que importam são
+    // extraídos à mão.
+    const status = e?.status || e?.statusCode || null;
+    console.error(
+      "[webhook] falha ao consultar o pagamento:",
+      "| id:", idPagamento,
+      "| status:", status ?? "(sem status)",
+      "| mensagem:", e?.message || String(e)
+    );
+
+    // 404 não é falha nossa: esse id não é de um pagamento (costuma ser de
+    // um merchant_order, que chega no mesmo endpoint). Insistir não muda o
+    // resultado, então responde 200 para o Mercado Pago parar de reenviar —
+    // um aviso que nunca vai dar em nada não deve ficar em fila para sempre.
+    if (status === 404) {
+      return NextResponse.json({ ignorado: "id não é de um pagamento" });
+    }
+
+    // Nos demais casos o 500 é proposital: faz o Mercado Pago tentar de novo
+    // mais tarde, que é o certo quando a falha é nossa (rede, fora do ar).
     return NextResponse.json({ erro: "consulta falhou" }, { status: 500 });
   }
 

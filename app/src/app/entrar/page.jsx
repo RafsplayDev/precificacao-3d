@@ -1,9 +1,10 @@
 "use client";
 import React, { Suspense } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { Button, Card, Input } from "@/design-system";
 import { supabase } from "@/lib/supabaseClient";
+import { irPara, caminhoInterno } from "@/lib/navegar";
 
 function traduzirErro(e) {
   const m = String(e?.message || e || "").toLowerCase();
@@ -18,9 +19,8 @@ function traduzirErro(e) {
 }
 
 function Formulario() {
-  const router = useRouter();
   const params = useSearchParams();
-  const proximo = params.get("proximo") || "/";
+  const proximo = caminhoInterno(params.get("proximo"));
 
   const [modo, setModo] = React.useState(params.get("modo") === "criar" ? "criar" : "entrar");
   const [nome, setNome] = React.useState("");
@@ -55,6 +55,7 @@ function Formulario() {
               email.trim() +
               ". Confirme e volte para entrar."
           );
+          setEnviando(false);
           return;
         }
       } else {
@@ -64,13 +65,15 @@ function Formulario() {
         });
         if (error) throw error;
       }
-      // refresh antes do push: o middleware precisa reler a licença com o
-      // cookie de sessão recém-criado, senão manda para /assinar por engano.
-      router.refresh();
-      router.push(proximo);
+      // Navegação de página inteira, e não router.push: o middleware precisa
+      // rodar de novo já com o cookie de sessão recém-criado para liberar o
+      // painel. Com o push, a rota vinha do cache do cliente e a tela ficava
+      // parada na própria página de login.
+      irPara(proximo);
+      // Sem setEnviando(false) aqui: a saída é a troca de página, e reabilitar
+      // o botão durante o carregamento só convidaria a um segundo envio.
     } catch (e) {
       setErro(traduzirErro(e));
-    } finally {
       setEnviando(false);
     }
   }

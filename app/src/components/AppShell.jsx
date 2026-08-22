@@ -2,9 +2,10 @@
 import React from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { Toast } from "@/design-system";
 import { supabase } from "@/lib/supabaseClient";
+import { irPara } from "@/lib/navegar";
 
 const NAV = [
   { href: "/", label: "Calculadora" },
@@ -24,7 +25,6 @@ export const useToast = () => React.useContext(ToastCtx);
 
 export function AppShell({ children }) {
   const pathname = usePathname();
-  const router = useRouter();
   const [toasts, setToasts] = React.useState([]);
   const [conta, setConta] = React.useState(null);
   const [extras, setExtras] = React.useState({ afiliado: false, admin: false });
@@ -53,8 +53,7 @@ export function AppShell({ children }) {
 
   async function sair() {
     await supabase.auth.signOut();
-    router.refresh();
-    router.push("/entrar");
+    irPara("/entrar");
   }
 
   const push = React.useCallback((t) => {

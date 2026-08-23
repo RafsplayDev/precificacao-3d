@@ -489,8 +489,8 @@ select.ap-cell { width: 100%; min-width: 0; cursor: pointer; }
 .ap-pilha__nome { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ap-pilha__card--on { font-weight: var(--weight-medium); color: var(--text-strong); }
 .ap-pilha__card--on svg { color: var(--fil-magenta); }
-.ap-pilha__card--novo { color: var(--fil-magenta); font-weight: var(--weight-medium); }
-.ap-pilha__card--novo svg { color: var(--fil-magenta); }
+.ap-pilha__toggle--novo { background: var(--fil-magenta); color: var(--text-inverse); }
+.ap-pilha__toggle--novo:hover { background: var(--fil-magenta); filter: brightness(0.92); }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }

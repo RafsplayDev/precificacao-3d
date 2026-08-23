@@ -880,21 +880,21 @@ function SeletorProduto({ produtos, atual, onTrocar, onNovo }) {
     () => [atual, ...produtos.filter((p) => p.id !== atual.id)],
     [produtos, atual]
   );
-  // O "adicionar" é só mais um card no fim da pilha.
-  const cards = [...ordenados.map((p) => ({ tipo: "produto", p })), { tipo: "novo" }];
-  const altura = aberto ? cards.length * PASSO - CARD_GAP : CARD_H;
+  const altura = aberto ? ordenados.length * PASSO - CARD_GAP : CARD_H;
 
   return (
     <div className="ap-pilha" ref={ref}>
       <div className="ap-pilha__head">
         <h1 className="ap-pilha__titulo">{aberto ? "Produtos" : "Produto"}</h1>
+        {/* Aberta a pilha se fecha sozinha (clique fora ou escolha), então o
+            botão vira o atalho que falta ali: cadastrar um produto novo. */}
         <button
           type="button"
-          className="ap-pilha__toggle"
-          aria-expanded={aberto}
-          onClick={() => setAberto((v) => !v)}
+          className={`ap-pilha__toggle ${aberto ? "ap-pilha__toggle--novo" : ""}`}
+          aria-expanded={aberto ? undefined : false}
+          onClick={() => { if (aberto) { setAberto(false); onNovo(); } else setAberto(true); }}
         >
-          {aberto ? "Recolher" : "Trocar"}
+          {aberto ? "Adicionar produto" : "Trocar"}
         </button>
       </div>
 
@@ -906,40 +906,8 @@ function SeletorProduto({ produtos, atual, onTrocar, onNovo }) {
         transition={mola}
         style={{ height: altura }}
       >
-        {cards.map((c, i) => {
+        {ordenados.map((p, i) => {
           const escondido = !aberto && i > 2;
-          const comum = {
-            className: "ap-pilha__card",
-            style: { zIndex: cards.length - i },
-            initial: false,
-            animate: {
-              // Fechada a pilha se aninha para cima, como no exemplo do Motion.
-              y: aberto ? i * PASSO : -i * 7,
-              scale: aberto ? 1 : 1 - Math.min(i, 3) * 0.05,
-              opacity: escondido ? 0 : 1,
-            },
-            transition: reduzido ? { duration: 0 } : { ...mola, delay: aberto ? i * 0.045 : 0 },
-          };
-
-          if (c.tipo === "novo") {
-            return (
-              <motion.button
-                key="__novo"
-                type="button"
-                {...comum}
-                className="ap-pilha__card ap-pilha__card--novo"
-                tabIndex={aberto ? 0 : -1}
-                aria-hidden={!aberto}
-                onClick={() => { setAberto(false); onNovo(); }}
-                whileTap={reduzido ? undefined : { scale: 0.98 }}
-              >
-                <span>Adicionar produto</span>
-                <Icon name="plus" size={18} strokeWidth={2.5} />
-              </motion.button>
-            );
-          }
-
-          const p = c.p;
           const atualCard = p.id === atual.id;
           return (
             <motion.button
@@ -947,13 +915,22 @@ function SeletorProduto({ produtos, atual, onTrocar, onNovo }) {
               type="button"
               role="option"
               aria-selected={atualCard}
-              {...comum}
               className={`ap-pilha__card ${atualCard ? "ap-pilha__card--on" : ""}`}
+              style={{ zIndex: ordenados.length - i }}
+              initial={false}
+              animate={{
+                // Fechada a pilha se aninha para cima, como no exemplo do Motion.
+                y: aberto ? i * PASSO : -i * 7,
+                scale: aberto ? 1 : 1 - Math.min(i, 3) * 0.05,
+                opacity: escondido ? 0 : 1,
+              }}
+              transition={reduzido ? { duration: 0 } : { ...mola, delay: aberto ? i * 0.045 : 0 }}
               // Fechada, só o card de cima responde — os de trás são enfeite.
               tabIndex={aberto || i === 0 ? 0 : -1}
               aria-hidden={!aberto && i !== 0}
               onClick={() => {
                 if (!aberto) { setAberto(true); return; }
+                // Escolher um produto já fecha a pilha.
                 onTrocar(p.id);
                 setAberto(false);
               }}

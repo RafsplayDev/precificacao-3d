@@ -123,3 +123,17 @@
 .dc-plan{display:flex;flex-direction:column;gap:var(--space-4);padding:var(--space-6)}
 .dc-plan__price{font-family:var(--font-display);font-size:var(--text-display-2);letter-spacing:var(--ls-display-2);color:var(--text-strong);line-height:1;white-space:nowrap}
 .dc-plan__feat{display:flex;gap:var(--space-2);align-items:flex-start;font-size:var(--text-body-sm);color:var(--text-body)}
+
+/* Olho de revelar senha, dentro do próprio campo. */
+.dc-input__olho {
+  background: none;
+  border: 0;
+  padding: 0 0.25rem;
+  margin-right: 0.15rem;
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0.6;
+}
+.dc-input__olho:hover { opacity: 1; }
+.dc-input__olho:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; border-radius: 4px; }

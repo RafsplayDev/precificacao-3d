@@ -78,6 +78,27 @@ export async function middleware(req) {
     .maybeSingle();
 
   if (licenca?.status !== "ativa") {
+    // ------------------------------------------------------------------
+    // O afiliado não é um cliente que ainda não pagou
+    //
+    // Quem divulga não precisa ter comprado, e mandar essa pessoa para a
+    // tela de pagamento é dizer que ela não tem o que veio fazer aqui —
+    // além de trancá-la fora da própria página, onde estão o link de
+    // indicação e a chave Pix para receber. Ela ficava sem acesso ao que
+    // é dela por direito.
+    // ------------------------------------------------------------------
+    const { data: afiliado } = await supabase
+      .from("afiliados")
+      .select("id")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (afiliado) {
+      return pathname.startsWith("/afiliado")
+        ? res
+        : NextResponse.redirect(new URL("/afiliado", req.url));
+    }
+
     return NextResponse.redirect(new URL("/assinar", req.url));
   }
 

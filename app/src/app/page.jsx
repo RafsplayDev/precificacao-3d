@@ -846,29 +846,50 @@ function qtd(v) {
 
 /* ---------- pedaços de UI ---------- */
 
+/** Filtra por nome, ignorando acento e caixa — "coracao" acha "CORAÇÃO". */
+function semAcento(t) {
+  return String(t || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+}
+function filtrarProdutos(produtos, busca) {
+  const alvo = semAcento(busca).trim();
+  if (!alvo) return produtos;
+  return produtos.filter((p) => semAcento(p.nome).includes(alvo));
+}
+
+/* Quantos itens a lista mostra de uma vez; o resto vem na rolagem. */
+const VISIVEIS = 5;
+/* Só os primeiros entram escalonados: com muito produto, esperar a vez de
+   todo mundo deixa a abertura arrastada. */
+const MAX_STAGGER = 6;
+
 /** Versão de computador: o título abre um menu, com os itens entrando
  *  empilhados como as notificações do Motion. */
 function SeletorProdutoMenu({ produtos, atual, onTrocar, onNovo }) {
   const [aberto, setAberto] = React.useState(false);
+  const [busca, setBusca] = React.useState("");
   const ref = React.useRef(null);
   const reduzido = useReducedMotion();
 
+  const fechar = React.useCallback(() => { setAberto(false); setBusca(""); }, []);
+
   React.useEffect(() => {
     if (!aberto) return;
-    const fora = (e) => { if (ref.current && !ref.current.contains(e.target)) setAberto(false); };
-    const esc = (e) => { if (e.key === "Escape") setAberto(false); };
+    const fora = (e) => { if (ref.current && !ref.current.contains(e.target)) fechar(); };
+    const esc = (e) => { if (e.key === "Escape") fechar(); };
     document.addEventListener("mousedown", fora);
     document.addEventListener("keydown", esc);
     return () => {
       document.removeEventListener("mousedown", fora);
       document.removeEventListener("keydown", esc);
     };
-  }, [aberto]);
+  }, [aberto, fechar]);
 
   // Mola das notificações do Motion: firme, com um respiro no fim.
   const mola = reduzido
     ? { duration: 0 }
     : { type: "spring", stiffness: 520, damping: 40, mass: 0.9 };
+
+  const lista = React.useMemo(() => filtrarProdutos(produtos, busca), [produtos, busca]);
 
   // O menu começa como uma pilha (tudo empilhado atrás do botão) e se abre em leque.
   const itemVariants = {
@@ -884,7 +905,7 @@ function SeletorProdutoMenu({ produtos, atual, onTrocar, onNovo }) {
       y: 0,
       scale: 1,
       filter: "blur(0px)",
-      transition: { ...mola, delay: reduzido ? 0 : i * 0.035 },
+      transition: { ...mola, delay: reduzido ? 0 : Math.min(i, MAX_STAGGER) * 0.035 },
     }),
     saindo: (i) => ({
       opacity: 0,
@@ -902,7 +923,7 @@ function SeletorProdutoMenu({ produtos, atual, onTrocar, onNovo }) {
           className="ap-picker__btn"
           aria-haspopup="listbox"
           aria-expanded={aberto}
-          onClick={() => setAberto((v) => !v)}
+          onClick={() => (aberto ? fechar() : setAberto(true))}
           whileTap={reduzido ? undefined : { scale: 0.97 }}
           transition={mola}
         >
@@ -917,8 +938,6 @@ function SeletorProdutoMenu({ produtos, atual, onTrocar, onNovo }) {
         {aberto && (
           <motion.div
             className="ap-picker__menu"
-            role="listbox"
-            aria-label="Produtos"
             initial={{ opacity: 0, y: reduzido ? 0 : -10, scale: reduzido ? 1 : 0.97 }}
             animate={{ opacity: 1, y: 0, scale: 1, transition: mola }}
             exit={{
@@ -929,40 +948,49 @@ function SeletorProdutoMenu({ produtos, atual, onTrocar, onNovo }) {
             }}
             style={{ transformOrigin: "top left" }}
           >
-            {produtos.map((p, i) => (
-              <motion.button
-                key={p.id}
-                type="button"
-                role="option"
-                aria-selected={p.id === atual.id}
-                className={`ap-picker__item ${p.id === atual.id ? "ap-picker__item--on" : ""}`}
-                onClick={() => { onTrocar(p.id); setAberto(false); }}
-                custom={i}
-                variants={itemVariants}
-                initial="empilhado"
-                animate="aberto"
-                exit="saindo"
-                whileTap={reduzido ? undefined : { scale: 0.98 }}
-              >
-                <span>{p.nome}</span>
-                {p.id === atual.id && <Icon name="check" size={16} strokeWidth={2.5} />}
-              </motion.button>
-            ))}
+            <input
+              className="ap-busca"
+              type="search"
+              autoFocus
+              placeholder="Buscar produto"
+              aria-label="Buscar produto"
+              value={busca}
+              onChange={(e) => setBusca(e.target.value)}
+            />
+
+            {/* Rola em vez de crescer: com muito produto, o que não cabe vem no scroll. */}
+            <div className="ap-picker__lista" role="listbox" aria-label="Produtos">
+              {lista.map((p, i) => (
+                <motion.button
+                  key={p.id}
+                  type="button"
+                  role="option"
+                  aria-selected={p.id === atual.id}
+                  className={`ap-picker__item ${p.id === atual.id ? "ap-picker__item--on" : ""}`}
+                  onClick={() => { onTrocar(p.id); fechar(); }}
+                  custom={i}
+                  variants={itemVariants}
+                  initial="empilhado"
+                  animate="aberto"
+                  exit="saindo"
+                  whileTap={reduzido ? undefined : { scale: 0.98 }}
+                >
+                  <span>{p.nome}</span>
+                  {p.id === atual.id && <Icon name="check" size={16} strokeWidth={2.5} />}
+                </motion.button>
+              ))}
+              {!lista.length && <p className="ap-vazio">Nenhum produto com esse nome.</p>}
+            </div>
+
             <div className="ap-picker__sep" />
-            <motion.button
+            <button
               type="button"
               className="ap-picker__item ap-picker__item--novo"
-              onClick={() => { setAberto(false); onNovo(); }}
-              custom={produtos.length}
-              variants={itemVariants}
-              initial="empilhado"
-              animate="aberto"
-              exit="saindo"
-              whileTap={reduzido ? undefined : { scale: 0.98 }}
+              onClick={() => { fechar(); onNovo(); }}
             >
               <span>Adicionar produto</span>
               <Icon name="plus" size={16} strokeWidth={2.5} />
-            </motion.button>
+            </button>
           </motion.div>
         )}
       </AnimatePresence>
@@ -979,20 +1007,23 @@ const PASSO = CARD_H + CARD_GAP;
  *  os outros espiando atrás; aberta, os cards descem um a um sobre a tela. */
 function SeletorProdutoPilha({ produtos, atual, onTrocar, onNovo }) {
   const [aberto, setAberto] = React.useState(false);
+  const [busca, setBusca] = React.useState("");
   const ref = React.useRef(null);
   const reduzido = useReducedMotion();
 
+  const fechar = React.useCallback(() => { setAberto(false); setBusca(""); }, []);
+
   React.useEffect(() => {
     if (!aberto) return;
-    const fora = (e) => { if (ref.current && !ref.current.contains(e.target)) setAberto(false); };
-    const esc = (e) => { if (e.key === "Escape") setAberto(false); };
+    const fora = (e) => { if (ref.current && !ref.current.contains(e.target)) fechar(); };
+    const esc = (e) => { if (e.key === "Escape") fechar(); };
     document.addEventListener("mousedown", fora);
     document.addEventListener("keydown", esc);
     return () => {
       document.removeEventListener("mousedown", fora);
       document.removeEventListener("keydown", esc);
     };
-  }, [aberto]);
+  }, [aberto, fechar]);
 
   // Mola das notificações do Motion: firme, com um respiro no fim.
   const mola = reduzido
@@ -1004,8 +1035,12 @@ function SeletorProdutoPilha({ produtos, atual, onTrocar, onNovo }) {
     () => [atual, ...produtos.filter((p) => p.id !== atual.id)],
     [produtos, atual]
   );
+  // Fechada só aparecem três: o de cima e duas bordas espiando atrás.
+  const empilhados = ordenados.slice(0, 3);
+  const lista = React.useMemo(() => filtrarProdutos(ordenados, busca), [ordenados, busca]);
+
   return (
-    // Aberta, a pilha flutua por cima do resto da página: a altura reservada
+    // Aberta, a lista flutua por cima do resto da página: a altura reservada
     // continua a de um card só, então nada abaixo se mexe.
     <div className="ap-pilha" ref={ref} data-aberto={aberto || undefined}>
       <h1 className="ap-pilha__sr">{atual.nome}</h1>
@@ -1019,77 +1054,99 @@ function SeletorProdutoPilha({ produtos, atual, onTrocar, onNovo }) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: reduzido ? 0 : 0.2 }}
-            onClick={() => setAberto(false)}
+            onClick={fechar}
             aria-hidden="true"
           />
         )}
       </AnimatePresence>
 
-      <div className="ap-pilha__pilha" role="listbox" aria-label="Produtos">
-        {ordenados.map((p, i) => {
-          const escondido = !aberto && i > 2;
-          const atualCard = p.id === atual.id;
-          return (
-            <motion.button
-              key={p.id}
-              type="button"
-              role="option"
-              aria-selected={atualCard}
-              aria-expanded={!aberto && i === 0 ? false : undefined}
-              className={`ap-pilha__card ${atualCard ? "ap-pilha__card--on" : ""}`}
-              style={{ zIndex: ordenados.length - i }}
-              initial={false}
-              animate={{
-                // Fechada a pilha se aninha para cima, como no exemplo do Motion.
-                y: aberto ? i * PASSO : -i * 7,
-                scale: aberto ? 1 : 1 - Math.min(i, 3) * 0.05,
-                opacity: escondido ? 0 : 1,
-              }}
-              transition={reduzido ? { duration: 0 } : { ...mola, delay: aberto ? i * 0.045 : 0 }}
-              // Fechada, só o card de cima responde — os de trás são enfeite.
-              tabIndex={aberto || i === 0 ? 0 : -1}
-              aria-hidden={!aberto && i !== 0}
-              onClick={() => {
-                if (!aberto) { setAberto(true); return; }
-                // Escolher um produto já fecha a pilha.
-                onTrocar(p.id);
-                setAberto(false);
-              }}
-              whileTap={reduzido ? undefined : { scale: 0.98 }}
-            >
-              <span className="ap-pilha__nome">{p.nome}</span>
-              {/* A setinha no card de cima é o aviso de que tem mais coisa embaixo. */}
-              {!aberto && i === 0 && (
-                <span className="ap-pilha__chev">
-                  <Icon name="chevron-down" size={18} strokeWidth={2.5} />
-                </span>
-              )}
-              {atualCard && aberto && <Icon name="check" size={18} strokeWidth={2.5} />}
-            </motion.button>
-          );
-        })}
+      <div className="ap-pilha__pilha">
+        {/* Fechada: a pilha de cards, com o produto atual por cima. */}
+        {!aberto && empilhados.map((p, i) => (
+          <motion.button
+            key={p.id}
+            type="button"
+            aria-expanded={i === 0 ? false : undefined}
+            aria-haspopup={i === 0 ? "listbox" : undefined}
+            className={`ap-pilha__card ${p.id === atual.id ? "ap-pilha__card--on" : ""}`}
+            style={{ zIndex: empilhados.length - i }}
+            initial={false}
+            // A pilha fechada se aninha para cima, como no exemplo do Motion.
+            animate={{ y: -i * 7, scale: 1 - i * 0.05, opacity: 1 }}
+            transition={reduzido ? { duration: 0 } : mola}
+            // Só o card de cima responde — os de trás são enfeite.
+            tabIndex={i === 0 ? 0 : -1}
+            aria-hidden={i !== 0}
+            onClick={() => setAberto(true)}
+            whileTap={reduzido ? undefined : { scale: 0.98 }}
+          >
+            <span className="ap-pilha__nome">{p.nome}</span>
+            {/* A setinha no card de cima é o aviso de que tem mais coisa embaixo. */}
+            {i === 0 && <Icon name="chevron-down" size={20} strokeWidth={2.5} />}
+          </motion.button>
+        ))}
 
+        {/* Aberta: busca em cima e a lista rolando embaixo. */}
         <AnimatePresence>
           {aberto && (
-            <motion.button
-              key="__novo"
-              type="button"
-              className="ap-pilha__novo"
-              style={{ zIndex: 1 }}
-              initial={{ opacity: 0, y: (ordenados.length - 1) * PASSO, scale: 0.96 }}
-              animate={{
-                opacity: 1,
-                y: ordenados.length * PASSO,
-                scale: 1,
-                transition: reduzido ? { duration: 0 } : { ...mola, delay: ordenados.length * 0.045 },
-              }}
+            <motion.div
+              className="ap-pilha__painel"
+              initial={{ opacity: 0, y: -6 }}
+              animate={{ opacity: 1, y: 0, transition: mola }}
               exit={{ opacity: 0, transition: { duration: 0.12 } }}
-              onClick={() => { setAberto(false); onNovo(); }}
-              whileTap={reduzido ? undefined : { scale: 0.97 }}
             >
-              <span>Adicionar produto</span>
-              <Icon name="plus" size={16} strokeWidth={2.5} />
-            </motion.button>
+              <input
+                className="ap-busca"
+                type="search"
+                autoFocus
+                placeholder="Buscar produto"
+                aria-label="Buscar produto"
+                value={busca}
+                onChange={(e) => setBusca(e.target.value)}
+              />
+
+              {/* Cabem cinco cards; o resto vem na rolagem, sumindo nas pontas. */}
+              <div
+                className="ap-pilha__scroll"
+                role="listbox"
+                aria-label="Produtos"
+                style={{ maxHeight: VISIVEIS * PASSO - CARD_GAP }}
+              >
+                {lista.map((p, i) => (
+                  <motion.button
+                    key={p.id}
+                    type="button"
+                    role="option"
+                    aria-selected={p.id === atual.id}
+                    className={`ap-pilha__card ap-pilha__card--fluxo ${p.id === atual.id ? "ap-pilha__card--on" : ""}`}
+                    initial={reduzido ? false : { opacity: 0, y: -14, scale: 0.97 }}
+                    animate={{
+                      opacity: 1,
+                      y: 0,
+                      scale: 1,
+                      transition: reduzido
+                        ? { duration: 0 }
+                        : { ...mola, delay: Math.min(i, MAX_STAGGER) * 0.045 },
+                    }}
+                    onClick={() => { onTrocar(p.id); fechar(); }}
+                    whileTap={reduzido ? undefined : { scale: 0.98 }}
+                  >
+                    <span className="ap-pilha__nome">{p.nome}</span>
+                    {p.id === atual.id && <Icon name="check" size={18} strokeWidth={2.5} />}
+                  </motion.button>
+                ))}
+                {!lista.length && <p className="ap-vazio">Nenhum produto com esse nome.</p>}
+              </div>
+
+              <button
+                type="button"
+                className="ap-pilha__novo"
+                onClick={() => { fechar(); onNovo(); }}
+              >
+                <span>Adicionar produto</span>
+                <Icon name="plus" size={16} strokeWidth={2.5} />
+              </button>
+            </motion.div>
           )}
         </AnimatePresence>
       </div>

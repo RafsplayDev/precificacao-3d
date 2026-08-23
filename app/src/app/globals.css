@@ -4,6 +4,11 @@
 
 html, body { padding: 0; }
 
+/* Fade nas pontas de listas roláveis. */
+:root {
+  --fade-pontas: linear-gradient(to bottom, transparent 0, #000 16px, #000 calc(100% - 16px), transparent 100%);
+}
+
 /* Nada de arrastar e selecionar texto pela interface — só onde se digita. */
 .ap-shell {
   min-height: 100vh; display: flex; flex-direction: column;
@@ -474,13 +479,18 @@ select.ap-cell { width: 100%; min-width: 0; cursor: pointer; }
 .ap-picker__menu {
   position: absolute; top: calc(100% + var(--space-3)); left: 0; z-index: 40;
   min-width: max(260px, 100%); max-width: min(92vw, 420px);
-  max-height: 340px; overflow-y: auto;
   padding: var(--space-2);
   background: var(--surface-card);
   border: 1px solid var(--border-hairline);
   border-radius: var(--radius-card);
   box-shadow: var(--shadow-raised, 0 12px 32px rgba(16, 16, 20, 0.14));
   display: flex; flex-direction: column; gap: 2px;
+}
+/* Cinco itens à vista; o resto vem na rolagem, sumindo nas pontas. */
+.ap-picker__lista {
+  display: flex; flex-direction: column; gap: 2px;
+  max-height: 220px; overflow-y: auto; overscroll-behavior: contain;
+  -webkit-mask-image: var(--fade-pontas); mask-image: var(--fade-pontas);
 }
 .ap-picker__item {
   display: flex; align-items: center; justify-content: space-between; gap: var(--space-3);
@@ -534,15 +544,36 @@ select.ap-cell { width: 100%; min-width: 0; cursor: pointer; }
 .ap-pilha__nome { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ap-pilha__card--on { font-weight: var(--weight-medium); color: var(--text-strong); }
 .ap-pilha__card--on svg { color: var(--fil-magenta); }
-/* A setinha que avisa que a pilha tem mais produtos embaixo. */
-.ap-pilha__chev {
-  display: inline-flex; align-items: center; justify-content: center; flex: none;
-  width: 28px; height: 28px; border-radius: var(--radius-pill);
-  background: var(--surface-sunken); color: var(--text-muted);
-}
-.ap-pilha__card:hover .ap-pilha__chev { background: var(--ink-950); color: var(--text-inverse); }
+/* A setinha, sozinha, avisa que a pilha tem mais produtos embaixo. */
+.ap-pilha__card > svg { flex: none; color: var(--text-muted); }
+.ap-pilha__card--on > svg { color: var(--fil-magenta); }
 .ap-pilha__novo { color: var(--fil-magenta); font-weight: var(--weight-medium); }
 .ap-pilha__novo svg { color: var(--fil-magenta); }
+
+/* Aberta, a lista vira painel: busca em cima, cards rolando embaixo. */
+.ap-pilha__painel {
+  position: absolute; top: 0; left: 0; right: 0; z-index: 2;
+  display: flex; flex-direction: column; gap: var(--space-2);
+}
+.ap-pilha__scroll {
+  display: flex; flex-direction: column; gap: 10px;
+  overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
+  padding: 4px 0;
+  -webkit-mask-image: var(--fade-pontas); mask-image: var(--fade-pontas);
+}
+/* No fluxo do painel os cards deixam de ser posicionados no braço. */
+.ap-pilha__card--fluxo, .ap-pilha__painel .ap-pilha__novo { position: relative; flex: none; }
+
+/* Campo de busca no topo das opções. */
+.ap-busca {
+  width: 100%; height: 44px; padding: 0 var(--space-4);
+  font: inherit; font-size: var(--text-body); letter-spacing: normal;
+  color: var(--text-body); background: var(--surface-card);
+  border: 1px solid var(--border-hairline); border-radius: var(--radius-card);
+}
+.ap-busca::placeholder { color: var(--text-muted); }
+.ap-busca:focus-visible { outline: none; box-shadow: var(--ring-focus); }
+.ap-vazio { margin: 0; padding: var(--space-4); color: var(--text-muted); text-align: center; }
 
 /* O fundo desfocado que sobe junto com a pilha aberta. */
 .ap-pilha__fundo {

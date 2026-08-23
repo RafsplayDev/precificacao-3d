@@ -880,32 +880,13 @@ function SeletorProduto({ produtos, atual, onTrocar, onNovo }) {
     () => [atual, ...produtos.filter((p) => p.id !== atual.id)],
     [produtos, atual]
   );
-  const altura = aberto ? ordenados.length * PASSO - CARD_GAP : CARD_H;
-
   return (
-    <div className="ap-pilha" ref={ref}>
-      <div className="ap-pilha__head">
-        <h1 className="ap-pilha__titulo">{aberto ? "Produtos" : "Produto"}</h1>
-        {/* Aberta a pilha se fecha sozinha (clique fora ou escolha), então o
-            botão vira o atalho que falta ali: cadastrar um produto novo. */}
-        <button
-          type="button"
-          className={`ap-pilha__toggle ${aberto ? "ap-pilha__toggle--novo" : ""}`}
-          aria-expanded={aberto ? undefined : false}
-          onClick={() => { if (aberto) { setAberto(false); onNovo(); } else setAberto(true); }}
-        >
-          {aberto ? "Adicionar produto" : "Trocar"}
-        </button>
-      </div>
+    // Aberta, a pilha flutua por cima do resto da página: a altura reservada
+    // continua a de um card só, então nada abaixo se mexe.
+    <div className="ap-pilha" ref={ref} data-aberto={aberto || undefined}>
+      <h1 className="ap-pilha__sr">{atual.nome}</h1>
 
-      <motion.div
-        className="ap-pilha__pilha"
-        role="listbox"
-        aria-label="Produtos"
-        animate={{ height: altura }}
-        transition={mola}
-        style={{ height: altura }}
-      >
+      <div className="ap-pilha__pilha" role="listbox" aria-label="Produtos">
         {ordenados.map((p, i) => {
           const escondido = !aberto && i > 2;
           const atualCard = p.id === atual.id;
@@ -915,6 +896,7 @@ function SeletorProduto({ produtos, atual, onTrocar, onNovo }) {
               type="button"
               role="option"
               aria-selected={atualCard}
+              aria-expanded={!aberto && i === 0 ? false : undefined}
               className={`ap-pilha__card ${atualCard ? "ap-pilha__card--on" : ""}`}
               style={{ zIndex: ordenados.length - i }}
               initial={false}
@@ -937,11 +919,41 @@ function SeletorProduto({ produtos, atual, onTrocar, onNovo }) {
               whileTap={reduzido ? undefined : { scale: 0.98 }}
             >
               <span className="ap-pilha__nome">{p.nome}</span>
+              {/* A setinha no card de cima é o aviso de que tem mais coisa embaixo. */}
+              {!aberto && i === 0 && (
+                <span className="ap-pilha__chev">
+                  <Icon name="chevron-down" size={18} strokeWidth={2.5} />
+                </span>
+              )}
               {atualCard && aberto && <Icon name="check" size={18} strokeWidth={2.5} />}
             </motion.button>
           );
         })}
-      </motion.div>
+
+        <AnimatePresence>
+          {aberto && (
+            <motion.button
+              key="__novo"
+              type="button"
+              className="ap-pilha__novo"
+              style={{ zIndex: 1 }}
+              initial={{ opacity: 0, y: (ordenados.length - 1) * PASSO, scale: 0.96 }}
+              animate={{
+                opacity: 1,
+                y: ordenados.length * PASSO,
+                scale: 1,
+                transition: reduzido ? { duration: 0 } : { ...mola, delay: ordenados.length * 0.045 },
+              }}
+              exit={{ opacity: 0, transition: { duration: 0.12 } }}
+              onClick={() => { setAberto(false); onNovo(); }}
+              whileTap={reduzido ? undefined : { scale: 0.97 }}
+            >
+              <span>Adicionar produto</span>
+              <Icon name="plus" size={16} strokeWidth={2.5} />
+            </motion.button>
+          )}
+        </AnimatePresence>
+      </div>
     </div>
   );
 }

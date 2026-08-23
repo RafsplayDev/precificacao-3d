@@ -21,8 +21,16 @@ export const dynamic = "force-dynamic";
  * nenhuma combinação fecha, e um forjador não ganha nada com a variedade.
  */
 function assinaturaConfere(req, ids) {
-  const segredo = process.env.MP_WEBHOOK_SECRET;
-  if (!segredo) return { ok: false, motivo: "MP_WEBHOOK_SECRET não configurado" };
+  // Duas chaves porque o Mercado Pago tem uma por modo (teste e produção), e
+  // nem todo aviso vem assinado com a que está no painel de webhooks: o que
+  // nasce do notification_url da preferência pode usar a outra. Aceitar as
+  // duas evita ficar trocando a variável no escuro para descobrir qual é.
+  const segredos = [
+    ["principal", process.env.MP_WEBHOOK_SECRET],
+    ["alternativo", process.env.MP_WEBHOOK_SECRET_2],
+  ].filter(([, v]) => v);
+
+  if (!segredos.length) return { ok: false, motivo: "MP_WEBHOOK_SECRET não configurado" };
 
   const assinatura = req.headers.get("x-signature");
   const idRequisicao = req.headers.get("x-request-id");
@@ -53,13 +61,15 @@ function assinaturaConfere(req, ids) {
     }
   }
 
-  for (const c of candidatos) {
-    const esperado = crypto.createHmac("sha256", segredo).update(c.manifesto).digest("hex");
-    const a = Buffer.from(esperado, "hex");
-    // timingSafeEqual em vez de === : a comparação normal termina no primeiro
-    // byte diferente, e esse tempo vaza o hash correto byte a byte.
-    if (a.length === recebido.length && crypto.timingSafeEqual(a, recebido)) {
-      return { ok: true, rotulo: c.rotulo };
+  for (const [nome, segredo] of segredos) {
+    for (const c of candidatos) {
+      const esperado = crypto.createHmac("sha256", segredo).update(c.manifesto).digest("hex");
+      const a = Buffer.from(esperado, "hex");
+      // timingSafeEqual em vez de === : a comparação normal termina no primeiro
+      // byte diferente, e esse tempo vaza o hash correto byte a byte.
+      if (a.length === recebido.length && crypto.timingSafeEqual(a, recebido)) {
+        return { ok: true, rotulo: `${c.rotulo} (segredo ${nome})` };
+      }
     }
   }
 
@@ -72,6 +82,7 @@ function assinaturaConfere(req, ids) {
     motivo: "assinatura não confere",
     detalhe:
       `tentou [${candidatos.map((c) => c.rotulo).join(", ")}]` +
+      ` com ${segredos.length} segredo(s)` +
       ` | v1 recebido: ${v1.slice(0, 8)}…`,
   };
 }

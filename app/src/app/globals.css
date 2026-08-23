@@ -552,15 +552,22 @@ select.ap-cell { width: 100%; min-width: 0; cursor: pointer; }
 
 /* Aberta, a lista vira painel: busca em cima, cards rolando embaixo. */
 .ap-pilha__painel {
-  position: absolute; top: 0; left: 0; right: 0; z-index: 2;
-  display: flex; flex-direction: column; gap: var(--space-2);
+  position: fixed; inset: 0; z-index: 2;
+  width: min(380px, 100%); margin: 0 auto;
+  display: flex; flex-direction: column; gap: var(--space-3);
+  padding: calc(var(--space-4) + env(safe-area-inset-top)) var(--space-4)
+           calc(var(--space-4) + env(safe-area-inset-bottom));
 }
+/* Quem rola é a lista, nunca a página atrás. */
 .ap-pilha__scroll {
+  flex: 1; min-height: 0;
   display: flex; flex-direction: column; gap: 10px;
   overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
   padding: 4px 0;
   -webkit-mask-image: var(--fade-pontas); mask-image: var(--fade-pontas);
 }
+/* Avisa o navegador do que vai se mexer — sem isso a entrada engasga no celular. */
+.ap-pilha__card--fluxo { will-change: transform, opacity; }
 /* No fluxo do painel os cards deixam de ser posicionados no braço. */
 .ap-pilha__card--fluxo, .ap-pilha__painel .ap-pilha__novo { position: relative; flex: none; }
 

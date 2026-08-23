@@ -62,28 +62,113 @@ final.
 
 ## 7. Mercado Pago
 
-1. Painel do Mercado Pago > **Suas integrações** > crie uma aplicação
-   (modelo: *Pagamentos online* > *CheckoutPro*).
-2. Em **Credenciais de produção**, copie o *Access Token* para `MP_ACCESS_TOKEN`.
-3. Em **Webhooks**, cadastre a URL:
-   `https://seudominio.com.br/api/mp/webhook`
-   marcando o evento **Pagamentos**.
-4. O painel mostra uma **assinatura secreta**. Copie para `MP_WEBHOOK_SECRET`.
+A integração inteira roda no servidor: o navegador nunca vê credencial nenhuma.
+Só duas variáveis importam, e cada uma tem uma versão para teste e outra para
+produção — confundir as duas é a causa da maioria dos problemas.
 
-Sem o `MP_WEBHOOK_SECRET` o webhook recusa tudo, por segurança: é ele que
-impede alguém de mandar um "pagamento aprovado" falso e liberar acesso de graça.
+| Variável | Onde fica no painel |
+|---|---|
+| `MP_ACCESS_TOKEN` | **Credenciais de teste** ou **de produção** > *Access Token* |
+| `MP_WEBHOOK_SECRET` | **Webhooks** > *Configurar notificações* > aba do modo > *Assinatura secreta* |
+
+*Public Key*, *Client ID* e *Client Secret* aparecem nas mesmas telas e **não são
+usados** aqui. Servem para outros tipos de integração.
+
+### Cadastrando o webhook
+
+1. **Suas integrações** > sua aplicação > **Webhooks** > *Configurar notificações*.
+2. Escolha a aba do modo: **Modo de teste** enquanto valida, **Modo de produção**
+   ao lançar. São dois cadastros independentes, com assinaturas diferentes.
+3. URL, com o caminho completo e **sem barra no final**:
+   `https://seudominio.com.br/api/mp/webhook`
+4. Marque o evento **Pagamentos (legacy)** — é o que envia o aviso no formato
+   que este código lê. "Order (Mercado Pago)" é a API nova, com outro formato.
+5. Salve. A **assinatura secreta** aparece então; copie para `MP_WEBHOOK_SECRET`.
+
+Gerar uma assinatura nova invalida a anterior na hora. Toda vez que fizer isso,
+atualize a variável e refaça o deploy no mesmo movimento — senão o webhook passa
+a recusar tudo e o sintoma não diz o motivo.
 
 ### Testando antes de lançar
 
-Use as **credenciais de teste** e crie um usuário de teste no painel do Mercado
-Pago para simular a compra. Em ambiente local o webhook não chega no
-`localhost` — exponha com um túnel:
+Não existe URL de teste: o ambiente é definido pelas **credenciais**, não pelo
+endereço. O mesmo site vira teste ou produção conforme o `MP_ACCESS_TOKEN`.
+
+Você precisa de **duas contas** distintas — o Mercado Pago proíbe pagar para si
+mesmo, e todo o resto do teste depende disso. A conta da aplicação vende; crie
+uma segunda em **Contas de teste** para comprar. Faça o login dela numa janela
+onde você não esteja logado com a sua conta real.
+
+Cartão de teste aprovado (o titular **APRO** é o que força a aprovação):
+
+```
+5031 4332 1540 6351   11/30   CVV 123   CPF 12345678909   APRO
+```
+
+O botão **Simular notificação**, na tela de webhooks, dispara um aviso assinado
+sem gastar saldo. Com um id inventado (`123456`) o resultado esperado é a
+assinatura passar e a consulta falhar — é o teste certo para validar só a
+assinatura.
+
+Para testar no `localhost`, exponha com um túnel, já que o webhook não alcança a
+sua máquina:
 
 ```bash
 npx cloudflared tunnel --url http://localhost:3000
 ```
 
 e use a URL do túnel em `NEXT_PUBLIC_URL_SITE` e no cadastro do webhook.
+
+### Quando algo falha
+
+Os erros aparecem nos *Runtime Logs* da Vercel, e cada mensagem aponta para uma
+causa diferente:
+
+| No log ou na tela | O que é |
+|---|---|
+| `falta MP_ACCESS_TOKEN` | Variável ausente, ou fora do ambiente *Production* |
+| `At least one policy returned UNAUTHORIZED` | Token inválido: trocado pelo Client Secret, ou de produção sem a aplicação ativada |
+| `sem assinatura válida, confirmando na API` | Normal — veja a seção abaixo |
+| `falha ao consultar o pagamento` com status 404 | O id não é de um pagamento; o aviso é ignorado |
+| Resposta **307** no painel do Mercado Pago | URL do webhook errada — faltou o caminho, ou sobrou barra no fim |
+| Botão **Pagar** cinza no checkout | Pagador é a mesma conta que vende |
+
+### Sobre a assinatura do webhook
+
+O webhook aceita o aviso por um de dois caminhos. O preferido é a assinatura
+HMAC. Quando ela não fecha, o aviso passa a valer só como um palpite de id, e
+quem decide é a API do Mercado Pago, consultada com o `MP_ACCESS_TOKEN`.
+
+Isso existe porque os avisos reais chegaram com assinatura que não fechava com
+nenhuma das chaves do painel, enquanto o simulador passava — e sem esse segundo
+caminho o cliente pagava e não recebia o acesso.
+
+Nada do corpo da requisição é aproveitado: nem o status, nem o valor, nem a
+referência. Só o id, e como pergunta. Para tirar proveito disso alguém teria que
+acertar o id de um pagamento que já é seu e que o Mercado Pago já confirma como
+aprovado — caso em que liberar o acesso é o certo a fazer.
+
+`MP_WEBHOOK_SECRET_2` é opcional e aceita uma segunda chave, útil para descobrir
+qual dos dois modos assina os avisos: o log diz qual delas fechou.
+
+### Virando a chave para produção
+
+1. `MP_ACCESS_TOKEN` = o token de **Credenciais de produção** (a aplicação
+   precisa estar ativada: setor e site preenchidos no painel).
+2. Cadastre o webhook na aba **Modo de produção** e ponha a assinatura de lá em
+   `MP_WEBHOOK_SECRET`.
+3. `NEXT_PUBLIC_URL_SITE` = o domínio final, sem barra no fim.
+4. **Redeploy** — variável nova só entra em build novo.
+5. Marque as três como *Sensitive* na Vercel: `MP_ACCESS_TOKEN`,
+   `MP_WEBHOOK_SECRET` e `SUPABASE_SERVICE_ROLE_KEY`.
+
+Trocar o token e esquecer a assinatura é o erro mais comum da virada, e o
+sintoma é o webhook recusando tudo enquanto as vendas acontecem normalmente —
+ou seja, gente pagando e não recebendo. Faça os dois juntos.
+
+Para testar depois do lançamento sem cobrar de ninguém, crie um segundo projeto
+na Vercel apontando para o mesmo repositório, com as credenciais de teste. Duas
+URLs estáveis, dois webhooks, e o site que vende fica intocado.
 
 ## 8. Afiliados
 

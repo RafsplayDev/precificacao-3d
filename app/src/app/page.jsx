@@ -846,14 +846,138 @@ function qtd(v) {
 
 /* ---------- pedaços de UI ---------- */
 
+/** Versão de computador: o título abre um menu, com os itens entrando
+ *  empilhados como as notificações do Motion. */
+function SeletorProdutoMenu({ produtos, atual, onTrocar, onNovo }) {
+  const [aberto, setAberto] = React.useState(false);
+  const ref = React.useRef(null);
+  const reduzido = useReducedMotion();
+
+  React.useEffect(() => {
+    if (!aberto) return;
+    const fora = (e) => { if (ref.current && !ref.current.contains(e.target)) setAberto(false); };
+    const esc = (e) => { if (e.key === "Escape") setAberto(false); };
+    document.addEventListener("mousedown", fora);
+    document.addEventListener("keydown", esc);
+    return () => {
+      document.removeEventListener("mousedown", fora);
+      document.removeEventListener("keydown", esc);
+    };
+  }, [aberto]);
+
+  // Mola das notificações do Motion: firme, com um respiro no fim.
+  const mola = reduzido
+    ? { duration: 0 }
+    : { type: "spring", stiffness: 520, damping: 40, mass: 0.9 };
+
+  // O menu começa como uma pilha (tudo empilhado atrás do botão) e se abre em leque.
+  const itemVariants = {
+    empilhado: (i) => ({
+      opacity: 0,
+      // Cada item nasce colado nos de cima, um pouquinho menor — a pilha do exemplo.
+      y: reduzido ? 0 : -8 - i * 6,
+      scale: reduzido ? 1 : 1 - Math.min(i, 4) * 0.04,
+      filter: reduzido ? "none" : "blur(2px)",
+    }),
+    aberto: (i) => ({
+      opacity: 1,
+      y: 0,
+      scale: 1,
+      filter: "blur(0px)",
+      transition: { ...mola, delay: reduzido ? 0 : i * 0.035 },
+    }),
+    saindo: (i) => ({
+      opacity: 0,
+      y: reduzido ? 0 : -6 - i * 4,
+      scale: reduzido ? 1 : 0.97,
+      transition: reduzido ? { duration: 0 } : { duration: 0.14, ease: "easeIn" },
+    }),
+  };
+
+  return (
+    <div className="ap-picker" ref={ref}>
+      <h1>
+        <motion.button
+          type="button"
+          className="ap-picker__btn"
+          aria-haspopup="listbox"
+          aria-expanded={aberto}
+          onClick={() => setAberto((v) => !v)}
+          whileTap={reduzido ? undefined : { scale: 0.97 }}
+          transition={mola}
+        >
+          <span>{atual.nome}</span>
+          <span className="ap-picker__chev" data-aberto={aberto || undefined}>
+            <Icon name="chevron-down" size={20} strokeWidth={2} />
+          </span>
+        </motion.button>
+      </h1>
+
+      <AnimatePresence>
+        {aberto && (
+          <motion.div
+            className="ap-picker__menu"
+            role="listbox"
+            aria-label="Produtos"
+            initial={{ opacity: 0, y: reduzido ? 0 : -10, scale: reduzido ? 1 : 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1, transition: mola }}
+            exit={{
+              opacity: 0,
+              y: reduzido ? 0 : -8,
+              scale: reduzido ? 1 : 0.97,
+              transition: reduzido ? { duration: 0 } : { duration: 0.16, ease: "easeIn" },
+            }}
+            style={{ transformOrigin: "top left" }}
+          >
+            {produtos.map((p, i) => (
+              <motion.button
+                key={p.id}
+                type="button"
+                role="option"
+                aria-selected={p.id === atual.id}
+                className={`ap-picker__item ${p.id === atual.id ? "ap-picker__item--on" : ""}`}
+                onClick={() => { onTrocar(p.id); setAberto(false); }}
+                custom={i}
+                variants={itemVariants}
+                initial="empilhado"
+                animate="aberto"
+                exit="saindo"
+                whileTap={reduzido ? undefined : { scale: 0.98 }}
+              >
+                <span>{p.nome}</span>
+                {p.id === atual.id && <Icon name="check" size={16} strokeWidth={2.5} />}
+              </motion.button>
+            ))}
+            <div className="ap-picker__sep" />
+            <motion.button
+              type="button"
+              className="ap-picker__item ap-picker__item--novo"
+              onClick={() => { setAberto(false); onNovo(); }}
+              custom={produtos.length}
+              variants={itemVariants}
+              initial="empilhado"
+              animate="aberto"
+              exit="saindo"
+              whileTap={reduzido ? undefined : { scale: 0.98 }}
+            >
+              <span>Adicionar produto</span>
+              <Icon name="plus" size={16} strokeWidth={2.5} />
+            </motion.button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
 /* Altura de cada card e o passo entre eles quando a pilha está aberta. */
 const CARD_H = 62;
 const CARD_GAP = 10;
 const PASSO = CARD_H + CARD_GAP;
 
-/** O título da página é uma pilha de cards: fechada mostra o produto atual com
- *  os outros espiando atrás; aberta, os cards descem um a um. */
-function SeletorProduto({ produtos, atual, onTrocar, onNovo }) {
+/** Versão de celular: uma pilha de cards. Fechada mostra o produto atual com
+ *  os outros espiando atrás; aberta, os cards descem um a um sobre a tela. */
+function SeletorProdutoPilha({ produtos, atual, onTrocar, onNovo }) {
   const [aberto, setAberto] = React.useState(false);
   const ref = React.useRef(null);
   const reduzido = useReducedMotion();
@@ -885,6 +1009,21 @@ function SeletorProduto({ produtos, atual, onTrocar, onNovo }) {
     // continua a de um card só, então nada abaixo se mexe.
     <div className="ap-pilha" ref={ref} data-aberto={aberto || undefined}>
       <h1 className="ap-pilha__sr">{atual.nome}</h1>
+
+      {/* Com a lista por cima da tela, o fundo desfocado separa uma coisa da outra. */}
+      <AnimatePresence>
+        {aberto && (
+          <motion.div
+            className="ap-pilha__fundo"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: reduzido ? 0 : 0.2 }}
+            onClick={() => setAberto(false)}
+            aria-hidden="true"
+          />
+        )}
+      </AnimatePresence>
 
       <div className="ap-pilha__pilha" role="listbox" aria-label="Produtos">
         {ordenados.map((p, i) => {
@@ -955,6 +1094,17 @@ function SeletorProduto({ produtos, atual, onTrocar, onNovo }) {
         </AnimatePresence>
       </div>
     </div>
+  );
+}
+
+/** No computador o menu antigo funciona melhor; no celular, a pilha de cards.
+ *  Os dois ficam no HTML e o CSS escolhe qual aparece — sem pulo na hidratação. */
+function SeletorProduto(props) {
+  return (
+    <>
+      <div className="ap-sel ap-sel--pc"><SeletorProdutoMenu {...props} /></div>
+      <div className="ap-sel ap-sel--celular"><SeletorProdutoPilha {...props} /></div>
+    </>
   );
 }
 

@@ -1,5 +1,6 @@
 "use client";
 import React from "react";
+import { Icon } from "../core/Icon.jsx";
 
 /**
  * @startingPoint section="Forms" subtitle="Inputs, select, checkbox, radio and switch" viewport="700x300"
@@ -13,6 +14,8 @@ export function Input({
   // Campo de senha ganha o olho de revelar. Digitar uma senha às cegas, sem
   // poder conferir, é a causa mais boba de "e-mail ou senha incorretos" — e
   // quem está criando a conta ainda não tem o hábito de digitar aquela senha.
+  // O olho é ícone do Lucide, não emoji: emoji muda de desenho a cada sistema
+  // e não acompanha a cor do campo.
   const ehSenha = rest.type === "password";
   const [revelada, setRevelada] = React.useState(false);
   const tipo = ehSenha && revelada ? "text" : rest.type;
@@ -28,7 +31,11 @@ export function Input({
           "aria-label": revelada ? "Ocultar senha" : "Mostrar senha",
           title: revelada ? "Ocultar senha" : "Mostrar senha",
         },
-        revelada ? "🙈" : "👁"
+        React.createElement(Icon, {
+          name: revelada ? "eye-off" : "eye",
+          size: 18,
+          strokeWidth: 1.75,
+        })
       )
     : null;
 

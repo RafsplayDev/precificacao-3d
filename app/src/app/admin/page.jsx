@@ -24,6 +24,7 @@ export default function AdminPage() {
   const [emailAfiliado, setEmailAfiliado] = React.useState("");
   const [emailCortesia, setEmailCortesia] = React.useState("");
   const [ocupado, setOcupado] = React.useState(false);
+  const [mostrarTudo, setMostrarTudo] = React.useState(false);
 
   const recarregar = React.useCallback(async () => {
     const [{ data: af }, { data: pg }] = await Promise.all([
@@ -79,6 +80,28 @@ export default function AdminPage() {
 
   const totalAPagar = afiliados.reduce((s, a) => s + Number(a.a_pagar_centavos || 0), 0);
   const aprovadas = vendas.filter((v) => v.status === "aprovado");
+
+  // ------------------------------------------------------------------
+  // O que a lista mostra por padrão
+  //
+  // Toda pessoa que abre o checkout e desiste deixa uma linha `pendente`
+  // para sempre, e cada tentativa recusada deixa uma `cancelado`. São
+  // muito mais numerosas que as vendas, e afogam justamente o que se quer
+  // ver ao abrir esta tela. Ficam a um clique de distância, para quando a
+  // pergunta for outra — investigar uma compra que travou, por exemplo.
+  //
+  // Pendentes recentes continuam à vista: uma compra de minutos atrás
+  // ainda pode fechar, e é a que alguém pode estar esperando agora.
+  // ------------------------------------------------------------------
+  const UMA_HORA = 60 * 60 * 1000;
+  const visiveis = mostrarTudo
+    ? vendas
+    : vendas.filter((v) => {
+        if (v.status === "aprovado" || v.status === "estornado") return true;
+        if (v.status !== "pendente") return false;
+        return Date.now() - new Date(v.criado_em).getTime() < UMA_HORA;
+      });
+  const ocultas = vendas.length - visiveis.length;
 
   return (
     <div className="ap-pagina ap-admin">
@@ -218,7 +241,16 @@ export default function AdminPage() {
       </Card>
 
       <Card>
-        <h2>Últimas compras</h2>
+        <div className="ap-admin__cabeca-lista">
+          <h2>Últimas compras</h2>
+          {(ocultas > 0 || mostrarTudo) && (
+            <button type="button" onClick={() => setMostrarTudo((v) => !v)}>
+              {mostrarTudo
+                ? "Mostrar só o que importa"
+                : `Ver tudo (${ocultas} ocultas)`}
+            </button>
+          )}
+        </div>
         <table className="ap-tabela">
           <thead>
             <tr>
@@ -230,7 +262,7 @@ export default function AdminPage() {
             </tr>
           </thead>
           <tbody>
-            {vendas.map((v) => (
+            {visiveis.map((v) => (
               <tr key={v.id}>
                 <td>{new Date(v.criado_em).toLocaleString("pt-BR")}</td>
                 <td>{v.email}</td>

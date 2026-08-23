@@ -24,13 +24,25 @@ function Conteudo() {
   const [conferindo, setConferindo] = React.useState(retorno === "sucesso");
 
   // ------------------------------------------------------------------
-  // Volta do Mercado Pago
-  // O comprador costuma chegar aqui antes do webhook. Em vez de dizer que
-  // não pagou — o que seria assustador e falso — a página fica conferindo
-  // por alguns segundos até a licença virar ativa.
+  // Esperando o pagamento cair
+  //
+  // A página fica conferindo a licença enquanto estiver aberta, e não só
+  // quando o Mercado Pago devolve com retorno=sucesso. O motivo é o Pix:
+  // quem paga por Pix não é redirecionado de volta — paga no aplicativo do
+  // banco e volta para esta aba por conta própria, ou nem volta. Sem esta
+  // conferência contínua, a pessoa pagava, o dinheiro caía, e a tela
+  // continuava pedindo que ela comprasse.
+  //
+  // Quando há retorno=sucesso, a conferência é rápida e tem fim: o webhook
+  // costuma chegar em segundos, e passar disso merece uma explicação. Sem
+  // retorno, ela é lenta e não desiste — a pessoa pode levar minutos para
+  // abrir o banco, e o custo de uma consulta a cada dez segundos é baixo.
   // ------------------------------------------------------------------
   React.useEffect(() => {
-    if (retorno !== "sucesso") return;
+    const voltandoDoCheckout = retorno === "sucesso";
+    const intervalo = voltandoDoCheckout ? 2000 : 10000;
+    const limite = voltandoDoCheckout ? 15 : Infinity;
+
     let vivo = true;
     let tentativas = 0;
 
@@ -41,19 +53,22 @@ function Conteudo() {
         irPara("/");
         return;
       }
-      if (++tentativas >= 15) {
+      if (++tentativas >= limite) {
         setConferindo(false);
         setErro(
           "O pagamento foi registrado, mas a confirmação do Mercado Pago ainda não chegou. " +
-            "Isso costuma levar poucos minutos — atualize esta página. Se demorar, fale com o suporte."
+            "Isso costuma levar poucos minutos — deixe esta página aberta que ela libera " +
+            "sozinha. Se demorar muito, fale com o suporte."
         );
         return;
       }
-      setTimeout(conferir, 2000);
+      setTimeout(conferir, intervalo);
     };
-    conferir();
+
+    const inicio = setTimeout(conferir, voltandoDoCheckout ? 0 : intervalo);
     return () => {
       vivo = false;
+      clearTimeout(inicio);
     };
   }, [retorno]);
 
@@ -63,6 +78,15 @@ function Conteudo() {
     try {
       const r = await fetch("/api/checkout", { method: "POST" });
       const dados = await r.json();
+
+      // 409 é "já pagou". Dizer isso e deixar a pessoa parada aqui é o
+      // oposto do que ela quer: ela clicou no botão justamente para entrar.
+      // Quem já tem acesso vai direto para o painel.
+      if (r.status === 409) {
+        irPara("/");
+        return;
+      }
+
       if (!r.ok) throw new Error(dados?.erro || "Não foi possível iniciar a compra.");
       window.location.href = dados.url;
     } catch (e) {

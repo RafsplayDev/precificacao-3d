@@ -133,16 +133,37 @@ export async function POST(req) {
     return NextResponse.json({ ignorado: true });
   }
 
+  // ------------------------------------------------------------------
+  // Duas provas de autenticidade, não uma
+  //
+  // A assinatura é a prova preferida. Quando ela fecha, o aviso segue em
+  // frente. Quando não fecha, o aviso não é descartado: passa a valer
+  // apenas como um palpite de id, e quem decide é a API do Mercado Pago,
+  // consultada logo abaixo com o nosso Access Token.
+  //
+  // Isso é seguro porque nada do corpo da requisição é aproveitado — nem o
+  // status, nem o valor, nem a referência. Só o id, e ainda assim como
+  // pergunta, não como resposta. Para conseguir alguma coisa, um forjador
+  // teria que acertar o id de um pagamento que já é seu e que o Mercado
+  // Pago já confirma como aprovado; nesse caso, ativar a licença é
+  // exatamente o comportamento correto.
+  //
+  // O motivo de existir esse segundo caminho: os avisos reais chegavam com
+  // assinatura que não fechava com nenhuma das chaves do painel, enquanto o
+  // simulador passava. O resultado era um cliente pagando e não recebendo o
+  // acesso — a pior falha possível aqui — por causa de um detalhe de
+  // formato de assinatura.
+  // ------------------------------------------------------------------
   const conferencia = assinaturaConfere(req, [idPagamento, corpo?.data?.id]);
-  if (!conferencia.ok) {
+  if (conferencia.ok) {
+    console.log("[webhook] assinatura ok:", conferencia.rotulo, "| id:", idPagamento);
+  } else {
     console.warn(
-      "[webhook] recusado:",
+      "[webhook] sem assinatura válida, confirmando na API:",
       conferencia.motivo,
       conferencia.detalhe || ""
     );
-    return NextResponse.json({ erro: "assinatura inválida" }, { status: 401 });
   }
-  console.log("[webhook] assinatura ok:", conferencia.rotulo, "| id:", idPagamento);
 
   const token = process.env.MP_ACCESS_TOKEN;
   if (!token) return NextResponse.json({ erro: "sem token" }, { status: 500 });

@@ -47,6 +47,90 @@ html, body { padding: 0; }
 .ap-nav a:hover { background: var(--surface-sunken); color: var(--text-strong); text-decoration: none; }
 .ap-nav a[aria-current="page"] { background: var(--ink-950); color: var(--text-inverse); }
 
+/* Botão de perfil: só no mobile, onde o e-mail e o "Sair" não cabem no topo. */
+.ap-barra { display: none; margin-left: auto; align-items: center; }
+.ap-perfil {
+  width: 40px; height: 40px; padding: 0; flex: none;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: none; border: var(--border-w) solid var(--border-default);
+  border-radius: var(--radius-pill); color: var(--text-strong); cursor: pointer;
+  font-family: var(--font-display); font-size: var(--text-body-md);
+  font-weight: var(--weight-medium); line-height: 1;
+  transition: background var(--dur-fast) var(--ease-standard), color var(--dur-fast) var(--ease-standard);
+}
+.ap-perfil.is-on { background: var(--ink-950); border-color: var(--ink-950); color: var(--text-inverse); }
+
+/* No desktop o menu é texto em linha no header: a barra de rodapé nem existe. */
+.ap-tabbar { display: none; }
+.ap-gaveta { display: contents; }
+
+@media (max-width: 860px) {
+  .ap-header__in { gap: var(--space-3); }
+  .ap-logo__sub { display: none; }
+  .ap-barra { display: flex; }
+
+  /* Gaveta da conta: desce colada no header, largura toda. */
+  .ap-gaveta {
+    display: grid; grid-template-rows: 0fr;
+    position: absolute; top: 100%; left: 0; right: 0; z-index: 45;
+    background: var(--surface-page);
+    border-bottom: var(--border-w) solid transparent;
+    overflow: hidden; visibility: hidden; pointer-events: none;
+    transition: grid-template-rows var(--dur-base) var(--ease-standard),
+                visibility var(--dur-base) var(--ease-standard),
+                border-color var(--dur-base) var(--ease-standard);
+  }
+  .ap-gaveta.is-open {
+    grid-template-rows: 1fr; visibility: visible; pointer-events: auto;
+    border-bottom-color: var(--border-hairline); box-shadow: var(--shadow-sm);
+  }
+  .ap-gaveta > * { min-height: 0; overflow: hidden; }
+  .ap-conta {
+    flex-direction: column; align-items: stretch; gap: var(--space-2);
+    padding: var(--space-4) var(--gutter-page);
+  }
+  .ap-conta__email { display: block; overflow-wrap: anywhere; }
+  .ap-conta button { text-align: left; }
+
+  /* ---- Menu fixo no rodapé ---- */
+  .ap-nav { display: none; }
+  .ap-tabbar {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 40;
+    display: flex; align-items: stretch;
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(8px);
+    border-top: var(--border-w) solid var(--border-hairline);
+    padding: var(--space-2) var(--space-2) calc(var(--space-2) + env(safe-area-inset-bottom, 0px));
+  }
+  .ap-tabbar a {
+    flex: 1 1 0; min-width: 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+    padding: 8px 2px; border-radius: var(--radius-md);
+    color: var(--text-muted); text-decoration: none;
+    transition: color var(--dur-fast) var(--ease-standard);
+  }
+  .ap-tabbar a[aria-current="page"] { color: var(--text-strong); }
+  .ap-nav__txt {
+    font-size: 10px; line-height: 1.2; letter-spacing: -0.01em;
+    max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  /* Com afiliado e admin são seis abas: aperta o texto em vez de cortá-lo. */
+  .ap-tabbar:has(a:nth-child(6)) { padding-left: 0; padding-right: 0; }
+  .ap-tabbar:has(a:nth-child(6)) .ap-nav__txt { font-size: 9px; letter-spacing: -0.02em; }
+
+  /* Fila de abas (Tudo/Material/…) é mais larga que o cartão no celular:
+     quem rola é ela, não a página. */
+  .dc-tabs {
+    max-width: 100%; overflow-x: auto; scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .dc-tabs::-webkit-scrollbar { display: none; }
+  .dc-tab { flex: none; }
+
+  /* O conteúdo termina acima da barra, nunca atrás dela. */
+  .ap-main { padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px)); }
+}
+
 /* ---- Página ---- */
 .ap-main { flex: 1; }
 .ap-wrap { max-width: var(--max-content); margin: 0 auto; padding: var(--space-8) var(--gutter-page) var(--space-20); }
@@ -188,6 +272,14 @@ html, body { padding: 0; }
 
 /* ---- Números de destaque ---- */
 .ap-figure { display: flex; flex-direction: column; gap: 2px; }
+/* Custo à esquerda, margem à direita — enquanto os dois couberem na mesma linha. */
+.ap-figuras { display: flex; justify-content: space-between; gap: var(--space-6); flex-wrap: wrap; margin-bottom: 12px; }
+.ap-figure--dir { text-align: right; align-items: flex-end; }
+@media (max-width: 640px) {
+  /* Empilhados, alinhar a margem à direita só desencontrava os dois números. */
+  .ap-figuras { flex-direction: column; gap: var(--space-4); }
+  .ap-figure--dir { text-align: left; align-items: flex-start; }
+}
 .ap-figure__val { font-family: var(--font-display); font-size: clamp(24px, 5vw, var(--text-h1)); letter-spacing: var(--ls-h1); color: var(--text-strong); line-height: 1; }
 .ap-figure__val--lg { font-size: clamp(30px, 7vw, var(--text-display-2)); letter-spacing: var(--ls-display-2); }
 .ap-figure--accent .ap-figure__val { color: var(--fil-magenta); }
@@ -357,6 +449,10 @@ select.ap-cell { width: 100%; min-width: 0; cursor: pointer; }
 /* Título que também é o seletor de produto */
 .ap-picker { position: relative; display: inline-block; }
 .ap-picker h1 { margin: 0; }
+/* No celular o nome do produto rouba a tela inteira: menor e mais apertado. */
+@media (max-width: 640px) {
+  .ap-picker h1 { font-size: clamp(19px, 5vw, 24px); letter-spacing: -0.01em; }
+}
 .ap-picker__btn {
   display: inline-flex; align-items: center; gap: var(--space-3);
   font: inherit; letter-spacing: inherit; color: inherit;

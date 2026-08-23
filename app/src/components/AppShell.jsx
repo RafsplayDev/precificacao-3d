@@ -3,15 +3,15 @@ import React from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { Toast } from "@/design-system";
+import { Toast, Icon } from "@/design-system";
 import { supabase } from "@/lib/supabaseClient";
 import { irPara } from "@/lib/navegar";
 
 const NAV = [
-  { href: "/", label: "Calculadora" },
-  { href: "/produtos", label: "Produtos" },
-  { href: "/cadastros", label: "Cadastros" },
-  { href: "/concorrentes", label: "Concorrentes" },
+  { href: "/", label: "Calculadora", icone: "calculator" },
+  { href: "/produtos", label: "Produtos", icone: "box" },
+  { href: "/cadastros", label: "Cadastros", icone: "layers" },
+  { href: "/concorrentes", label: "Concorrentes", icone: "store" },
 ];
 
 /**
@@ -28,6 +28,15 @@ export function AppShell({ children }) {
   const [toasts, setToasts] = React.useState([]);
   const [conta, setConta] = React.useState(null);
   const [extras, setExtras] = React.useState({ afiliado: false, admin: false });
+  // "perfil" ou nada: a única gaveta que resta é a da conta.
+  const [aberto, setAberto] = React.useState(null);
+  const alternar = (qual) => setAberto((v) => (v === qual ? null : qual));
+  const inicial = (conta?.email || "?").trim().charAt(0).toUpperCase();
+  const itens = React.useMemo(() => [
+    ...NAV,
+    ...(extras.afiliado ? [{ href: "/afiliado", label: "Indicações", icone: "gift" }] : []),
+    ...(extras.admin ? [{ href: "/admin", label: "Admin", icone: "shield" }] : []),
+  ], [extras.afiliado, extras.admin]);
 
   const publica = SEM_MENU.some((p) => pathname === p || pathname.startsWith(p + "/"));
 
@@ -51,10 +60,27 @@ export function AppShell({ children }) {
     };
   }, [publica, pathname]);
 
+  React.useEffect(() => {
+    setAberto(null);
+  }, [pathname]);
+
   async function sair() {
     await supabase.auth.signOut();
     irPara("/entrar");
   }
+
+  // O ícone só existe na barra do rodapé: no header o menu é texto, como sempre foi.
+  const links = (comIcone) =>
+    itens.map((n) => (
+      <Link
+        key={n.href}
+        href={n.href}
+        aria-current={pathname === n.href ? "page" : undefined}
+      >
+        {comIcone && <Icon name={n.icone} size={20} />}
+        {comIcone ? <span className="ap-nav__txt">{n.label}</span> : n.label}
+      </Link>
+    ));
 
   const push = React.useCallback((t) => {
     const id = Math.random().toString(36).slice(2);
@@ -74,38 +100,38 @@ export function AppShell({ children }) {
             </Link>
             {!publica && (
               <>
-                <nav className="ap-nav">
-                  {NAV.map((n) => (
-                    <Link
-                      key={n.href}
-                      href={n.href}
-                      aria-current={pathname === n.href ? "page" : undefined}
-                    >
-                      {n.label}
-                    </Link>
-                  ))}
-                  {extras.afiliado && (
-                    <Link href="/afiliado" aria-current={pathname === "/afiliado" ? "page" : undefined}>
-                      Indicações
-                    </Link>
-                  )}
-                  {extras.admin && (
-                    <Link href="/admin" aria-current={pathname === "/admin" ? "page" : undefined}>
-                      Admin
-                    </Link>
-                  )}
-                </nav>
+                <div className="ap-barra">
+                  <button
+                    type="button"
+                    className={"ap-perfil" + (aberto === "perfil" ? " is-on" : "")}
+                    aria-label="Sua conta"
+                    aria-expanded={aberto === "perfil"}
+                    onClick={() => alternar("perfil")}
+                  >
+                    <span aria-hidden="true">{inicial}</span>
+                  </button>
+                </div>
+
+                <nav className="ap-nav" aria-label="Seções">{links(false)}</nav>
 
                 {conta && (
-                  <div className="ap-conta">
-                    <span className="ap-conta__email">{conta.email}</span>
-                    <button type="button" onClick={sair}>Sair</button>
+                  <div className={"ap-gaveta" + (aberto === "perfil" ? " is-open" : "")}>
+                    <div className="ap-conta">
+                      <span className="ap-conta__email">{conta.email}</span>
+                      <button type="button" onClick={sair}>Sair</button>
+                    </div>
                   </div>
                 )}
               </>
             )}
           </div>
         </header>
+
+        {/* A barra do rodapé vive fora do header de propósito: dentro dele o
+            blur criaria bloco de contenção e ela deixaria de ser fixa. */}
+        {!publica && (
+          <nav className="ap-tabbar" aria-label="Seções">{links(true)}</nav>
+        )}
 
         <main className="ap-main">{children}</main>
 

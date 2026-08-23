@@ -287,12 +287,12 @@ export default function Calculadora() {
       {/* ---- Assinatura: a pilha de custo e os preços sugeridos, lado a lado ---- */}
       <div className="ap-hero">
       <Card padding="var(--space-5)">
-        <div style={{ display: "flex", justifyContent: "space-between", gap: 24, flexWrap: "wrap", marginBottom: 12 }}>
+        <div className="ap-figuras">
           <div className="ap-figure">
             <span className="dc-eyebrow">CUSTO TOTAL POR UNIDADE</span>
             <span className="ap-figure__val ap-figure__val--lg">{money(custosTotais)}</span>
           </div>
-          <div className="ap-figure ap-figure--accent" style={{ textAlign: "right", alignItems: "flex-end" }}>
+          <div className="ap-figure ap-figure--accent ap-figure--dir">
             <span className="dc-eyebrow">MARGEM NO {canal === "atacado" ? "ATACADO" : "VAREJO"}</span>
             <span className="ap-figure__val ap-figure__val--lg">{money(unit.margem)}</span>
             <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-body-sm)", color: "var(--text-muted)" }}>

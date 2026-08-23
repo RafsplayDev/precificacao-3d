@@ -856,11 +856,9 @@ function filtrarProdutos(produtos, busca) {
   return produtos.filter((p) => semAcento(p.nome).includes(alvo));
 }
 
-/* Quantos itens a lista mostra de uma vez; o resto vem na rolagem. */
-const VISIVEIS = 5;
 /* Só os primeiros entram escalonados: com muito produto, esperar a vez de
    todo mundo deixa a abertura arrastada. */
-const MAX_STAGGER = 6;
+const MAX_STAGGER = 4;
 
 /** Versão de computador: o título abre um menu, com os itens entrando
  *  empilhados como as notificações do Motion. */
@@ -1025,10 +1023,18 @@ function SeletorProdutoPilha({ produtos, atual, onTrocar, onNovo }) {
     };
   }, [aberto, fechar]);
 
+  // Com a lista ocupando a tela, quem rola é ela — não a página atrás.
+  React.useEffect(() => {
+    if (!aberto) return;
+    const antes = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = antes; };
+  }, [aberto]);
+
   // Mola das notificações do Motion: firme, com um respiro no fim.
   const mola = reduzido
     ? { duration: 0 }
-    : { type: "spring", stiffness: 420, damping: 34, mass: 0.9 };
+    : { type: "spring", stiffness: 300, damping: 30, mass: 0.8 };
 
   // O atual vem na frente: fechada, a pilha mostra ele por cima.
   const ordenados = React.useMemo(
@@ -1095,23 +1101,19 @@ function SeletorProdutoPilha({ produtos, atual, onTrocar, onNovo }) {
               animate={{ opacity: 1, y: 0, transition: mola }}
               exit={{ opacity: 0, transition: { duration: 0.12 } }}
             >
+              {/* Sem foco automático: no celular o teclado subindo por conta
+                  própria come metade da lista antes de a pessoa pedir. */}
               <input
                 className="ap-busca"
                 type="search"
-                autoFocus
                 placeholder="Buscar produto"
                 aria-label="Buscar produto"
                 value={busca}
                 onChange={(e) => setBusca(e.target.value)}
               />
 
-              {/* Cabem cinco cards; o resto vem na rolagem, sumindo nas pontas. */}
-              <div
-                className="ap-pilha__scroll"
-                role="listbox"
-                aria-label="Produtos"
-                style={{ maxHeight: VISIVEIS * PASSO - CARD_GAP }}
-              >
+              {/* A lista inteira, rolando dentro do painel. */}
+              <div className="ap-pilha__scroll" role="listbox" aria-label="Produtos">
                 {lista.map((p, i) => (
                   <motion.button
                     key={p.id}
@@ -1119,14 +1121,13 @@ function SeletorProdutoPilha({ produtos, atual, onTrocar, onNovo }) {
                     role="option"
                     aria-selected={p.id === atual.id}
                     className={`ap-pilha__card ap-pilha__card--fluxo ${p.id === atual.id ? "ap-pilha__card--on" : ""}`}
-                    initial={reduzido ? false : { opacity: 0, y: -14, scale: 0.97 }}
+                    initial={reduzido ? false : { opacity: 0, y: -10 }}
                     animate={{
                       opacity: 1,
                       y: 0,
-                      scale: 1,
                       transition: reduzido
                         ? { duration: 0 }
-                        : { ...mola, delay: Math.min(i, MAX_STAGGER) * 0.045 },
+                        : { ...mola, delay: Math.min(i, MAX_STAGGER) * 0.03 },
                     }}
                     onClick={() => { onTrocar(p.id); fechar(); }}
                     whileTap={reduzido ? undefined : { scale: 0.98 }}

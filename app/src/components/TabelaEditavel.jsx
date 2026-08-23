@@ -74,8 +74,12 @@ export function TabelaEditavel({ tabela, colunas, linhas, novoRegistro, recarreg
     const base = novoRegistro(linhas);
     setNovo({
       base,
+      // Campos de texto sugeridos (ex.: "Novo filamento") entram vazios: o nome
+      // sugerido vira placeholder e só é usado se a pessoa não digitar nada.
       campos: Object.fromEntries(
-        camposDoForm.filter((c) => c.tipo !== "calc").map((c) => [c.key, paraTexto(base[c.key], c)])
+        camposDoForm
+          .filter((c) => c.tipo !== "calc")
+          .map((c) => [c.key, c.tipo === "texto" ? "" : paraTexto(base[c.key], c)])
       ),
     });
   }
@@ -88,7 +92,10 @@ export function TabelaEditavel({ tabela, colunas, linhas, novoRegistro, recarreg
       const campos = { ...novo.base };
       for (const col of camposDoForm) {
         if (col.tipo === "calc") continue;
-        campos[col.key] = paraBanco(novo.campos[col.key], col);
+        const digitado = novo.campos[col.key];
+        // texto em branco volta para a sugestão que estava no placeholder
+        if (col.tipo === "texto" && String(digitado ?? "").trim() === "") continue;
+        campos[col.key] = paraBanco(digitado, col);
       }
       const criado = await inserirLinha(tabela, campos);
       if (aplicar) aplicar(tabela, criado); else await recarregar();
@@ -203,6 +210,7 @@ export function TabelaEditavel({ tabela, colunas, linhas, novoRegistro, recarreg
                 autoFocus={i === 0}
                 linha={{ ...novo.base, ...novo.campos }}
                 valor={novo.campos[col.key]}
+                placeholder={col.tipo === "texto" ? paraTexto(novo.base[col.key], col) || undefined : undefined}
                 onChange={(v) =>
                   setNovo((n) => {
                     const campos = { ...n.campos, [col.key]: v };
@@ -397,7 +405,7 @@ function paraBanco(texto, coluna) {
   return texto === "" ? null : texto;
 }
 
-function CampoFormulario({ coluna, linha, valor, onChange, onEnter, autoFocus }) {
+function CampoFormulario({ coluna, linha, valor, onChange, onEnter, autoFocus, placeholder }) {
   const rotulo = coluna.rotulo ? coluna.rotulo(linha) : coluna.label;
 
   if (coluna.tipo === "select") {
@@ -420,6 +428,7 @@ function CampoFormulario({ coluna, linha, valor, onChange, onEnter, autoFocus })
     <Input
       label={rotulo}
       autoFocus={autoFocus}
+      placeholder={placeholder}
       value={valor ?? ""}
       prefix={dinheiro ? "R$" : undefined}
       inputMode={coluna.tipo === "texto" ? undefined : dinheiro ? "numeric" : "decimal"}

@@ -23,6 +23,7 @@ export default function Produtos() {
   const [aba, setAba] = React.useState("pecas");
   const [nomeando, setNomeando] = React.useState(null); // "novo" | "renomear"
   const [nomeRascunho, setNomeRascunho] = React.useState("");
+  const [sugestaoNome, setSugestaoNome] = React.useState("");
   const [descRascunho, setDescRascunho] = React.useState("");
   const [salvandoNome, setSalvandoNome] = React.useState(false);
   const [alvoExcluir, setAlvoExcluir] = React.useState(null);
@@ -56,12 +57,15 @@ export default function Produtos() {
   const c = produto ? calcular(produto) : null;
 
   function abrirNovoProduto() {
-    setNomeRascunho(`Produto ${d.produtos.length + 1}`);
+    // o nome sugerido fica só no placeholder; o campo abre vazio
+    setSugestaoNome(`Produto ${d.produtos.length + 1}`);
+    setNomeRascunho("");
     setDescRascunho("");
     setNomeando("novo");
   }
 
   function abrirRenomear() {
+    setSugestaoNome("");
     setNomeRascunho(produto?.nome || "");
     setDescRascunho(produto?.descricao || "");
     setNomeando("renomear");
@@ -69,7 +73,7 @@ export default function Produtos() {
 
   /** O mesmo diálogo cria e renomeia — o nome é sempre a primeira coisa que você define. */
   async function confirmarNome() {
-    const nome = nomeRascunho.trim();
+    const nome = nomeRascunho.trim() || sugestaoNome;
     if (!nome) return;
     setSalvandoNome(true);
     try {
@@ -229,6 +233,7 @@ export default function Produtos() {
           <DialogNome
             modo={nomeando}
             valor={nomeRascunho}
+            placeholder={sugestaoNome}
             onChange={setNomeRascunho}
             descricao={descRascunho}
             onChangeDescricao={setDescRascunho}
@@ -435,6 +440,7 @@ export default function Produtos() {
         <DialogNome
           modo={nomeando}
           valor={nomeRascunho}
+          placeholder={sugestaoNome}
           onChange={setNomeRascunho}
           salvando={salvandoNome}
           onClose={() => !salvandoNome && setNomeando(null)}
@@ -473,8 +479,9 @@ function Mini({ rotulo, valor }) {
 }
 
 /** Diálogo único de nome — usado tanto para criar quanto para renomear. */
-function DialogNome({ modo, valor, onChange, descricao, onChangeDescricao, salvando, onClose, onConfirmar }) {
+function DialogNome({ modo, valor, onChange, descricao, onChangeDescricao, salvando, onClose, onConfirmar, placeholder }) {
   const criar = modo === "novo";
+  const podeSalvar = Boolean(valor.trim() || placeholder);
   return (
     <Dialog
       open={true}
@@ -484,7 +491,7 @@ function DialogNome({ modo, valor, onChange, descricao, onChangeDescricao, salva
       footer={
         <>
           <Button variant="secondary" size="sm" disabled={salvando} onClick={onClose}>Cancelar</Button>
-          <Button variant="accent" size="sm" disabled={salvando || !valor.trim()} onClick={onConfirmar}>
+          <Button variant="accent" size="sm" disabled={salvando || !podeSalvar} onClick={onConfirmar}>
             {salvando ? "Salvando..." : criar ? "Criar produto" : "Salvar"}
           </Button>
         </>
@@ -494,15 +501,16 @@ function DialogNome({ modo, valor, onChange, descricao, onChangeDescricao, salva
         <Input
           label="Nome do produto"
           autoFocus
+          placeholder={placeholder || undefined}
           value={valor}
           onChange={(e) => onChange(e.target.value)}
-          onKeyDown={(e) => { if (e.key === "Enter" && valor.trim() && !salvando) onConfirmar(); }}
+          onKeyDown={(e) => { if (e.key === "Enter" && podeSalvar && !salvando) onConfirmar(); }}
         />
         <Input
           label="Descrição"
           value={descricao}
           onChange={(e) => onChangeDescricao(e.target.value)}
-          onKeyDown={(e) => { if (e.key === "Enter" && valor.trim() && !salvando) onConfirmar(); }}
+          onKeyDown={(e) => { if (e.key === "Enter" && podeSalvar && !salvando) onConfirmar(); }}
         />
       </div>
     </Dialog>

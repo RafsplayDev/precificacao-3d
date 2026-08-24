@@ -4,6 +4,14 @@
 
 html, body { padding: 0; }
 
+/* Nada pode esticar a página para os lados.
+   Quando algo furava a largura da tela, o Chrome do Android passava a medir
+   o que é fixo (o cartão do tutorial, a barra de abas de baixo) pela
+   largura esticada e o conteúdo pela largura da tela: duas larguras
+   diferentes na mesma imagem. `clip` e não `hidden` porque `hidden` faria
+   do body um container de rolagem e o header grudado pararia de grudar. */
+html, body { max-width: 100%; overflow-x: clip; }
+
 /* Fade nas pontas de listas roláveis. */
 :root {
   --fade-pontas: linear-gradient(to bottom, transparent 0, #000 16px, #000 calc(100% - 16px), transparent 100%);
@@ -1006,18 +1014,16 @@ select.ap-cell {
   font-size: var(--text-body-sm);
   line-height: 1.45;
   text-transform: none; letter-spacing: normal; font-weight: var(--weight-regular);
-  opacity: 0; visibility: hidden;
-  transform: translateY(-4px);
-  transition: opacity var(--dur-fast) var(--ease-standard),
-              transform var(--dur-fast) var(--ease-standard),
-              visibility var(--dur-fast);
+  animation: ap-expl-abre var(--dur-fast) var(--ease-out);
 }
-.ap-expl.is-open .ap-expl__balao {
-  opacity: 1; visibility: visible; transform: translateY(0);
+@keyframes ap-expl-abre {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-/* Perto da borda direita o balao sairia da tela: no celular ele se ancora
-   pela direita do icone, que fica sempre a esquerda do cartao. */
+/* Perto da borda da tela o balão sairia dela; quem o traz de volta é o
+   deslocamento medido no componente (margin-left), que não briga com o
+   transform da animação de abertura. */
 @media (max-width: 720px) {
   .ap-expl__balao { max-width: calc(100vw - var(--space-10)); }
 }

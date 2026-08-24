@@ -2,7 +2,7 @@
 import React from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Button, Icon } from "@/design-system";
-import { PASSOS } from "@/lib/tutorial";
+import { PASSOS, ETAPAS } from "@/lib/tutorial";
 import { ehTeste } from "@/lib/modo";
 import { usoDoTeste } from "@/lib/dadosLocais";
 
@@ -204,9 +204,7 @@ function Guia({ passo, indice, total, onProximo, onAnterior, onSair }) {
         aria-label={`Tutorial, passo ${indice + 1} de ${total}`}
       >
         <div className="ap-tour__topo">
-          <span className="ap-tour__contador">
-            PASSO {indice + 1} DE {total}
-          </span>
+          <Avanco indice={indice} />
           <button type="button" className="ap-tour__fechar" onClick={onSair} aria-label="Sair do tutorial">
             <Icon name="x" size={16} />
           </button>
@@ -218,6 +216,15 @@ function Guia({ passo, indice, total, onProximo, onAnterior, onSair }) {
         <div className="ap-tour__corpo">
           <h2 className="ap-tour__titulo">{passo.titulo}</h2>
           <p className="ap-tour__texto">{passo.texto}</p>
+          {passo.etapas && (
+            <ol className="ap-tour__etapas">
+              {ETAPAS.map((e, i) => (
+                <li key={e.id}>
+                  <strong>{i + 1}. {e.nome}</strong> {RESUMO[e.id]}
+                </li>
+              ))}
+            </ol>
+          )}
           {passo.exigeLinha && (
             <p className={"ap-tour__aviso" + (feito ? " is-ok" : "")}>
               {feito ? "Pronto, pode seguir." : "Cadastre com os seus números — o tutorial espera."}
@@ -244,6 +251,53 @@ function Guia({ passo, indice, total, onProximo, onAnterior, onSair }) {
       </div>
     </>
   );
+}
+
+/* --------------------------- o avanço ---------------------------- */
+
+/** O que cada etapa faz, em uma linha, na modal de abertura. */
+const RESUMO = {
+  cadastro: "sua impressora, seu filamento, sua conta de luz.",
+  produto: "a peça que você quer vender, em gramas e horas.",
+  calculadora: "o custo real e o preço de venda.",
+};
+
+/**
+ * Quanto falta, sem contar passos.
+ *
+ * Uma barra por etapa: as que ficaram para trás estão cheias, a atual
+ * enche conforme os passos dela caem, as próximas esperam. "Passo 7 de 18"
+ * dizia a verdade e assustava; três barras curtas dizem a mesma coisa e
+ * parecem o que são — um caminho de três partes, quase todo já andado.
+ */
+function Avanco({ indice }) {
+  const atual = PASSOS[indice]?.etapa;
+
+  return (
+    <div className="ap-tour__avanco">
+      <span className="ap-tour__etapa">
+        {ETAPAS.find((e) => e.id === atual)?.nome}
+      </span>
+      <span className="ap-tour__barras" aria-hidden="true">
+        {ETAPAS.map((e) => (
+          <span key={e.id} className="ap-tour__barra">
+            <i style={{ transform: `scaleX(${fracao(e.id, indice)})` }} />
+          </span>
+        ))}
+      </span>
+    </div>
+  );
+}
+
+/** Quanto da barra de uma etapa já foi vencido: 0, 1, ou algo no meio. */
+function fracao(etapa, indice) {
+  const passos = PASSOS.filter((p) => p.etapa === etapa);
+  const feitos = passos.filter((p) => PASSOS.indexOf(p) < indice).length;
+  // O passo atual conta como meio: a barra sai do zero assim que a etapa
+  // começa (senão a primeira tela parece não ter avançado nada) e só enche
+  // de vez quando a etapa acaba.
+  const noAtual = passos.some((p) => PASSOS.indexOf(p) === indice) ? 0.5 : 0;
+  return Math.min(1, (feitos + noAtual) / passos.length);
 }
 
 /* --------------------------- as medidas --------------------------- */

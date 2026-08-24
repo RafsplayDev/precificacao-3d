@@ -8,7 +8,6 @@ import { Toast, Icon } from "@/design-system";
 import { supabase } from "@/lib/supabaseClient";
 import { irPara } from "@/lib/navegar";
 import { TutorialProvider, useTutorial } from "@/components/Tutorial";
-import { ehTeste } from "@/lib/modo";
 
 const NAV = [
   { href: "/", label: "Calculadora", icone: "calculator", tour: "nav-calculadora" },
@@ -52,10 +51,6 @@ function Casca({ children }) {
   ], [extras.afiliado, extras.admin]);
 
   const publica = SEM_MENU.some((p) => pathname === p || pathname.startsWith(p + "/"));
-  // Só depois da montagem: no servidor não existe cookie para ler, e
-  // decidir antes faria a faixa piscar em quem já pagou.
-  const [teste, setTeste] = React.useState(false);
-  React.useEffect(() => setTeste(ehTeste()), [pathname]);
 
   React.useEffect(() => {
     if (publica) return;
@@ -64,8 +59,8 @@ function Casca({ children }) {
       const { data: { user } } = await supabase.auth.getUser();
       if (!vivo) return;
       // `false` e `null` querem dizer coisas diferentes: null é "ainda não
-      // sei", e é o que segura a faixa do teste de oferecer criar conta a
-      // quem já tem uma.
+      // sei", e é o que segura a gaveta de oferecer criar conta a quem já
+      // tem uma.
       setLogado(!!user);
       if (!user) return;
       setConta(user);
@@ -190,8 +185,6 @@ function Casca({ children }) {
           <nav className="ap-tabbar" aria-label="Seções">{links(true)}</nav>
         )}
 
-        {!publica && teste && <FaixaTeste logado={logado} />}
-
         <main className="ap-main">{children}</main>
 
         <div className="ap-toasts">
@@ -207,37 +200,6 @@ function Casca({ children }) {
         </div>
       </div>
     </ToastCtx.Provider>
-  );
-}
-
-/**
- * A faixa do teste.
- *
- * Ela diz a coisa que a pessoa mais precisa saber e que nenhuma tela
- * mostra sozinha: o que ela está digitando não está na conta dela, está
- * neste navegador. Esconder isso até a hora da compra seria vender uma
- * surpresa ruim — e a frase seguinte, de que os dados sobem junto, é o que
- * transforma o aviso em motivo para continuar.
- *
- * O convite muda com o ponto da jornada: quem ainda não tem conta é
- * convidado a criar uma (a cobrança vem depois, no fluxo normal); quem já
- * entrou e só não pagou vê o botão de liberar o acesso. Mandar quem não
- * tem conta direto para /assinar seria mostrar um checkout que o login vai
- * interromper no clique seguinte.
- */
-function FaixaTeste({ logado }) {
-  return (
-    <div className="ap-teste">
-      <span>
-        <strong>Teste grátis.</strong> Seus dados ficam salvos só neste navegador — ao
-        {logado === false ? " criar sua conta" : " liberar o acesso"}, tudo sobe para ela.
-      </span>
-      {logado === false ? (
-        <Link href="/entrar?modo=criar">Criar minha conta</Link>
-      ) : logado ? (
-        <Link href="/assinar">Liberar acesso</Link>
-      ) : null}
-    </div>
   );
 }
 

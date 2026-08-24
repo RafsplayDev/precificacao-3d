@@ -610,7 +610,6 @@ select.ap-cell { width: 100%; min-width: 0; cursor: pointer; }
   .ap-table--cadastro tbody td:first-child::before { display: none; }
   .ap-table--cadastro tbody td:first-child .ap-cell {
     height: 38px; font-size: var(--text-body-md); font-weight: var(--weight-medium);
-    padding-left: 0;
   }
   /* o nome da coluna acompanha o campo */
   .ap-table--cadastro tbody td::before {
@@ -621,7 +620,12 @@ select.ap-cell { width: 100%; min-width: 0; cursor: pointer; }
     color: var(--text-muted); white-space: nowrap;
     overflow: hidden; text-overflow: ellipsis;
   }
-  .ap-table--cadastro tbody td .ap-cell { padding-left: 0; padding-right: 0; }
+  /* O campo respira por dentro, mas é puxado para fora na mesma medida: o texto
+     continua alinhado com o nome da coluna, e a moldura do foco não encosta nele. */
+  .ap-table--cadastro tbody td .ap-cell {
+    padding-left: 8px; padding-right: 8px;
+    margin-left: -8px; width: calc(100% + 8px);
+  }
   .ap-table--cadastro tbody td.ap-td--num { text-align: left; }
   .ap-table--cadastro tbody .ap-cell--num { text-align: left; }
   /* campo calculado continua se distinguindo, agora por fundo próprio */

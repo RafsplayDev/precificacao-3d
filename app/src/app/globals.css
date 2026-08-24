@@ -256,15 +256,34 @@ html, body { padding: 0; }
 .ap-sugerido--foco .dc-eyebrow, .ap-sugerido--foco .ap-figure__val { color: var(--text-strong); }
 .ap-sugerido--foco .dc-eyebrow { color: var(--canal); }
 .ap-sugerido--foco .ap-figure__val { font-size: clamp(28px, 8vw, 36px); }
-.ap-sugerido__campos { display: grid; gap: var(--space-3); }
+.ap-sugerido__equivale {
+  font-size: var(--text-body-sm); color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
 
 
 
 /* O número grande do painel também é o campo do preço definido. */
-.ap-sugerido__precolinha { display: flex; align-items: baseline; gap: 8px; }
+/* Moldura discreta e um lápis: o número não parece só um número. */
 .ap-sugerido__precobtn {
-  padding: 0; margin: 0; border: 0; background: none; text-align: left;
-  font: inherit; color: inherit; cursor: text; width: 100%;
+  display: flex; align-items: center; justify-content: space-between; gap: var(--space-3);
+  width: 100%; margin: 0; padding: var(--space-2) var(--space-3);
+  font: inherit; color: inherit; text-align: left; cursor: text;
+  background: var(--surface-sunken);
+  border: var(--border-w) dashed var(--border-default);
+  border-radius: var(--radius-input);
+}
+.ap-sugerido__precobtn svg { flex: none; color: var(--text-muted); }
+.ap-sugerido__precobtn:hover { border-color: var(--canal); }
+.ap-sugerido__precobtn:hover svg { color: var(--canal); }
+.ap-sugerido__precobtn:focus-visible { outline: none; box-shadow: var(--ring-focus); }
+/* o campo aberto ocupa a mesma moldura, agora inteira */
+.ap-sugerido__precolinha {
+  display: flex; align-items: baseline; gap: 8px;
+  padding: var(--space-2) var(--space-3);
+  background: var(--surface-card);
+  border: var(--border-w) solid var(--canal);
+  border-radius: var(--radius-input);
 }
 .ap-sugerido__preco {
   width: 100%; padding: 0; border: 0; background: none;
@@ -333,16 +352,11 @@ html, body { padding: 0; }
 }
 
 /* As escolhas de preço no topo do primeiro card — só no celular. */
-.ap-escolhas { display: none; }
-@media (max-width: 640px) {
-  .ap-so-pc { display: none; }
-  .ap-escolhas {
-    display: flex; justify-content: center; margin-bottom: var(--space-4);
-  }
-  /* No computador o par Sugerido/Definido continua no card de preço de venda;
-     no celular ele já apareceu em cima. */
-  .ap-precovenda__head .dc-tabs { display: none; }
-}
+/* A escolha entre sugerido e definido mora no card do preço, em qualquer tela;
+   no card de preço de venda ela seria repetição. */
+.ap-escolhas { display: flex; justify-content: center; margin-bottom: var(--space-4); }
+.ap-precovenda__head .dc-tabs { display: none; }
+@media (max-width: 640px) { .ap-so-pc { display: none; } }
 
 /* ---- Número que rola: cada dígito é uma fita de 0 a 9 ---- */
 .ap-num { display: inline-flex; align-items: flex-start; font-variant-numeric: tabular-nums; line-height: 1; }
@@ -439,7 +453,7 @@ select.ap-cell { width: 100%; min-width: 0; cursor: pointer; }
 .ap-prodcard:hover .ap-prodcard__acoes { color: var(--text-strong); }
 .ap-prodcard__head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); }
 .ap-prodcard__head h2 {
-  font-size: var(--text-h3); letter-spacing: var(--ls-h3); font-weight: var(--weight-medium);
+  font-size: var(--text-body-lg); letter-spacing: -0.01em; font-weight: var(--weight-medium);
   margin: 0; min-width: 0; overflow-wrap: anywhere;
 }
 .ap-prodcard__desc {

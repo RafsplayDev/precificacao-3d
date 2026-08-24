@@ -3,6 +3,7 @@ import React from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
+import { motion, useReducedMotion } from "motion/react";
 import { Toast, Icon } from "@/design-system";
 import { supabase } from "@/lib/supabaseClient";
 import { irPara } from "@/lib/navegar";
@@ -25,6 +26,7 @@ export const useToast = () => React.useContext(ToastCtx);
 
 export function AppShell({ children }) {
   const pathname = usePathname();
+  const reduzido = useReducedMotion();
   const [toasts, setToasts] = React.useState([]);
   const [conta, setConta] = React.useState(null);
   const [extras, setExtras] = React.useState({ afiliado: false, admin: false });
@@ -70,17 +72,36 @@ export function AppShell({ children }) {
   }
 
   // O ícone só existe na barra do rodapé: no header o menu é texto, como sempre foi.
+  // O realce da aba atual é um elemento só, que desliza de uma para a outra —
+  // dois `layoutId` porque header e rodapé são listas independentes.
   const links = (comIcone) =>
-    itens.map((n) => (
-      <Link
-        key={n.href}
-        href={n.href}
-        aria-current={pathname === n.href ? "page" : undefined}
-      >
-        {comIcone && <Icon name={n.icone} size={20} />}
-        {comIcone ? <span className="ap-nav__txt">{n.label}</span> : n.label}
-      </Link>
-    ));
+    itens.map((n) => {
+      const atual = pathname === n.href;
+      return (
+        <Link
+          key={n.href}
+          href={n.href}
+          aria-current={atual ? "page" : undefined}
+        >
+          {atual && (
+            <motion.span
+              layoutId={comIcone ? "aba-rodape" : "aba-topo"}
+              className="ap-nav__marca"
+              aria-hidden="true"
+              transition={
+                reduzido
+                  ? { duration: 0 }
+                  : { type: "spring", stiffness: 400, damping: 34, mass: 0.7 }
+              }
+            />
+          )}
+          <span className="ap-nav__rot">
+            {comIcone && <Icon name={n.icone} size={20} />}
+            {comIcone ? <span className="ap-nav__txt">{n.label}</span> : n.label}
+          </span>
+        </Link>
+      );
+    });
 
   const push = React.useCallback((t) => {
     const id = Math.random().toString(36).slice(2);

@@ -3,7 +3,7 @@ import React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence, useReducedMotion } from "motion/react";
-import { Card, Button, Select, Badge, Icon, IconButton, Tabs, Checkbox, Dialog, Input } from "@/design-system";
+import { Card, Button, Select, Badge, Icon, IconButton, Tabs, Checkbox, Dialog, Input, useAreaVisivel } from "@/design-system";
 import { useDados, salvarLinha, inserirLinha, removerLinha } from "@/lib/useDados";
 import { useToast } from "@/components/AppShell";
 import { custosProduto, cenarioUnitario, cenarioDesconto, precoComMarketplace, LINHAS_CUSTO, valorAdicional, valorTrabalho } from "@/lib/calc";
@@ -516,17 +516,7 @@ export default function Calculadora() {
             </div>
 
             <div className="ap-precofields">
-              {/* o preço definido só faz sentido quando é ele a base do cálculo */}
-              {produto.usar_preco === "Final" && canal === "varejo" && (
-                <div>
-                  <CampoNumero
-                    label="Preço desejado" prefixo="R$" moeda
-                    value={canal === "atacado" ? produto.preco_final_atacado : produto.preco_final_varejo}
-                    onChange={(v) => patch({ [`preco_final_${prefixo}`]: v })}
-                    onCommit={(v) => persistir({ [`preco_final_${prefixo}`]: v })}
-                  />
-                </div>
-              )}
+              {/* o preço definido se edita no próprio card do canal, lá em cima */}
               {canal === "atacado" && produto.usar_preco === "Final" && (
                 <div className="dc-field">
                   <span className="dc-field__label">Faixa definida por</span>
@@ -675,63 +665,63 @@ function CartaoSugerido({
   canal, rotulo, valor, markup, padrao, ativo, definido, onSelecionar, onMarkup, onDefinido,
 }) {
   const [editando, setEditando] = React.useState(false);
-  // Em "preço definido" o card mostra e edita o preço; em "sugerido", o markup.
+  const reduzido = useReducedMotion();
+  // Centraliza no que está à vista: com o teclado aberto, no meio do que sobrou.
+  const area = useAreaVisivel();
+  // Em "preço definido" o card mostra o preço escolhido; em "sugerido", o do markup.
   const emDefinido = typeof onDefinido === "function";
   const mostrado = emDefinido ? (toNum(definido) || valor) : valor;
-  const [texto, setTexto] = React.useState("");
 
-  const abrirEdicao = (e) => {
+  // Enquanto edita, os valores vivem aqui: só vão para o banco ao concluir.
+  const [markupLocal, setMarkupLocal] = React.useState(toNum(markup));
+  const [precoLocal, setPrecoLocal] = React.useState(toNum(definido) || valor);
+
+  const abrir = (e) => {
     e.stopPropagation();
-    setTexto(emDefinido ? numeroParaMoeda(mostrado) : String(toNum(markup)));
+    setMarkupLocal(toNum(markup));
+    setPrecoLocal(toNum(definido) || valor);
     setEditando(true);
   };
 
-  const salvar = () => {
+  const concluir = () => {
     setEditando(false);
-    if (emDefinido) onDefinido(moedaParaNumero(texto));
-    else onMarkup(toNum(texto));
+    if (toNum(markupLocal) !== toNum(markup)) onMarkup(toNum(markupLocal));
+    if (emDefinido && toNum(precoLocal) !== toNum(definido)) onDefinido(toNum(precoLocal));
   };
 
-  return (
-    <div
-      className={`ap-sugerido ap-sugerido--${canal} ${ativo ? "ap-sugerido--on" : ""}`}
-      role="button"
-      tabIndex={editando ? -1 : 0}
-      onClick={() => !editando && onSelecionar()}
-      onKeyDown={(e) => {
-        if (!editando && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); onSelecionar(); }
-      }}
-      title={
-        emDefinido
-          ? `Preço definido para ${rotulo.toLowerCase()} — sugerido ${money(valor)}`
-          : `Custo × ${num(markup)} · padrão do negócio ${num(padrao, 1)}×`
-      }
-    >
-      <span className="ap-sugerido__topo">
-        <span className="dc-eyebrow">{rotulo}</span>
+  // A mesma `layoutId` nos dois estados é o que faz o card crescer até virar
+  // painel e voltar para o lugar depois — não é um card novo, é o mesmo.
+  const idLayout = `sugerido-${canal}`;
+  const mola = reduzido
+    ? { duration: 0 }
+    : { type: "spring", stiffness: 320, damping: 32, mass: 0.8 };
 
-        {editando ? (
-          <>
-            <span className="ap-sugerido__markup ap-sugerido__markup--fixo">
-              {emDefinido ? "R$" : "×"}
-            </span>
-            <input
-              className="ap-sugerido__input"
-              autoFocus
-              size={emDefinido ? 7 : 4}
-              inputMode={emDefinido ? "numeric" : "decimal"}
-              value={texto}
-              onClick={(e) => e.stopPropagation()}
-              onChange={(e) => setTexto(emDefinido ? mascaraMoeda(e.target.value) : e.target.value)}
-              onBlur={salvar}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") e.currentTarget.blur();
-                if (e.key === "Escape") { setEditando(false); }
-              }}
-            />
-          </>
-        ) : (
-          <>
+  const classe = `ap-sugerido ap-sugerido--${canal} ${ativo ? "ap-sugerido--on" : ""}`;
+
+  return (
+    <>
+      {/* enquanto o card está em foco, um vazio do mesmo tamanho segura a fileira */}
+      {editando ? (
+        <div className={`${classe} ap-sugerido--fantasma`} aria-hidden="true" />
+      ) : (
+        <motion.div
+          layoutId={idLayout}
+          transition={mola}
+          className={classe}
+          role="button"
+          tabIndex={0}
+          onClick={onSelecionar}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onSelecionar(); }
+          }}
+          title={
+            emDefinido
+              ? `Preço definido para ${rotulo.toLowerCase()} — sugerido ${money(valor)}`
+              : `Custo × ${num(markup)} · padrão do negócio ${num(padrao, 1)}×`
+          }
+        >
+          <span className="ap-sugerido__topo">
+            <span className="dc-eyebrow">{rotulo}</span>
             <span className="ap-sugerido__markup">
               {emDefinido ? "definido" : `× ${num(markup)}`}
             </span>
@@ -739,26 +729,91 @@ function CartaoSugerido({
               className="ap-sugerido__editar"
               variant="ghost"
               size="sm"
-              label={
-                emDefinido
-                  ? `Editar preço de ${rotulo.toLowerCase()}`
-                  : `Editar markup de ${rotulo.toLowerCase()}`
-              }
-              onClick={abrirEdicao}
+              label={`Editar ${rotulo.toLowerCase()}`}
+              onClick={abrir}
             >
               <Icon name="pencil" size={13} />
             </IconButton>
+          </span>
+
+          <NumeroRolante texto={money(mostrado)} className="ap-figure__val" />
+          {/* fica invisível quando não é o canal escolhido, mas segura a altura */}
+          <span className="ap-sugerido__estado" aria-hidden={!ativo}>
+            {ativo && <><Icon name="check" size={12} strokeWidth={3} /> selecionado</>}
+          </span>
+        </motion.div>
+      )}
+
+      <AnimatePresence>
+        {editando && (
+          <>
+            <motion.div
+              className="ap-sugerido__fundo"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: reduzido ? 0 : 0.2 }}
+              onClick={concluir}
+              aria-hidden="true"
+            />
+            <motion.div
+              layoutId={idLayout}
+              transition={mola}
+              className={`${classe} ap-sugerido--foco`}
+              style={area ? { top: area.top + area.height / 2 } : undefined}
+              role="dialog"
+              aria-modal="true"
+              aria-label={`Editar ${rotulo.toLowerCase()}`}
+            >
+              <span className="ap-sugerido__topo">
+                <span className="dc-eyebrow">{rotulo}</span>
+                <span className="ap-sugerido__markup">
+                  {emDefinido ? "definido" : `× ${num(markupLocal)}`}
+                </span>
+                <IconButton variant="ghost" size="sm" label="Concluir" onClick={concluir}>
+                  <Icon name="x" size={14} />
+                </IconButton>
+              </span>
+
+              <NumeroRolante
+                texto={money(emDefinido ? toNum(precoLocal) : custoDoMarkup(valor, markup) * toNum(markupLocal))}
+                className="ap-figure__val"
+              />
+
+              <div className="ap-sugerido__campos">
+                {emDefinido && (
+                  <CampoNumero
+                    label="Preço definido"
+                    prefixo="R$"
+                    moeda
+                    value={precoLocal}
+                    onChange={setPrecoLocal}
+                    onCommit={setPrecoLocal}
+                  />
+                )}
+                <CampoNumero
+                  label="Markup"
+                  sufixo="×"
+                  hint={`padrão do negócio ${num(padrao, 1)}×`}
+                  value={markupLocal}
+                  onChange={setMarkupLocal}
+                  onCommit={setMarkupLocal}
+                />
+              </div>
+
+              <Button onClick={concluir}>Concluir</Button>
+            </motion.div>
           </>
         )}
-      </span>
-
-      <NumeroRolante texto={money(mostrado)} className="ap-figure__val" />
-      {/* fica invisível quando não é o canal escolhido, mas segura a altura */}
-      <span className="ap-sugerido__estado" aria-hidden={!ativo}>
-        {ativo && <><Icon name="check" size={12} strokeWidth={3} /> selecionado</>}
-      </span>
-    </div>
+      </AnimatePresence>
+    </>
   );
+}
+
+/** O custo por trás de um sugerido: preço ÷ markup, para prever o novo preço. */
+function custoDoMarkup(valor, markup) {
+  const m = toNum(markup);
+  return m ? toNum(valor) / m : 0;
 }
 
 /**

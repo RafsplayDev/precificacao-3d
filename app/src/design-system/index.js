@@ -14,7 +14,7 @@ export { Checkbox } from "./components/forms/Checkbox.jsx";
 export { Radio } from "./components/forms/Radio.jsx";
 export { Switch } from "./components/forms/Switch.jsx";
 export { Tabs } from "./components/navigation/Tabs.jsx";
-export { Dialog } from "./components/feedback/Dialog.jsx";
+export { Dialog, useAreaVisivel } from "./components/feedback/Dialog.jsx";
 export { Toast } from "./components/feedback/Toast.jsx";
 export { Tooltip } from "./components/feedback/Tooltip.jsx";
 export { FilamentSwatches, FILAMENTS } from "./components/commerce/FilamentSwatches.jsx";

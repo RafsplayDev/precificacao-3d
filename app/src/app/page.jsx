@@ -998,11 +998,15 @@ function NumeroRolante({ texto, className = "" }) {
     <span className={`ap-num ${className}`.trim()}>
       {/* o valor inteiro fica no rótulo: leitor de tela não lê fita de dígitos */}
       <span className="dc-sr-only">{t}</span>
-      {t.split("").map((ch, i) =>
-        ch >= "0" && ch <= "9"
-          ? <Digito key={i} valor={Number(ch)} mola={mola} />
-          : <span key={i} className="ap-num__fixo" aria-hidden="true">{ch}</span>
-      )}
+      {t.split("").map((ch, i, todos) => {
+        // A chave conta da direita: assim o dígito das unidades continua sendo
+        // o mesmo elemento quando o número ganha ou perde uma casa, e ele rola
+        // até o novo valor em vez de nascer de novo no zero.
+        const chave = `d${todos.length - 1 - i}`;
+        return ch >= "0" && ch <= "9"
+          ? <Digito key={chave} valor={Number(ch)} mola={mola} />
+          : <span key={chave} className="ap-num__fixo" aria-hidden="true">{ch}</span>;
+      })}
     </span>
   );
 }

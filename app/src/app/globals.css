@@ -393,7 +393,11 @@ html, body { padding: 0; }
   background: var(--surface-card);
 }
 .ap-tablewrap .ap-table thead th { background: var(--surface-sunken); }
-.ap-tablewrap .ap-table tbody tr:hover td { background: var(--surface-sunken); }
+/* O realce da linha é do mouse: no touch o :hover cola depois do toque e
+   parece que a linha ficou selecionada. */
+@media (hover: hover) {
+  .ap-tablewrap .ap-table tbody tr:hover td { background: var(--surface-sunken); }
+}
 .ap-tablewrap .ap-table tbody tr:first-child td { border-top: 0; padding-top: var(--space-4); }
 .ap-tablewrap .ap-table tbody tr:last-child td { padding-bottom: var(--space-4); }
 .ap-tablewrap .ap-table th:first-child,
@@ -403,7 +407,7 @@ html, body { padding: 0; }
 .dc-tabs { overflow-x: auto; scrollbar-width: none; }
 .dc-tabs::-webkit-scrollbar { display: none; }
 .dc-tab { white-space: nowrap; }
-.ap-table { width: 100%; border-collapse: collapse; min-width: max-content; }
+.ap-table { width: 100%; border-collapse: collapse; min-width: max-content; -webkit-tap-highlight-color: transparent; }
 .ap-table th {
   text-align: left; font-family: var(--font-mono); font-size: var(--text-eyebrow);
   letter-spacing: var(--ls-eyebrow); text-transform: uppercase; color: var(--text-muted);
@@ -414,7 +418,9 @@ html, body { padding: 0; }
 .ap-table td { padding: var(--space-3); border-top: 1px solid var(--border-hairline); vertical-align: middle; transition: background var(--dur-fast, 120ms) var(--ease-out); }
 /* Colunas derivadas: não se digita nelas, então não se parecem com campo. */
 .ap-table td.ap-td--calc { background: var(--surface-sunken); color: var(--text-muted); }
-.ap-tablewrap .ap-table tbody tr:hover td.ap-td--calc { background: var(--ink-100, var(--surface-sunken)); }
+@media (hover: hover) {
+  .ap-tablewrap .ap-table tbody tr:hover td.ap-td--calc { background: var(--ink-100, var(--surface-sunken)); }
+}
 .ap-table th.ap-th--calc { color: var(--text-faint); }
 .ap-calc { display: inline-flex; align-items: baseline; gap: 5px; }
 .ap-calc--num::before {

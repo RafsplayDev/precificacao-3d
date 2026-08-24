@@ -99,10 +99,35 @@ export async function middleware(req) {
         : NextResponse.redirect(new URL("/afiliado", req.url));
     }
 
-    return NextResponse.redirect(new URL("/assinar", req.url));
+    // ------------------------------------------------------------------
+    // Modo teste: a porta fica aberta, o banco fica fechado
+    //
+    // Barrar quem ainda não pagou na porta de entrada era pedir R$ 34,90 a
+    // quem nunca viu a calculadora funcionar com um número seu. Agora a
+    // pessoa entra, cadastra a impressora dela de verdade e vê o preço
+    // sair — só que nada disso viaja para o Supabase: o cliente do
+    // navegador lê este cookie e grava tudo no próprio navegador
+    // (lib/dadosLocais.js). Quando a licença é liberada, os dados sobem.
+    //
+    // O cookie não é a autorização, é um aviso: quem o forjar para "ativa"
+    // continua esbarrando no RLS, que só conhece o auth.uid() do Supabase.
+    // ------------------------------------------------------------------
+    marcarModo(res, "teste");
+    return res;
   }
 
+  marcarModo(res, "ativa");
   return res;
+}
+
+/** Diz às telas em qual dos dois modos elas estão. Legível pelo JS de propósito. */
+function marcarModo(res, modo) {
+  res.cookies.set("dc_modo", modo, {
+    httpOnly: false,
+    sameSite: "lax",
+    path: "/",
+    maxAge: 60 * 60 * 24,
+  });
 }
 
 export const config = {

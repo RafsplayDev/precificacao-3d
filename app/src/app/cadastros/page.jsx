@@ -2,6 +2,8 @@
 import React from "react";
 import { Card, Tabs, Badge } from "@/design-system";
 import { useDados } from "@/lib/useDados";
+import { useTutorial } from "@/components/Tutorial";
+import { Explicacao } from "@/components/Explicacao";
 import { TabelaEditavel } from "@/components/TabelaEditavel";
 import { money } from "@/lib/format";
 import { depreciacaoTotal } from "@/lib/calc";
@@ -201,6 +203,14 @@ const TEXTOS = {
 export default function Cadastros() {
   const d = useDados();
   const [aba, setAba] = React.useState("impressoras");
+  const { passo } = useTutorial();
+
+  // O tutorial troca de aba por conta própria. Sem isso o texto falaria de
+  // filamento enquanto a tela ainda mostra impressoras, e o destaque cairia
+  // sobre a tabela errada.
+  React.useEffect(() => {
+    if (passo?.aba) setAba(passo.aba);
+  }, [passo?.aba]);
 
   const linhas = aba === "bens" ? d.bens_depreciacao : aba === "geral" ? d.configuracoes : d[aba];
   const total = depreciacaoTotal(d.bens_depreciacao);
@@ -215,7 +225,7 @@ export default function Cadastros() {
         </div>
       </div>
 
-      <div style={{ marginBottom: "var(--space-6)" }}>
+      <div style={{ marginBottom: "var(--space-6)" }} data-tutorial="cadastros-abas">
         <Tabs
           variant="underline"
           items={ABAS.map((a) => ({
@@ -238,11 +248,13 @@ export default function Cadastros() {
       ) : aba === "geral" ? (
         <div className="ap-grid ap-grid--2">
           {SECOES_GERAL.map((sec) => (
-            <Card key={sec.id} padding="var(--space-6)">
+            <Card key={sec.id} padding="var(--space-6)" data-tutorial={`geral-${sec.id}`}>
               <div className="ap-sectionhead ap-sectionhead--tight">
-                <h2>{sec.titulo}</h2>
+                <h2>
+                  {sec.titulo}
+                  <Explicacao rotulo={`Como funciona: ${sec.titulo}`}>{sec.texto}</Explicacao>
+                </h2>
               </div>
-              <p className="ap-hint">{sec.texto}</p>
               <TabelaEditavel
                 tabela="configuracoes"
                 colunas={sec.colunas}
@@ -256,12 +268,16 @@ export default function Cadastros() {
           ))}
         </div>
       ) : (
-        <Card padding="var(--space-6)">
+        <Card padding="var(--space-6)" data-tutorial="cadastros-tabela">
           <div className="ap-sectionhead">
-            <h2>{ABAS.find((a) => a.id === aba).label}</h2>
+            <h2>
+              {ABAS.find((a) => a.id === aba).label}
+              <Explicacao rotulo={`Como funciona: ${ABAS.find((a) => a.id === aba).label}`}>
+                {TEXTOS[aba]}
+              </Explicacao>
+            </h2>
             {aba === "bens" && <Badge tone="info" variant="soft">{money(total)} / MÊS</Badge>}
           </div>
-          <p className="ap-hint">{TEXTOS[aba]}</p>
           <TabelaEditavel
             tabela={TABELA_DB[aba]}
             colunas={COLUNAS[aba]}

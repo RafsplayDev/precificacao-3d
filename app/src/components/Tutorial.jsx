@@ -1,0 +1,399 @@
+"use client";
+import React from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { Button, Icon } from "@/design-system";
+import { PASSOS } from "@/lib/tutorial";
+import { ehTeste } from "@/lib/modo";
+import { usoDoTeste } from "@/lib/dadosLocais";
+import { PRECO_PADRAO, normalizarPreco, reais } from "@/lib/produto";
+import { supabase } from "@/lib/supabaseClient";
+
+/**
+ * O tutorial guiado.
+ *
+ * Um recorte de luz sobre o elemento do passo e um cartão ao lado dele. O
+ * recorte não é um scrim clicável: `pointer-events: none` no escuro inteiro
+ * é o que permite a pessoa **usar** o app enquanto é guiada — clicar em
+ * "Adicionar impressora", digitar, salvar. Um tutorial que só deixa apertar
+ * "Próximo" mostra o app; este faz a pessoa operá-lo, e é operando que ela
+ * descobre se vale os R$ 34,90.
+ *
+ * O estado mora no localStorage porque ele precisa sobreviver à navegação
+ * entre /cadastros, /produtos e / — que aqui é troca de página de verdade,
+ * não de aba.
+ *
+ * Quando um diálogo do app abre (o formulário de cadastro), o cartão se
+ * recolhe: o scrim do diálogo passa por cima dele de qualquer jeito, e
+ * deixá-lo lá só empilharia sombra sobre sombra.
+ */
+
+const CHAVE = "dc_tutorial_v1";
+
+/**
+ * As telas em que o tutorial pode acontecer.
+ *
+ * A lista existe por causa de um laço: o cookie `dc_modo` dura 24 horas e
+ * sobrevive ao logout. Sem esta checagem, quem saísse da conta caía em
+ * /entrar com o modo teste ainda no cookie, o tutorial tentava levar a
+ * pessoa para /cadastros, o middleware devolvia para /entrar — e assim sem
+ * parar. O tutorial só existe dentro do app.
+ */
+const ROTAS_DO_APP = ["/", "/produtos", "/cadastros", "/concorrentes"];
+const MARGEM = 8; // folga do recorte em volta do alvo
+
+const Ctx = React.createContext({ passo: null, ativo: false, iniciar: () => {} });
+export const useTutorial = () => React.useContext(Ctx);
+
+function lerEstado() {
+  try {
+    return JSON.parse(window.localStorage.getItem(CHAVE) || "null");
+  } catch {
+    return null;
+  }
+}
+
+function gravarEstado(estado) {
+  try {
+    window.localStorage.setItem(CHAVE, JSON.stringify(estado));
+  } catch {}
+}
+
+export function TutorialProvider({ children }) {
+  const pathname = usePathname();
+  const router = useRouter();
+  const [indice, setIndice] = React.useState(null); // null = tutorial fora do ar
+  const [pronto, setPronto] = React.useState(false);
+
+  // A primeira leitura só pode acontecer no navegador: no servidor não há
+  // localStorage nem cookie de modo, e chutar aqui faria o tutorial piscar.
+  React.useEffect(() => {
+    const salvo = lerEstado();
+    if (salvo?.estado === "ativo" && Number.isInteger(salvo.indice)) setIndice(salvo.indice);
+    else if (!salvo && ehTeste()) setIndice(0);
+    setPronto(true);
+  }, []);
+
+  const noApp = ROTAS_DO_APP.includes(pathname);
+  const passo = indice == null || !noApp ? null : PASSOS[indice] || null;
+
+  const ir = React.useCallback((novo) => {
+    if (novo == null || novo >= PASSOS.length) {
+      setIndice(null);
+      gravarEstado({ estado: "fim" });
+      return;
+    }
+    const alvo = Math.max(0, novo);
+    setIndice(alvo);
+    gravarEstado({ estado: "ativo", indice: alvo });
+  }, []);
+
+  const encerrar = React.useCallback(() => {
+    setIndice(null);
+    gravarEstado({ estado: "saiu" });
+  }, []);
+
+  const iniciar = React.useCallback(() => {
+    setIndice(0);
+    gravarEstado({ estado: "ativo", indice: 0 });
+  }, []);
+
+  // Cada passo sabe em que tela mora. Trocar de tela é do tutorial, não da
+  // pessoa: quem está sendo guiado não deveria precisar achar o menu.
+  React.useEffect(() => {
+    if (!passo || passo.rota === pathname) return;
+    router.push(passo.rota);
+  }, [passo, pathname, router]);
+
+  const valor = React.useMemo(
+    () => ({
+      passo: passo && passo.rota === pathname ? passo : null,
+      indice,
+      total: PASSOS.length,
+      ativo: indice != null,
+      iniciar,
+      encerrar,
+      proximo: () => ir((indice ?? 0) + 1),
+      anterior: () => ir((indice ?? 0) - 1),
+    }),
+    [passo, pathname, indice, ir, iniciar, encerrar]
+  );
+
+  return (
+    <Ctx.Provider value={valor}>
+      {children}
+      {pronto && valor.passo && (
+        <Guia
+          passo={valor.passo}
+          indice={indice}
+          total={PASSOS.length}
+          onProximo={valor.proximo}
+          onAnterior={valor.anterior}
+          onSair={encerrar}
+        />
+      )}
+    </Ctx.Provider>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+
+function Guia({ passo, indice, total, onProximo, onAnterior, onSair }) {
+  const area = useAreaDoAlvo(passo.alvo);
+  const dialogoAberto = useDialogoAberto();
+  const uso = useUso(passo.exigeLinha);
+
+  if (dialogoAberto) return null;
+
+  const feito = passo.exigeLinha ? uso > 0 : true;
+
+  return (
+    <>
+      {area
+        ? <span className="ap-tour__luz" style={{ ...caixa(area), position: "fixed" }} aria-hidden="true" />
+        : <span className="ap-tour__escuro" aria-hidden="true" />}
+      <div
+        className={"ap-tour__cartao" + (area ? "" : " ap-tour__cartao--centro")}
+        style={area ? posicaoDoCartao(area) : undefined}
+        role="dialog"
+        aria-live="polite"
+        aria-label={`Tutorial, passo ${indice + 1} de ${total}`}
+      >
+        <div className="ap-tour__topo">
+          <span className="ap-tour__contador">
+            PASSO {indice + 1} DE {total}
+          </span>
+          <button type="button" className="ap-tour__fechar" onClick={onSair} aria-label="Sair do tutorial">
+            <Icon name="x" size={16} />
+          </button>
+        </div>
+
+        {passo.oferta ? <Oferta /> : (
+          <>
+            <h2 className="ap-tour__titulo">{passo.titulo}</h2>
+            <p className="ap-tour__texto">{passo.texto}</p>
+            {passo.exigeLinha && (
+              <p className={"ap-tour__aviso" + (feito ? " is-ok" : "")}>
+                {feito ? "Pronto, pode seguir." : "Cadastre com os seus números — o tutorial espera."}
+              </p>
+            )}
+          </>
+        )}
+
+        <div className="ap-tour__acoes">
+          {indice > 0 && (
+            <button type="button" className="ap-tour__voltar" onClick={onAnterior}>
+              Voltar
+            </button>
+          )}
+          <span className="ap-tour__espaco" />
+          {passo.opcional && (
+            <button type="button" className="ap-tour__pular" onClick={onProximo}>
+              Pular esta parte
+            </button>
+          )}
+          {!passo.oferta && (
+            <Button
+              size="sm"
+              variant={feito ? "accent" : "secondary"}
+              onClick={onProximo}
+            >
+              {passo.acao || (passo.opcional ? "Cadastrei" : "Próximo")}
+            </Button>
+          )}
+        </div>
+      </div>
+    </>
+  );
+}
+
+/* ---------------------------- a oferta ---------------------------- */
+
+/**
+ * O último passo é o único que vende. Vem depois do preço na tela de
+ * propósito: até aqui a pessoa não foi interrompida por nada.
+ */
+function Oferta() {
+  const [preco, setPreco] = React.useState(PRECO_PADRAO);
+  const [indo, setIndo] = React.useState(false);
+
+  React.useEffect(() => {
+    let vivo = true;
+    supabase
+      .from("vw_preco")
+      .select("*")
+      .maybeSingle()
+      .then(({ data }) => {
+        if (vivo) setPreco(normalizarPreco(data));
+      });
+    return () => {
+      vivo = false;
+    };
+  }, []);
+
+  return (
+    <>
+      <h2 className="ap-tour__titulo">Esse preço é seu</h2>
+      <p className="ap-tour__texto">
+        Você acabou de precificar uma peça sua com o custo real dela. O teste guarda tudo
+        no seu navegador e para por aqui: uma impressora, um produto.
+      </p>
+      <ul className="ap-tour__lista">
+        <li>Quantas impressoras, filamentos e produtos você quiser</li>
+        <li>Faixas de atacado, taxas de marketplace e comparação com concorrentes</li>
+        <li>Tudo salvo na sua conta, acessível de qualquer aparelho</li>
+        <li>Pagamento único, sem mensalidade</li>
+      </ul>
+      <div className="ap-tour__preco">
+        {preco.em_promocao && <s>{reais(preco.cheio_centavos)}</s>}
+        <strong>{reais(preco.vigente_centavos)}</strong>
+        <span>uma vez só</span>
+      </div>
+      <Button
+        block
+        onClick={() => {
+          setIndo(true);
+          window.location.assign("/assinar");
+        }}
+        disabled={indo}
+      >
+        {indo ? "Abrindo…" : "Liberar meu acesso"}
+      </Button>
+      <p className="ap-tour__rodape">O que você cadastrou no teste sobe para a conta automaticamente.</p>
+    </>
+  );
+}
+
+/* --------------------------- as medidas --------------------------- */
+
+/**
+ * Onde o alvo está agora.
+ *
+ * Medido de tempos em tempos, e não uma vez só: entre um passo e outro a
+ * pessoa abre formulários, salva linhas e a tabela cresce. Um retângulo
+ * congelado acabaria destacando o lugar onde o botão estava.
+ *
+ * O relógio é um `setInterval` curto e não um `requestAnimationFrame`
+ * porque o rAF para em aba oculta ou sem composição — e o destaque voltaria
+ * pela metade quando a pessoa retomasse. O custo de medir a cada 120 ms é
+ * um `getBoundingClientRect`, e o estado só muda quando o retângulo muda.
+ */
+function useAreaDoAlvo(alvo) {
+  const [area, setArea] = React.useState(null);
+
+  React.useEffect(() => {
+    if (!alvo) {
+      setArea(null);
+      return;
+    }
+
+    let jaRolou = false;
+    let anterior = "";
+
+    const medir = () => {
+      const el = visivel(document.querySelectorAll(`[data-tutorial="${alvo}"]`));
+      if (!el) {
+        if (anterior !== "") {
+          anterior = "";
+          setArea(null);
+        }
+        return;
+      }
+
+      const r = el.getBoundingClientRect();
+      const assinatura = `${Math.round(r.top)}:${Math.round(r.left)}:${Math.round(r.width)}:${Math.round(r.height)}`;
+      if (assinatura !== anterior) {
+        anterior = assinatura;
+        setArea({ top: r.top, left: r.left, width: r.width, height: r.height });
+      }
+
+      // Só na primeira medição: rolar a cada passagem brigaria com a pessoa
+      // que está rolando a página para ler a tabela.
+      if (!jaRolou) {
+        jaRolou = true;
+        if (r.top < 80 || r.bottom > window.innerHeight - 80) {
+          el.scrollIntoView({ block: "center", behavior: "smooth" });
+        }
+      }
+    };
+
+    medir();
+    const relogio = setInterval(medir, 120);
+    window.addEventListener("scroll", medir, true);
+    window.addEventListener("resize", medir);
+    return () => {
+      clearInterval(relogio);
+      window.removeEventListener("scroll", medir, true);
+      window.removeEventListener("resize", medir);
+    };
+  }, [alvo]);
+
+  return area;
+}
+
+/** O mesmo `data-tutorial` existe no menu do topo e na barra do rodapé; vale o que está na tela. */
+function visivel(lista) {
+  for (const el of lista) {
+    const r = el.getBoundingClientRect();
+    if (r.width > 0 && r.height > 0) return el;
+  }
+  return null;
+}
+
+/** Enquanto o formulário de cadastro está aberto, o cartão sai da frente. */
+function useDialogoAberto() {
+  const [aberto, setAberto] = React.useState(false);
+  React.useEffect(() => {
+    const olhar = () => setAberto(Boolean(document.querySelector(".dc-dialog__scrim")));
+    olhar();
+    const obs = new MutationObserver(olhar);
+    obs.observe(document.body, { childList: true, subtree: true });
+    return () => obs.disconnect();
+  }, []);
+  return aberto;
+}
+
+/** Quantas linhas a pessoa já cadastrou na tabela que este passo pede. */
+function useUso(tabela) {
+  const [quantas, setQuantas] = React.useState(0);
+  React.useEffect(() => {
+    if (!tabela || !ehTeste()) return;
+    const olhar = () => setQuantas(usoDoTeste()[tabela]?.usado || 0);
+    olhar();
+    const id = setInterval(olhar, 700);
+    return () => clearInterval(id);
+  }, [tabela]);
+  return tabela && ehTeste() ? quantas : 1;
+}
+
+const caixa = (a) => ({
+  top: a.top - MARGEM,
+  left: a.left - MARGEM,
+  width: a.width + MARGEM * 2,
+  height: a.height + MARGEM * 2,
+});
+
+/**
+ * O cartão vai abaixo do alvo; se não couber, acima; se não couber em
+ * nenhum dos dois, ele encosta na borda de baixo da tela. No celular a
+ * conta não vale a pena — largura de sobra não existe e o cartão fica
+ * sempre no rodapé, por CSS.
+ */
+function posicaoDoCartao(a) {
+  if (typeof window === "undefined") return undefined;
+  const LARGURA = 380;
+  const ALTURA = 260;
+  const folga = 16;
+
+  const abaixo = a.top + a.height + folga;
+  const acima = a.top - ALTURA - folga;
+  const top = abaixo + ALTURA < window.innerHeight ? abaixo : acima > 0 ? acima : undefined;
+
+  const left = Math.min(
+    Math.max(a.left + a.width / 2 - LARGURA / 2, folga),
+    Math.max(window.innerWidth - LARGURA - folga, folga)
+  );
+
+  return top == null
+    ? { left, bottom: folga, width: LARGURA }
+    : { left, top, width: LARGURA };
+}

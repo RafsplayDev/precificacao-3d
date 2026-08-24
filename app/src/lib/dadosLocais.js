@@ -214,7 +214,7 @@ export function inserirLocal(tabela, campos) {
     const [um, muitos] = NOMES[tabela] || ["registro", "registros"];
     throw erro(
       `No teste grátis dá para cadastrar ${teto === 1 ? `1 ${um}` : `${teto} ${muitos}`}. ` +
-        "Libere o acesso para cadastrar quantos quiser — o que você já digitou vai junto.",
+        "Crie sua conta para cadastrar quantos quiser — o que você já digitou vai junto.",
       "LIMITE_TESTE"
     );
   }

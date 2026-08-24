@@ -53,8 +53,12 @@ export default async function VendasPage() {
           precisa vender para lucrar. Sem planilha quebrada, sem achismo.
         </p>
         <div className="ap-vendas__cta">
-          <Link href="/entrar?modo=criar" className="dc-btn dc-btn--primary dc-btn--lg">
-            Quero minha calculadora
+          {/* O primeiro botão não pede e-mail: o tutorial acontece antes da
+              conta, com a impressora e o filamento de quem está lendo. Pedir
+              cadastro aqui era cobrar confiança de quem ainda não viu um
+              preço sair. */}
+          <Link href="/" className="dc-btn dc-btn--primary dc-btn--lg">
+            Testar agora, sem cadastro
           </Link>
           <span>
             {preco.em_promocao && (
@@ -97,9 +101,12 @@ export default async function VendasPage() {
           Não é assinatura. Você paga uma vez e o acesso é seu. Pix ou cartão, pelo
           Mercado Pago.
         </p>
-        <Link href="/entrar?modo=criar" className="dc-btn dc-btn--primary dc-btn--lg">
-          Criar minha conta
+        <Link href="/" className="dc-btn dc-btn--primary dc-btn--lg">
+          Testar agora, sem cadastro
         </Link>
+        <p className="ap-vendas__entrar">
+          Prefere já criar a conta? <Link href="/entrar?modo=criar">Criar conta</Link>
+        </p>
         <p className="ap-vendas__entrar">
           Já comprou? <Link href="/entrar">Entrar</Link>
         </p>

@@ -7,6 +7,25 @@ const PUBLICAS = ["/vendas", "/entrar", "/auth"];
 /** Páginas que exigem login, mas não licença ativa. */
 const SEM_LICENCA = ["/assinar", "/sair"];
 
+/**
+ * As telas do app que o tutorial percorre.
+ *
+ * Quem chega sem conta entra por aqui: o tutorial acontece antes do
+ * cadastro, com os números da pessoa, e o "banco" é o localStorage do
+ * navegador (lib/dadosLocais.js). Pedir e-mail e senha antes de a
+ * calculadora mostrar um preço era cobrar confiança de quem ainda não viu
+ * nada funcionar.
+ */
+const APP = ["/", "/produtos", "/cadastros", "/concorrentes"];
+
+/**
+ * O tutorial termina na calculadora, e é ali que a pessoa fica livre para
+ * mexer no resultado do que acabou de cadastrar. Sair dessa tela depois do
+ * tutorial é querer usar o app — e aí sim vale criar a conta.
+ */
+const LIVRE_SEM_CONTA = "/";
+const COOKIE_TOUR = "dc_tour";
+
 const COOKIE_REF = "ref_afiliado";
 const TRINTA_DIAS = 60 * 60 * 24 * 30;
 
@@ -64,7 +83,26 @@ export async function middleware(req) {
   }
 
   if (!user) {
+    // ----------------------------------------------------------------
+    // Visitante sem conta: o tutorial primeiro
+    //
+    // Enquanto o tutorial está em andamento (ou nem começou), as telas que
+    // ele percorre ficam abertas — senão o roteiro esbarraria na tela de
+    // login no primeiro passo. Terminado o tutorial, só a calculadora
+    // continua livre: ela mostra o preço que a pessoa acabou de montar. As
+    // outras pedem conta, com `proximo` para a pessoa voltar exatamente
+    // para onde tentou ir.
+    // ----------------------------------------------------------------
+    const noApp = comeca(pathname, APP);
+    const tourAcabou = req.cookies.get(COOKIE_TOUR)?.value === "fim";
+
+    if (noApp && (!tourAcabou || pathname === LIVRE_SEM_CONTA)) {
+      marcarModo(res, "teste");
+      return res;
+    }
+
     const destino = new URL("/entrar", req.url);
+    if (noApp) destino.searchParams.set("modo", "criar");
     if (pathname !== "/") destino.searchParams.set("proximo", pathname);
     return NextResponse.redirect(destino);
   }

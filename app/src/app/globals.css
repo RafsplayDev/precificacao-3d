@@ -440,7 +440,19 @@ html, body { padding: 0; }
 .ap-cell:hover { border-color: var(--border-default); }
 .ap-cell:focus { outline: none; border-color: var(--border-strong); box-shadow: var(--ring-focus); background: var(--surface-card); }
 .ap-cell--num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; text-align: right; min-width: 0; }
-select.ap-cell { width: 100%; min-width: 0; cursor: pointer; }
+/* O select da célula seguia a cara do sistema operacional: seta nativa, moldura
+   própria, altura diferente. Aqui ele usa a mesma seta e o mesmo espaçamento do
+   Select do design system — a lista aberta continua sendo a do navegador. */
+select.ap-cell {
+  width: 100%; min-width: 0; cursor: pointer;
+  appearance: none; -webkit-appearance: none;
+  padding-right: 26px;
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%235C616B' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 6px center;
+  background-size: 14px 14px;
+  text-overflow: ellipsis;
+}
 
 /* ---- Estados ---- */
 .ap-empty { padding: var(--space-12) var(--space-6); text-align: center; border-radius: var(--radius-card); border: 1px dashed var(--border-default); }

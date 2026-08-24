@@ -55,6 +55,25 @@ export default function Produtos() {
 
   const pecas = produto ? d.pecas.filter((p) => p.produto_id === produto.id) : [];
   const adicionais = produto ? d.custos_adicionais.filter((c) => c.produto_id === produto.id) : [];
+
+  /** Campos de um insumo do produto — a tabela mostra todos menos o valor à mão. */
+  const colunasInsumo = [
+    { key: "insumo_id", label: "Insumo", tipo: "select", estica: true, vazio: "— avulso, valor manual —",
+      options: d.insumos.map((i) => ({ value: i.id, label: i.nome })) },
+    { key: "quantidade", label: "Qtd usada", tipo: "numero",
+      // a quantidade é sempre na unidade do insumo escolhido
+      rotulo: (linha) => {
+        const u = d.insumos.find((i) => i.id === linha?.insumo_id)?.unidade;
+        return u ? `Qtd usada (${u})` : "Qtd usada";
+      } },
+    { key: "unidade", label: "Unidade", tipo: "calc", formato: "texto",
+      valor: (linha) => d.insumos.find((i) => i.id === linha.insumo_id)?.unidade || "—" },
+    { key: "valor", label: "Valor manual (R$)", tipo: "moeda",
+      // com insumo escolhido o valor vem do custo por unidade
+      oculto: (linha) => Boolean(linha?.insumo_id) },
+    { key: "total", label: "Total", tipo: "calc", formato: "moeda",
+      valor: (linha) => valorAdicional(linha, d.insumos) },
+  ];
   const trabalhos = produto ? d.produto_trabalhos.filter((t) => t.produto_id === produto.id) : [];
   const c = produto ? calcular(produto) : null;
 
@@ -366,23 +385,11 @@ export default function Produtos() {
           <TabelaEditavel
             tabela="custos_adicionais"
             rotulo="insumo"
-            colunas={[
-              { key: "insumo_id", label: "Insumo", tipo: "select", estica: true, vazio: "— avulso, valor manual —",
-                options: d.insumos.map((i) => ({ value: i.id, label: i.nome })) },
-              { key: "quantidade", label: "Qtd usada", tipo: "numero",
-                // a quantidade é sempre na unidade do insumo escolhido
-                rotulo: (linha) => {
-                  const u = d.insumos.find((i) => i.id === linha?.insumo_id)?.unidade;
-                  return u ? `Qtd usada (${u})` : "Qtd usada";
-                } },
-              { key: "unidade", label: "Unidade", tipo: "calc", formato: "texto",
-                valor: (linha) => d.insumos.find((i) => i.id === linha.insumo_id)?.unidade || "—" },
-              { key: "valor", label: "Valor manual (R$)", tipo: "moeda",
-                // com insumo escolhido o valor vem do custo por unidade
-                oculto: (linha) => Boolean(linha?.insumo_id) },
-              { key: "total", label: "Total", tipo: "calc", formato: "moeda",
-                valor: (linha) => valorAdicional(linha, d.insumos) },
-            ]}
+            colunas={colunasInsumo.filter((c) => c.key !== "valor")}
+            // O valor à mão só interessa ao insumo avulso: na tabela ele era uma
+            // coluna de zeros. Fica no formulário, onde some sozinho quando um
+            // insumo é escolhido.
+            colunasFormulario={colunasInsumo}
             linhas={adicionais}
             recarregar={d.recarregar}
             aplicar={d.aplicar}

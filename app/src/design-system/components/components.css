@@ -64,6 +64,30 @@
 .dc-select__wrap{position:relative;display:block}
 .dc-select__chev{position:absolute;right:12px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--text-muted)}
 
+/* Combobox: o select com lista própria. O gatilho copia a caixa do .dc-select;
+   a lista vive num portal, então o posicionamento vem do componente. */
+.dc-combo{display:block;position:relative;min-width:0}
+.dc-combo__gatilho{display:flex;align-items:center;gap:var(--space-2);width:100%;background:var(--surface-card);border:var(--border-w) solid var(--border-default);border-radius:var(--radius-input);height:var(--control-h-md);padding:0 var(--space-3);font-family:var(--font-body);font-size:var(--text-body-md);color:var(--text-strong);cursor:pointer;text-align:left;transition:border-color var(--dur-fast) var(--ease-standard),box-shadow var(--dur-fast) var(--ease-standard)}
+.dc-combo__gatilho:hover{border-color:var(--ink-200)}
+.dc-combo__gatilho:focus-visible,.dc-combo__gatilho--on{outline:none;border-color:var(--border-strong);box-shadow:var(--ring-focus)}
+.dc-combo__gatilho:disabled{cursor:not-allowed;opacity:.55}
+.dc-combo__valor{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dc-combo__valor--vazio{color:var(--text-faint)}
+.dc-combo__chev{flex:none;display:inline-flex;color:var(--text-muted);transition:transform var(--dur-fast) var(--ease-standard)}
+.dc-combo__gatilho--on .dc-combo__chev{transform:rotate(180deg)}
+
+/* variante da célula de tabela: sem moldura até o toque, como os outros campos */
+.dc-combo--celula .dc-combo__gatilho{height:34px;border-color:transparent;background:transparent;font-size:var(--text-body-sm);padding:0 8px}
+.dc-combo--celula .dc-combo__gatilho:hover{border-color:var(--border-default)}
+.dc-combo--celula .dc-combo__gatilho:focus-visible,.dc-combo--celula .dc-combo__gatilho--on{border-color:var(--border-strong);background:var(--surface-card)}
+
+.dc-combo__lista{position:fixed;z-index:1200;margin:0;padding:var(--space-1);list-style:none;overflow-y:auto;overscroll-behavior:contain;background:var(--surface-card);border:var(--border-w) solid var(--border-hairline);border-radius:var(--radius-card);box-shadow:var(--shadow-md);outline:none}
+.dc-combo__opcao{display:flex;align-items:center;gap:var(--space-2);padding:8px 10px;border-radius:var(--radius-input);font-family:var(--font-body);font-size:var(--text-body-sm);color:var(--text-body);cursor:pointer}
+.dc-combo__rot{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dc-combo__opcao--foco{background:var(--surface-sunken)}
+.dc-combo__opcao--on{color:var(--text-strong);font-weight:var(--weight-medium)}
+.dc-combo__check{flex:none;display:inline-flex;color:var(--text-accent)}
+
 .dc-check{display:inline-flex;gap:var(--space-3);align-items:flex-start;cursor:pointer;font-size:var(--text-body-md);color:var(--text-body)}
 .dc-check__box{flex:none;width:18px;height:18px;margin-top:2px;border:var(--border-w-strong) solid var(--ink-200);border-radius:var(--radius-xs);background:var(--surface-card);display:inline-flex;align-items:center;justify-content:center;transition:background var(--dur-fast) var(--ease-standard),border-color var(--dur-fast) var(--ease-standard)}
 .dc-check:hover .dc-check__box{border-color:var(--ink-400)}

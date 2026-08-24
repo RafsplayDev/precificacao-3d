@@ -10,6 +10,7 @@ export { Card } from "./components/core/Card.jsx";
 export { Icon } from "./components/core/Icon.jsx";
 export { Input } from "./components/forms/Input.jsx";
 export { Select } from "./components/forms/Select.jsx";
+export { Combobox } from "./components/forms/Combobox.jsx";
 export { Checkbox } from "./components/forms/Checkbox.jsx";
 export { Radio } from "./components/forms/Radio.jsx";
 export { Switch } from "./components/forms/Switch.jsx";

@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import { Button, IconButton, Icon, Dialog, Input, Select } from "@/design-system";
+import { Button, IconButton, Icon, Dialog, Input, Select, Combobox } from "@/design-system";
 import { salvarLinha, inserirLinha, removerLinha, tratarMensagemErro } from "@/lib/useDados";
 import { useToast } from "@/components/AppShell";
 import { toNum, money, num, mascaraMoeda, moedaParaNumero, numeroParaMoeda } from "@/lib/format";
@@ -280,17 +280,16 @@ function Celula({ linha, coluna, onCommit }) {
 
   if (coluna.tipo === "select") {
     return (
-      <select
-        key={String(bruto ?? "")}
-        className="ap-cell"
-        defaultValue={bruto ?? ""}
-        onChange={(e) => onCommit(e.target.value)}
-      >
-        {coluna.vazio && <option value="">{coluna.vazio}</option>}
-        {opcoesDe(coluna, linha).map((o) => (
-          <option key={o.value ?? o} value={o.value ?? o}>{o.label ?? o}</option>
-        ))}
-      </select>
+      <Combobox
+        variant="celula"
+        ariaLabel={coluna.label}
+        value={bruto ?? ""}
+        onChange={(v) => onCommit(v)}
+        options={[
+          ...(coluna.vazio ? [{ value: "", label: coluna.vazio }] : []),
+          ...opcoesDe(coluna, linha).map((o) => ({ value: o.value ?? o, label: o.label ?? o })),
+        ]}
+      />
     );
   }
 

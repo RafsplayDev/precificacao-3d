@@ -5,8 +5,6 @@ import { Button, Icon } from "@/design-system";
 import { PASSOS } from "@/lib/tutorial";
 import { ehTeste } from "@/lib/modo";
 import { usoDoTeste } from "@/lib/dadosLocais";
-import { PRECO_PADRAO, normalizarPreco, reais } from "@/lib/produto";
-import { supabase } from "@/lib/supabaseClient";
 
 /**
  * O tutorial guiado.
@@ -20,7 +18,18 @@ import { supabase } from "@/lib/supabaseClient";
  *
  * O estado mora no localStorage porque ele precisa sobreviver à navegação
  * entre /cadastros, /produtos e / — que aqui é troca de página de verdade,
- * não de aba.
+ * não de aba. Uma cópia vai no cookie `dc_tour`, que é o que o middleware
+ * lê para manter essas telas abertas a quem ainda não criou conta.
+ *
+ * O tutorial nunca começa sozinho: quem o liga é a página /tutorial (o
+ * link que o afiliado divulga) ou o botão na gaveta da conta. Enquanto ele
+ * partia de qualquer visita ao app, quem já tinha conta topava com o
+ * roteiro toda vez que abria o site em outro navegador.
+ *
+ * O roteiro termina na calculadora e acaba ali: nada de cartão vendendo
+ * acesso no último passo. Quem gostou do preço que viu encontra o convite
+ * na faixa do teste e segue pelo caminho normal — criar conta, depois
+ * pagar.
  *
  * Quando um diálogo do app abre (o formulário de cadastro), o cartão se
  * recolhe: o scrim do diálogo passa por cima dele de qualquer jeito, e
@@ -28,6 +37,24 @@ import { supabase } from "@/lib/supabaseClient";
  */
 
 const CHAVE = "dc_tutorial_v1";
+
+/**
+ * O mesmo estado, em cookie, para o middleware enxergar.
+ *
+ * Quem chega sem conta faz o tutorial antes de se cadastrar, e o middleware
+ * precisa saber se ele ainda está rolando para deixar /cadastros e
+ * /produtos abertos. localStorage não viaja no request; cookie viaja. O
+ * cookie não autoriza nada além dessas telas de teste, cujo banco é o
+ * próprio navegador — forjá-lo não dá acesso a dado de ninguém.
+ */
+const COOKIE_TOUR = "dc_tour";
+const DIA = 60 * 60 * 24;
+
+function marcarTour(valor) {
+  try {
+    document.cookie = `${COOKIE_TOUR}=${valor}; path=/; max-age=${DIA}; samesite=lax`;
+  } catch {}
+}
 
 /**
  * As telas em que o tutorial pode acontecer.
@@ -52,7 +79,19 @@ function lerEstado() {
   }
 }
 
+/**
+ * Ligar o tutorial de fora do React.
+ *
+ * A página /tutorial precisa deixar o roteiro armado *antes* de trocar de
+ * endereço, e nesse momento o provider da tela seguinte ainda nem montou.
+ * Gravar estado e cookie aqui é o que faz o primeiro passo já chegar de pé.
+ */
+export function iniciarTutorial() {
+  gravarEstado({ estado: "ativo", indice: 0 });
+}
+
 function gravarEstado(estado) {
+  marcarTour(estado.estado === "ativo" ? "ativo" : "fim");
   try {
     window.localStorage.setItem(CHAVE, JSON.stringify(estado));
   } catch {}
@@ -68,8 +107,14 @@ export function TutorialProvider({ children }) {
   // localStorage nem cookie de modo, e chutar aqui faria o tutorial piscar.
   React.useEffect(() => {
     const salvo = lerEstado();
-    if (salvo?.estado === "ativo" && Number.isInteger(salvo.indice)) setIndice(salvo.indice);
-    else if (!salvo && ehTeste()) setIndice(0);
+    if (salvo?.estado === "ativo" && Number.isInteger(salvo.indice)) {
+      setIndice(salvo.indice);
+      marcarTour("ativo");
+    } else if (salvo) {
+      // O cookie vence em um dia e o localStorage não: sem este reforço,
+      // quem terminou o tutorial ontem voltaria a ter as telas abertas hoje.
+      marcarTour("fim");
+    }
     setPronto(true);
   }, []);
 
@@ -171,16 +216,12 @@ function Guia({ passo, indice, total, onProximo, onAnterior, onSair }) {
             empurrava "Próximo" para fora da área visível e o tutorial ficava
             sem saída aparente — que foi o que aconteceu no celular. */}
         <div className="ap-tour__corpo">
-          {passo.oferta ? <Oferta /> : (
-            <>
-              <h2 className="ap-tour__titulo">{passo.titulo}</h2>
-              <p className="ap-tour__texto">{passo.texto}</p>
-              {passo.exigeLinha && (
-                <p className={"ap-tour__aviso" + (feito ? " is-ok" : "")}>
-                  {feito ? "Pronto, pode seguir." : "Cadastre com os seus números — o tutorial espera."}
-                </p>
-              )}
-            </>
+          <h2 className="ap-tour__titulo">{passo.titulo}</h2>
+          <p className="ap-tour__texto">{passo.texto}</p>
+          {passo.exigeLinha && (
+            <p className={"ap-tour__aviso" + (feito ? " is-ok" : "")}>
+              {feito ? "Pronto, pode seguir." : "Cadastre com os seus números — o tutorial espera."}
+            </p>
           )}
         </div>
 
@@ -196,74 +237,11 @@ function Guia({ passo, indice, total, onProximo, onAnterior, onSair }) {
               Pular esta parte
             </button>
           )}
-          {!passo.oferta && (
-            <Button
-              size="sm"
-              variant={feito ? "accent" : "secondary"}
-              onClick={onProximo}
-            >
-              {passo.acao || (passo.opcional ? "Cadastrei" : "Próximo")}
-            </Button>
-          )}
+          <Button size="sm" variant={feito ? "accent" : "secondary"} onClick={onProximo}>
+            {passo.acao || (passo.opcional ? "Cadastrei" : "Próximo")}
+          </Button>
         </div>
       </div>
-    </>
-  );
-}
-
-/* ---------------------------- a oferta ---------------------------- */
-
-/**
- * O último passo é o único que vende. Vem depois do preço na tela de
- * propósito: até aqui a pessoa não foi interrompida por nada.
- */
-function Oferta() {
-  const [preco, setPreco] = React.useState(PRECO_PADRAO);
-  const [indo, setIndo] = React.useState(false);
-
-  React.useEffect(() => {
-    let vivo = true;
-    supabase
-      .from("vw_preco")
-      .select("*")
-      .maybeSingle()
-      .then(({ data }) => {
-        if (vivo) setPreco(normalizarPreco(data));
-      });
-    return () => {
-      vivo = false;
-    };
-  }, []);
-
-  return (
-    <>
-      <h2 className="ap-tour__titulo">Esse preço é seu</h2>
-      <p className="ap-tour__texto">
-        Você acabou de precificar uma peça sua com o custo real dela. O teste guarda tudo
-        no seu navegador e para por aqui: uma impressora, um produto.
-      </p>
-      <ul className="ap-tour__lista">
-        <li>Quantas impressoras, filamentos e produtos você quiser</li>
-        <li>Faixas de atacado, taxas de marketplace e comparação com concorrentes</li>
-        <li>Tudo salvo na sua conta, acessível de qualquer aparelho</li>
-        <li>Pagamento único, sem mensalidade</li>
-      </ul>
-      <div className="ap-tour__preco">
-        {preco.em_promocao && <s>{reais(preco.cheio_centavos)}</s>}
-        <strong>{reais(preco.vigente_centavos)}</strong>
-        <span>uma vez só</span>
-      </div>
-      <Button
-        block
-        onClick={() => {
-          setIndo(true);
-          window.location.assign("/assinar");
-        }}
-        disabled={indo}
-      >
-        {indo ? "Abrindo…" : "Liberar meu acesso"}
-      </Button>
-      <p className="ap-tour__rodape">O que você cadastrou no teste sobe para a conta automaticamente.</p>
     </>
   );
 }

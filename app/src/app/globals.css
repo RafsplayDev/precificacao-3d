@@ -113,7 +113,7 @@ html, body { max-width: 100%; overflow-x: clip; }
     padding: var(--space-4) var(--gutter-page);
   }
   .ap-conta__email { display: block; overflow-wrap: anywhere; }
-  .ap-conta button { text-align: left; }
+  .ap-conta button, .ap-conta a { text-align: left; }
 
   /* ---- Menu fixo no rodapé ---- */
   .ap-nav { display: none; }

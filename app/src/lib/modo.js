@@ -4,7 +4,8 @@
  * Em qual dos dois modos a pessoa está.
  *
  * O middleware carimba o cookie `dc_modo` a cada request: "ativa" para quem
- * tem licença, "teste" para quem entrou sem pagar. Ler o cookie é síncrono,
+ * tem licença, "teste" para quem ainda não pagou — inclusive para quem nem
+ * conta tem, porque o tutorial acontece antes do cadastro. Ler o cookie é síncrono,
  * e isso importa — se o modo chegasse por uma consulta ao Supabase, a
  * primeira renderização de toda tela apontaria para o banco errado e a
  * pessoa veria os dados piscarem antes de trocar.

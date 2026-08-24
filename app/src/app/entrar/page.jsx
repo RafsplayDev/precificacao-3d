@@ -38,6 +38,13 @@ function Formulario() {
 
   const criando = modo === "criar";
 
+  /**
+   * Quem chegou aqui empurrado por uma tela do app fez o tutorial primeiro
+   * e tem coisa digitada no navegador. Dizer que esse trabalho vai junto é
+   * o que separa "criar conta" de "recomeçar do zero".
+   */
+  const vindoDoTeste = criando && proximo !== "/";
+
   async function enviar(ev) {
     ev.preventDefault();
     setErro(null);
@@ -96,9 +103,11 @@ function Formulario() {
         <div className="ap-auth__cabeca">
           <h1>{criando ? "Criar conta" : "Entrar"}</h1>
           <p>
-            {criando
-              ? "Leva um minuto. Depois é só liberar o acesso."
-              : "Bem-vindo de volta à sua calculadora."}
+            {!criando
+              ? "Bem-vindo de volta à sua calculadora."
+              : vindoDoTeste
+                ? "Leva um minuto. O que você cadastrou no teste continua aí e vai junto para a sua conta."
+                : "Leva um minuto. Depois é só liberar o acesso."}
           </p>
         </div>
 
@@ -159,6 +168,10 @@ function Formulario() {
 
         <p className="ap-auth__rodape">
           <Link href="/vendas">Conhecer a Precificação 3D</Link>
+          {" · "}
+          {/* A saída para quem caiu aqui sem querer criar conta ainda: o
+              tutorial roda sem cadastro e mostra o preço de uma peça real. */}
+          <Link href="/tutorial">Testar sem cadastro</Link>
         </p>
       </Card>
     </div>

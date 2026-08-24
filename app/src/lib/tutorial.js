@@ -202,17 +202,9 @@ export const PASSOS = [
     titulo: "O que sobra no seu bolso",
     texto:
       "Taxa de marketplace e imposto entram aqui, no preço final — não na sua margem. Este é o " +
-      "lucro líquido de verdade.",
+      "lucro líquido de verdade. Daqui em diante a calculadora é sua: mexa nos números e veja o " +
+      "preço responder.",
     acao: "Terminei",
-  },
-  {
-    id: "oferta",
-    rota: "/",
-    oferta: true,
-    titulo: "Esse preço é seu",
-    texto:
-      "Você acabou de precificar uma peça sua com o custo real dela. O teste guarda tudo no seu " +
-      "navegador e para por aqui: uma impressora, um produto.",
   },
 ];
 

@@ -21,7 +21,7 @@ const NAV = [
  * Páginas que existem antes do acesso liberado. Elas se bastam: mostrar o
  * menu do app para quem ainda não pagou seria oferecer portas fechadas.
  */
-const SEM_MENU = ["/entrar", "/assinar", "/vendas"];
+const SEM_MENU = ["/entrar", "/assinar", "/vendas", "/tutorial"];
 
 const ToastCtx = React.createContext(() => {});
 export const useToast = () => React.useContext(ToastCtx);
@@ -39,6 +39,7 @@ function Casca({ children }) {
   const reduzido = useReducedMotion();
   const [toasts, setToasts] = React.useState([]);
   const [conta, setConta] = React.useState(null);
+  const [logado, setLogado] = React.useState(null);
   const [extras, setExtras] = React.useState({ afiliado: false, admin: false });
   // "perfil" ou nada: a única gaveta que resta é a da conta.
   const [aberto, setAberto] = React.useState(null);
@@ -61,7 +62,12 @@ function Casca({ children }) {
     let vivo = true;
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!vivo || !user) return;
+      if (!vivo) return;
+      // `false` e `null` querem dizer coisas diferentes: null é "ainda não
+      // sei", e é o que segura a faixa do teste de oferecer criar conta a
+      // quem já tem uma.
+      setLogado(!!user);
+      if (!user) return;
       setConta(user);
       // Duas consultas curtas que o RLS já filtra: se voltou linha, a pessoa
       // tem aquele papel. Definem quais links aparecem no menu.
@@ -154,12 +160,22 @@ function Casca({ children }) {
 
                 <nav className="ap-nav" aria-label="Seções">{links(false)}</nav>
 
-                {conta && (
+                {/* Sem conta a gaveta continua existindo: é ali que mora o
+                    "ver o tutorial de novo" e o convite para se cadastrar.
+                    Um botão de perfil que abre o vazio seria pior que não
+                    ter botão. */}
+                {(conta || logado === false) && (
                   <div className={"ap-gaveta" + (aberto === "perfil" ? " is-open" : "")}>
                     <div className="ap-conta">
-                      <span className="ap-conta__email">{conta.email}</span>
+                      <span className="ap-conta__email">
+                        {conta ? conta.email : "Você está no teste grátis"}
+                      </span>
                       <RepetirTutorial />
-                      <button type="button" onClick={sair}>Sair</button>
+                      {conta ? (
+                        <button type="button" onClick={sair}>Sair</button>
+                      ) : (
+                        <Link href="/entrar?modo=criar">Criar minha conta</Link>
+                      )}
                     </div>
                   </div>
                 )}
@@ -174,7 +190,7 @@ function Casca({ children }) {
           <nav className="ap-tabbar" aria-label="Seções">{links(true)}</nav>
         )}
 
-        {!publica && teste && <FaixaTeste />}
+        {!publica && teste && <FaixaTeste logado={logado} />}
 
         <main className="ap-main">{children}</main>
 
@@ -202,15 +218,25 @@ function Casca({ children }) {
  * neste navegador. Esconder isso até a hora da compra seria vender uma
  * surpresa ruim — e a frase seguinte, de que os dados sobem junto, é o que
  * transforma o aviso em motivo para continuar.
+ *
+ * O convite muda com o ponto da jornada: quem ainda não tem conta é
+ * convidado a criar uma (a cobrança vem depois, no fluxo normal); quem já
+ * entrou e só não pagou vê o botão de liberar o acesso. Mandar quem não
+ * tem conta direto para /assinar seria mostrar um checkout que o login vai
+ * interromper no clique seguinte.
  */
-function FaixaTeste() {
+function FaixaTeste({ logado }) {
   return (
     <div className="ap-teste">
       <span>
         <strong>Teste grátis.</strong> Seus dados ficam salvos só neste navegador — ao
-        liberar o acesso, tudo sobe para a sua conta.
+        {logado === false ? " criar sua conta" : " liberar o acesso"}, tudo sobe para ela.
       </span>
-      <Link href="/assinar">Liberar acesso</Link>
+      {logado === false ? (
+        <Link href="/entrar?modo=criar">Criar minha conta</Link>
+      ) : logado ? (
+        <Link href="/assinar">Liberar acesso</Link>
+      ) : null}
     </div>
   );
 }

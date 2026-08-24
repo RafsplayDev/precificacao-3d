@@ -21,6 +21,8 @@ import { Icon } from "@/design-system";
 export function Explicacao({ children, rotulo = "O que é isto?" }) {
   const [aberto, setAberto] = React.useState(false);
   const caixa = React.useRef(null);
+  const balao = React.useRef(null);
+  const [desvio, setDesvio] = React.useState(0);
 
   // ------------------------------------------------------------------
   // O hover só existe onde existe mouse
@@ -34,6 +36,29 @@ export function Explicacao({ children, rotulo = "O que é isto?" }) {
   React.useEffect(() => {
     setTemMouse(window.matchMedia?.("(hover: hover) and (pointer: fine)").matches ?? false);
   }, []);
+
+  // ------------------------------------------------------------------
+  // O balão volta para dentro da tela
+  //
+  // Ancorado no ícone, ele sai pela direita quando o ícone está perto da
+  // borda direita — e pela esquerda se fosse ancorado do outro lado. Em vez
+  // de escolher um lado, mede-se onde ele caiu e desloca-se o que faltar.
+  // `margin-left` e não `transform` porque o transform é da animação.
+  // ------------------------------------------------------------------
+  React.useLayoutEffect(() => {
+    if (!aberto) {
+      setDesvio(0);
+      return;
+    }
+    const el = balao.current;
+    if (!el) return;
+    const folga = 12;
+    const r = el.getBoundingClientRect();
+    const sobra = r.right - (window.innerWidth - folga);
+    const falta = folga - r.left;
+    if (sobra > 0) setDesvio((d) => d - sobra);
+    else if (falta > 0) setDesvio((d) => d + falta);
+  }, [aberto]);
 
   React.useEffect(() => {
     if (!aberto) return;
@@ -71,9 +96,23 @@ export function Explicacao({ children, rotulo = "O que é isto?" }) {
       >
         <Icon name="info" size={15} />
       </button>
-      <span className="ap-expl__balao" role="note">
-        {children}
-      </span>
+      {/* Só existe no DOM quando está aberto. Escondido por `visibility`
+          ele continuava ocupando layout: uma caixa de 320px ancorada num
+          ícone no meio da tela esticava a página para além da largura do
+          telefone, e aí o que é fixo (o cartão do tutorial, a barra de
+          abas) passava a medir essa largura maior enquanto o conteúdo
+          continuava no tamanho da tela — as duas larguras diferentes que
+          apareciam ao fundo. */}
+      {aberto && (
+        <span
+          className="ap-expl__balao"
+          role="note"
+          ref={balao}
+          style={desvio ? { marginLeft: desvio } : undefined}
+        >
+          {children}
+        </span>
+      )}
     </span>
   );
 }

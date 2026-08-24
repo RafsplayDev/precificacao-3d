@@ -316,10 +316,8 @@ export default function Calculadora() {
       </Card>
 
       <Card padding="var(--space-5)">
-        <div className="ap-sectionhead ap-sectionhead--tight ap-so-pc"><h2>Preço sugerido</h2></div>
-
-        {/* No celular a escolha entre sugerido e definido vem aqui em cima, no
-            lugar do título; varejo e atacado já são os dois cards abaixo. */}
+        {/* A escolha entre sugerido e definido abre o card, no lugar de um
+            título; varejo e atacado já são os dois cards abaixo. */}
         <div className="ap-escolhas">
           <Tabs
             items={[

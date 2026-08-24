@@ -356,7 +356,6 @@ html, body { padding: 0; }
    no card de preço de venda ela seria repetição. */
 .ap-escolhas { display: flex; justify-content: center; margin-bottom: var(--space-4); }
 .ap-precovenda__head .dc-tabs { display: none; }
-@media (max-width: 640px) { .ap-so-pc { display: none; } }
 
 /* ---- Número que rola: cada dígito é uma fita de 0 a 9 ---- */
 .ap-num { display: inline-flex; align-items: flex-start; font-variant-numeric: tabular-nums; line-height: 1; }

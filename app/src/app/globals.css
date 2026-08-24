@@ -233,10 +233,32 @@ html, body { padding: 0; }
 }
 .ap-sugerido:hover .ap-sugerido__editar,
 .ap-sugerido:focus-within .ap-sugerido__editar { opacity: 1; }
-/* Onde não existe passar o mouse, o lápis fica sempre à mostra. */
-@media (hover: none) {
-  .ap-sugerido__editar, .ap-sugerido__markup { opacity: 1; }
+/* O lápis está sempre à mostra: no toque não existe passar o mouse, e no
+   computador ele some no meio do card quando aparece só no hover. */
+.ap-sugerido__editar, .ap-sugerido:hover .ap-sugerido__editar,
+.ap-sugerido:focus-within .ap-sugerido__editar { opacity: 1; }
+
+/* ---- Card em foco: o mesmo card, crescido em painel de edição ---- */
+/* O vazio segura o lugar na fileira enquanto o card está no meio da tela. */
+.ap-sugerido--fantasma { visibility: hidden; }
+.ap-sugerido__fundo {
+  position: fixed; inset: 0; z-index: 70;
+  background: rgba(16, 16, 20, 0.28);
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
 }
+.ap-sugerido--foco {
+  position: fixed; z-index: 71;
+  top: 50%; left: 50%; translate: -50% -50%;
+  width: min(420px, 92vw);
+  gap: var(--space-4); padding: var(--space-5);
+  background: var(--surface-card);
+  border-color: var(--canal); box-shadow: var(--shadow-lg);
+  cursor: default;
+}
+.ap-sugerido--foco .dc-eyebrow, .ap-sugerido--foco .ap-figure__val { color: var(--text-strong); }
+.ap-sugerido--foco .dc-eyebrow { color: var(--canal); }
+.ap-sugerido--foco .ap-figure__val { font-size: clamp(28px, 8vw, 36px); }
+.ap-sugerido__campos { display: grid; gap: var(--space-3); }
 
 .ap-sugerido__input {
   width: 4.5ch; padding: 0 4px; height: 24px;
@@ -438,7 +460,7 @@ select.ap-cell { width: 100%; min-width: 0; cursor: pointer; }
 .ap-prodhead { display: grid; gap: var(--space-5); margin-bottom: var(--space-6); align-items: center; }
 @media (min-width: 900px) { .ap-prodhead { grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); gap: var(--space-6); } }
 .ap-prodhead h1 {
-  font-size: clamp(24px, 4.5vw, 32px); letter-spacing: var(--ls-h1);
+  font-size: clamp(19px, 3.4vw, 26px); letter-spacing: var(--ls-h1);
   font-weight: var(--weight-medium); margin: 6px 0 0;
   display: flex; align-items: center; gap: var(--space-2); overflow-wrap: anywhere;
 }
@@ -453,7 +475,7 @@ select.ap-cell { width: 100%; min-width: 0; cursor: pointer; }
 .ap-prodhead { display: grid; gap: var(--space-5); margin-bottom: var(--space-6); align-items: center; }
 @media (min-width: 900px) { .ap-prodhead { grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); gap: var(--space-6); } }
 .ap-prodhead h1 {
-  font-size: clamp(24px, 4.5vw, 32px); letter-spacing: var(--ls-h1);
+  font-size: clamp(19px, 3.4vw, 26px); letter-spacing: var(--ls-h1);
   font-weight: var(--weight-medium); margin: 6px 0 0;
   display: flex; align-items: center; gap: var(--space-2); overflow-wrap: anywhere;
 }

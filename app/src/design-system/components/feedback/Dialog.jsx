@@ -8,7 +8,7 @@ import { Icon } from "../core/Icon.jsx";
  * ele cobre um pedaço dela. Quem sabe o tamanho do que sobrou é a visualViewport
  * — sem ela o diálogo se centraliza na tela inteira e metade fica atrás do teclado.
  */
-function useAreaVisivel() {
+export function useAreaVisivel() {
   const [area, setArea] = React.useState(null);
 
   React.useEffect(() => {

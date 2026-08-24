@@ -229,10 +229,8 @@ html, body { padding: 0; }
 
 .ap-sugerido__editar {
   width: 24px; height: 24px;   /* mesma altura do campo, para nada empurrar a linha */
-  opacity: 0; transition: opacity var(--dur-base) var(--ease-out);
+  margin-left: auto;           /* encostado na direita: nada mais divide a linha */
 }
-.ap-sugerido:hover .ap-sugerido__editar,
-.ap-sugerido:focus-within .ap-sugerido__editar { opacity: 1; }
 /* O lápis está sempre à mostra: no toque não existe passar o mouse, e no
    computador ele some no meio do card quando aparece só no hover. */
 .ap-sugerido__editar, .ap-sugerido:hover .ap-sugerido__editar,
@@ -260,25 +258,22 @@ html, body { padding: 0; }
 .ap-sugerido--foco .ap-figure__val { font-size: clamp(28px, 8vw, 36px); }
 .ap-sugerido__campos { display: grid; gap: var(--space-3); }
 
-.ap-sugerido__input {
-  width: 4.5ch; padding: 0 4px; height: 24px;
-  font: inherit; font-size: var(--text-body-sm); font-variant-numeric: tabular-nums;
-  color: var(--text-strong); background: var(--surface-card);
-  border: var(--border-w) solid var(--canal); border-radius: var(--radius-input);
+
+
+/* O número grande do painel também é o campo do preço definido. */
+.ap-sugerido__precolinha { display: flex; align-items: baseline; gap: 8px; }
+.ap-sugerido__precobtn {
+  padding: 0; margin: 0; border: 0; background: none; text-align: left;
+  font: inherit; color: inherit; cursor: text; width: 100%;
 }
-.ap-sugerido__input:focus { outline: none; box-shadow: var(--ring-focus); }
-
-
-/* O markup fica ao lado do nome do canal, e só aparece no hover — sem reservar linha. */
-.ap-sugerido__markup {
-  font-size: var(--text-caption); color: var(--text-muted);
+.ap-sugerido__preco {
+  width: 100%; padding: 0; border: 0; background: none;
+  font-family: var(--font-display); font-size: clamp(28px, 8vw, 36px);
+  letter-spacing: var(--ls-h1); color: var(--text-strong); line-height: 1;
   font-variant-numeric: tabular-nums;
-  opacity: 0; transition: opacity var(--dur-base) var(--ease-out);
 }
-/* o "×" acompanha o campo em edição, então fica sempre visível */
-.ap-sugerido__markup--fixo { opacity: 1; }
-.ap-sugerido:hover .ap-sugerido__markup,
-.ap-sugerido:focus-visible .ap-sugerido__markup { opacity: 1; }
+.ap-sugerido__preco:focus-visible { outline: none; }
+
 @media (min-width: 980px) {
   .ap-grid--2 { grid-template-columns: 1fr 1fr; }
   .ap-grid--main { grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); }

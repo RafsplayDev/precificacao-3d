@@ -1100,20 +1100,39 @@ function SeletorProdutoPilha({ produtos, atual, onTrocar, onNovo }) {
               initial={{ opacity: 0, y: -6 }}
               animate={{ opacity: 1, y: 0, transition: mola }}
               exit={{ opacity: 0, transition: { duration: 0.12 } }}
+              // O painel cobre a tela inteira: tocar no vazio dele fecha,
+              // como tocar fora fechava quando a lista era um menu pequeno.
+              onClick={(e) => { if (e.target === e.currentTarget) fechar(); }}
             >
-              {/* Sem foco automático: no celular o teclado subindo por conta
-                  própria come metade da lista antes de a pessoa pedir. */}
-              <input
-                className="ap-busca"
-                type="search"
-                placeholder="Buscar produto"
-                aria-label="Buscar produto"
-                value={busca}
-                onChange={(e) => setBusca(e.target.value)}
-              />
+              <div className="ap-pilha__topo">
+                {/* Sem foco automático: no celular o teclado subindo por conta
+                    própria come metade da lista antes de a pessoa pedir. */}
+                <input
+                  className="ap-busca"
+                  type="search"
+                  placeholder="Buscar produto"
+                  aria-label="Buscar produto"
+                  value={busca}
+                  onChange={(e) => setBusca(e.target.value)}
+                />
+                <button
+                  type="button"
+                  className="ap-pilha__fechar"
+                  onClick={fechar}
+                  aria-label="Fechar lista"
+                  title="Fechar"
+                >
+                  <Icon name="x" size={20} strokeWidth={2.5} />
+                </button>
+              </div>
 
               {/* A lista inteira, rolando dentro do painel. */}
-              <div className="ap-pilha__scroll" role="listbox" aria-label="Produtos">
+              <div
+                className="ap-pilha__scroll"
+                role="listbox"
+                aria-label="Produtos"
+                onClick={(e) => { if (e.target === e.currentTarget) fechar(); }}
+              >
                 {lista.map((p, i) => (
                   <motion.button
                     key={p.id}

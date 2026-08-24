@@ -571,6 +571,17 @@ select.ap-cell { width: 100%; min-width: 0; cursor: pointer; }
 /* No fluxo do painel os cards deixam de ser posicionados no braço. */
 .ap-pilha__card--fluxo, .ap-pilha__painel .ap-pilha__novo { position: relative; flex: none; }
 
+/* Busca e o botão de fechar dividem a primeira linha do painel. */
+.ap-pilha__topo { display: flex; align-items: center; gap: var(--space-2); flex: none; }
+.ap-pilha__fechar {
+  flex: none; display: inline-flex; align-items: center; justify-content: center;
+  width: 44px; height: 44px; border-radius: var(--radius-pill);
+  color: var(--text-body); background: var(--surface-card);
+  border: 1px solid var(--border-hairline); cursor: pointer;
+}
+.ap-pilha__fechar:hover { background: var(--ink-950); color: var(--text-inverse); }
+.ap-pilha__fechar:focus-visible { outline: none; box-shadow: var(--ring-focus); }
+
 /* Campo de busca no topo das opções. */
 .ap-busca {
   width: 100%; height: 44px; padding: 0 var(--space-4);

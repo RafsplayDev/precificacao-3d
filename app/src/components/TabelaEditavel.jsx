@@ -24,7 +24,7 @@ import { toNum, money, num, mascaraMoeda, moedaParaNumero, numeroParaMoeda } fro
  *   - a largura de cada coluna vem do maior texto que ela tem hoje (valores ou
  *     rótulo), com teto; passando disso a tabela rola na horizontal.
  */
-export function TabelaEditavel({ tabela, colunas, linhas, novoRegistro, recarregar, aplicar, remover, vazio, semRemover = false, rotulo = "linha", abrirRef, semBotao = false, semTabela = false, colunasFormulario }) {
+export function TabelaEditavel({ tabela, colunas, linhas, novoRegistro, recarregar, aplicar, remover, vazio, semRemover = false, rotulo = "linha", abrirRef, semBotao = false, semTabela = false, colunasFormulario, obrigatorios }) {
   const toast = useToast();
   const [salvando, setSalvando] = React.useState(null);
   const [itemParaExcluir, setItemParaExcluir] = React.useState(null);
@@ -69,6 +69,21 @@ export function TabelaEditavel({ tabela, colunas, linhas, novoRegistro, recarreg
   /** O botão de adicionar abre um formulário; a linha só nasce preenchida.
    *  `abrirRef` deixa uma tela de fora acionar o mesmo formulário. */
   const camposDoForm = colunasFormulario || colunas;
+
+  /**
+   * Campos sem os quais o botão não libera.
+   *
+   * Usado pelo tutorial: lá o formulário fica com dois ou três campos e
+   * todos importam para o preço. Deixar "Adicionar" clicável antes deles
+   * criaria uma impressora de R$ 0,00 — e a calculadora, no fim do
+   * roteiro, mostraria um custo que não é o da pessoa.
+   */
+  const faltando = (obrigatorios || []).some((k) => {
+    const col = camposDoForm.find((c) => c.key === k);
+    const texto = String(novo?.campos?.[k] ?? "").trim();
+    if (texto === "") return true;
+    return col && col.tipo !== "texto" && !(Number(paraBanco(texto, col)) > 0);
+  });
 
   function abrirFormulario() {
     const base = novoRegistro(linhas);
@@ -199,7 +214,13 @@ export function TabelaEditavel({ tabela, colunas, linhas, novoRegistro, recarreg
               <Button variant="secondary" size="sm" disabled={criando} onClick={() => setNovo(null)}>
                 Cancelar
               </Button>
-              <Button variant="accent" size="sm" disabled={criando} onClick={adicionar}>
+              <Button
+                variant="accent"
+                size="sm"
+                disabled={criando || faltando}
+                className={!criando && !faltando && obrigatorios?.length ? "is-pulsando" : ""}
+                onClick={adicionar}
+              >
                 {criando ? "Adicionando..." : "Adicionar"}
               </Button>
             </>
@@ -225,7 +246,7 @@ export function TabelaEditavel({ tabela, colunas, linhas, novoRegistro, recarreg
                     return { ...n, campos };
                   })
                 }
-                onEnter={() => !criando && adicionar()}
+                onEnter={() => !criando && !faltando && adicionar()}
               />
             ))}
           </div>

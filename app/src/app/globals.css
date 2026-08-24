@@ -859,6 +859,26 @@ select.ap-cell {
   border-radius: var(--radius-card);
   box-shadow: var(--shadow-lg);
   animation: ap-tour-surge var(--dur-base) var(--ease-out);
+
+  /* Três travas contra o cartão furar a tela, cada uma para um jeito
+     diferente de isso acontecer:
+     - o teto de largura vale mesmo se alguma regra de posicionamento não
+       pegar, porque nenhuma delas pode vencer um max-width;
+     - `text-size-adjust` desliga o aumento automático de fonte que o
+       Chrome do Android aplica sozinho em texto que ele julga ser o
+       conteúdo principal — é ele que estica a caixa sem avisar;
+     - `overflow-wrap` (herdado pelo título e pelo texto) garante que nem
+       uma palavra comprida empurre a borda. */
+  max-width: calc(100vw - var(--space-6));
+  overflow-wrap: anywhere;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+/* O corpo rola; o rodapé de ações fica sempre à vista. */
+.ap-tour__corpo {
+  display: flex; flex-direction: column; gap: var(--space-2);
+  min-height: 0; overflow-y: auto; overscroll-behavior: contain;
 }
 
 /* Sem alvo (a abertura e a oferta) o cartão é o centro da tela. */
@@ -867,7 +887,6 @@ select.ap-cell {
   transform: translate(-50%, -50%);
   width: min(440px, calc(100vw - var(--space-6) * 2));
   max-height: calc(100vh - var(--space-8));
-  overflow-y: auto;
 }
 /* O escuro dos passos sem alvo.
    Elemento irmao, e nao um `::before` do cartao: dentro do contexto de
@@ -925,14 +944,17 @@ select.ap-cell {
 @media (max-width: 720px) {
   .ap-tour__cartao {
     left: var(--space-3) !important;
-    right: var(--space-3);
+    right: var(--space-3) !important;
     top: auto !important;
     bottom: calc(var(--space-3) + 64px);
     width: auto !important;
-    max-height: 60vh;
-    overflow-y: auto;
+    max-width: none;
+    max-height: 62vh;
   }
-  .ap-tour__cartao--centro { top: 50% !important; bottom: auto; transform: translateY(-50%); left: var(--space-3) !important; }
+  .ap-tour__cartao--centro {
+    top: 50% !important; bottom: auto; transform: translateY(-50%);
+    left: var(--space-3) !important; width: auto !important;
+  }
 }
 
 /* ---------------------------------------------------------------------

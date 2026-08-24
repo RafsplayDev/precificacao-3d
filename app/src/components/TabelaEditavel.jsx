@@ -3,7 +3,7 @@ import React from "react";
 import { Button, IconButton, Icon, Dialog, Input, Select } from "@/design-system";
 import { salvarLinha, inserirLinha, removerLinha, tratarMensagemErro } from "@/lib/useDados";
 import { useToast } from "@/components/AppShell";
-import { toNum, moneyPrecise, num, mascaraMoeda, moedaParaNumero, numeroParaMoeda } from "@/lib/format";
+import { toNum, money, num, mascaraMoeda, moedaParaNumero, numeroParaMoeda } from "@/lib/format";
 
 /**
  * Tabela editável ligada direto a uma tabela do Supabase.
@@ -270,7 +270,7 @@ function Celula({ linha, coluna, onCommit }) {
     const v = toNum(cru);
     return (
       <span className="ap-calc ap-calc--num">
-        {coluna.formato === "moeda" ? moneyPrecise(v) : coluna.formato === "percent" ? `${num(v * 100)}%` : num(v)}
+        {coluna.formato === "moeda" ? money(v) : coluna.formato === "percent" ? `${num(v * 100)}%` : num(v)}
       </span>
     );
   }
@@ -357,7 +357,7 @@ function textoDaCelula(linha, col) {
   if (col.tipo === "calc") {
     if (col.formato === "texto") return String((col.valor ? col.valor(linha) : bruto) ?? "");
     const v = toNum(col.valor ? col.valor(linha) : bruto);
-    return col.formato === "moeda" ? moneyPrecise(v) : col.formato === "percent" ? `${num(v * 100)}%` : num(v);
+    return col.formato === "moeda" ? money(v) : col.formato === "percent" ? `${num(v * 100)}%` : num(v);
   }
   if (col.tipo === "moeda") return numeroParaMoeda(bruto);
   if (col.tipo === "percent") return String(toNum(bruto) * 100);

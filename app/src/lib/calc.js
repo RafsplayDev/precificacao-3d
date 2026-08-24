@@ -88,8 +88,19 @@ export function valorTrabalho(trabalho, maosObra = []) {
   return div(n(mo.custo_hora) * n(trabalho.minutos), 60) / unidades;
 }
 
+/**
+ * O markup vale para o negócio inteiro: o que está nos cadastros manda, e o
+ * valor gravado no produto só entra enquanto não houver configuração.
+ */
+export function markupsDe(config, produto) {
+  return {
+    varejo: n(config?.markup_varejo_padrao) || n(produto?.markup_varejo) || 2,
+    atacado: n(config?.markup_atacado_padrao) || n(produto?.markup_atacado) || 1.5,
+  };
+}
+
 /** Consolidado de um produto: custos, markup e preços sugeridos. */
-export function custosProduto({ produto, pecas = [], impressoras = [], filamentos = [], adicionais = [], insumos = [], trabalhos = [], maosObra = [], bens = [], tarifaKwh = 0 }) {
+export function custosProduto({ produto, pecas = [], impressoras = [], filamentos = [], adicionais = [], insumos = [], trabalhos = [], maosObra = [], bens = [], tarifaKwh = 0, config = null }) {
   const deprTotal = depreciacaoTotal(bens);
   const byId = (arr) => Object.fromEntries(arr.map((x) => [x.id, x]));
   const imp = byId(impressoras);
@@ -117,8 +128,8 @@ export function custosProduto({ produto, pecas = [], impressoras = [], filamento
     custos_trabalho,
     custos_adicionais,
     custos_totais,
-    sugerido_atacado: custos_totais * n(produto?.markup_atacado),
-    sugerido_varejo: custos_totais * n(produto?.markup_varejo),
+    sugerido_atacado: custos_totais * markupsDe(config, produto).atacado,
+    sugerido_varejo: custos_totais * markupsDe(config, produto).varejo,
     depreciacao_total_mensal: deprTotal,
   };
 }

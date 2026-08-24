@@ -6,7 +6,7 @@ import { useDados, inserirLinha, salvarLinha, removerLinha, tratarMensagemErro }
 import { TabelaEditavel } from "@/components/TabelaEditavel";
 import { useToast } from "@/components/AppShell";
 import { custosProduto, valorAdicional, valorTrabalho } from "@/lib/calc";
-import { money, moneyPrecise } from "@/lib/format";
+import { money } from "@/lib/format";
 
 const CATEGORIAS = { Producao: "Produção", Acabamento: "Acabamento", Modelagem: "Modelagem" };
 
@@ -30,7 +30,8 @@ export default function Produtos() {
   const [excluindoProd, setExcluindoProd] = React.useState(false);
 
   const produto = d.produtos.find((p) => p.id === sel) || null;
-  const tarifa = d.configuracoes[0]?.tarifa_kwh ?? 0;
+  const cfg = d.configuracoes[0];
+  const tarifa = cfg?.tarifa_kwh ?? 0;
 
   /** Custos de um produto qualquer — serve tanto para a lista quanto para o detalhe. */
   const calcular = React.useCallback(
@@ -46,9 +47,10 @@ export default function Produtos() {
         maosObra: d.maos_obra,
         bens: d.bens_depreciacao,
         tarifaKwh: tarifa,
+        config: cfg,
       }),
     [d.pecas, d.impressoras, d.filamentos, d.custos_adicionais, d.insumos,
-     d.produto_trabalhos, d.maos_obra, d.bens_depreciacao, tarifa]
+     d.produto_trabalhos, d.maos_obra, d.bens_depreciacao, tarifa, cfg]
   );
 
   const pecas = produto ? d.pecas.filter((p) => p.produto_id === produto.id) : [];
@@ -353,7 +355,7 @@ export default function Produtos() {
         <Card padding="var(--space-6)">
           <div className="ap-sectionhead">
             <h2>Insumos e custos adicionais</h2>
-            <span className="ap-row__val">{moneyPrecise(c.custos_adicionais)}</span>
+            <span className="ap-row__val">{money(c.custos_adicionais)}</span>
           </div>
           <p className="ap-hint">
             Escolha um insumo cadastrado e diga quanto entra em cada produto, na unidade dele — 2 argolas,
@@ -400,7 +402,7 @@ export default function Produtos() {
         <Card padding="var(--space-6)">
           <div className="ap-sectionhead">
             <h2>Mão de obra</h2>
-            <span className="ap-row__val">{moneyPrecise(c.custos_trabalho)}</span>
+            <span className="ap-row__val">{money(c.custos_trabalho)}</span>
           </div>
           <p className="ap-hint">
             Quantos minutos deste produto são de produção, acabamento e modelagem. O valor sai do custo/hora

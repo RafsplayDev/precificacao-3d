@@ -178,7 +178,7 @@ const SECOES_GERAL = [
   {
     id: "markup",
     titulo: "Markup e atacado",
-    texto: "O multiplicador que todo produto novo recebe e a partir de quantas peças um pedido conta como atacado. Na calculadora dá para mudar tudo isso por produto.",
+    texto: "O multiplicador que a calculadora usa em todos os produtos e a partir de quantas peças um pedido conta como atacado.",
     colunas: [
       // as três esticam: dividem a largura do card em partes iguais
       { key: "markup_varejo_padrao", label: "Markup varejo", tipo: "numero", estica: true },
@@ -194,7 +194,7 @@ const TEXTOS = {
   insumos: "Argola, saquinho, ímã — mas também tinta em ml, fita em metros, resina em gramas. Diga quanto pagou e quanto veio no pacote, na unidade que fizer sentido; o custo por unidade sai da divisão e entra sozinho nos custos do produto.",
   maos_obra: "Produção, acabamento e modelagem podem valer valores diferentes por hora. Cada produto escolhe quais tipos usa e por quantos minutos.",
   marketplaces: "O preço de venda vira (preço base + taxa fixa) ÷ (1 − comissão), então a taxa não come sua margem.",
-  geral: "Valores que valem para o negócio inteiro. A tarifa de energia entra no custo de cada peça (horas × potência × tarifa). Os markups são os que todo produto novo recebe — na calculadora dá para mudar o de cada produto.",
+  geral: "Valores que valem para o negócio inteiro. A tarifa de energia entra no custo de cada peça (horas × potência × tarifa). Os markups valem para todos os produtos da calculadora.",
   bens: "Depreciação fiscal de todos os bens do negócio. A soma mensal entra no custo de depreciação de cada peça.",
 };
 

@@ -32,6 +32,7 @@ export default function Concorrentes() {
             maosObra: d.maos_obra,
             bens: d.bens_depreciacao,
             tarifaKwh: d.configuracoes[0]?.tarifa_kwh ?? 0,
+            config: d.configuracoes[0],
           });
           const meuPreco =
             produto.usar_preco === "Final" ? toNum(produto.preco_final_varejo) : c.sugerido_varejo;

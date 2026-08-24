@@ -1,10 +1,7 @@
 const brl = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
-const brlPrecise = new Intl.NumberFormat("pt-BR", {
-  style: "currency", currency: "BRL", minimumFractionDigits: 2, maximumFractionDigits: 4,
-});
 
+// Dinheiro é sempre em centavos: as casas extras só poluíam a leitura.
 export const money = (n) => brl.format(Number(n) || 0);
-export const moneyPrecise = (n) => brlPrecise.format(Number(n) || 0);
 export const pct = (n, d = 1) =>
   `${((Number(n) || 0) * 100).toLocaleString("pt-BR", { minimumFractionDigits: d, maximumFractionDigits: d })}%`;
 export const num = (n, d = 2) =>

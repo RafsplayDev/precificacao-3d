@@ -6,8 +6,8 @@ import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import { Card, Button, Select, Badge, Icon, IconButton, Tabs, Checkbox, Dialog, Input, useAreaVisivel } from "@/design-system";
 import { useDados, salvarLinha, inserirLinha, removerLinha } from "@/lib/useDados";
 import { useToast } from "@/components/AppShell";
-import { custosProduto, cenarioUnitario, cenarioDesconto, precoComMarketplace, LINHAS_CUSTO, valorAdicional, valorTrabalho } from "@/lib/calc";
-import { money, moneyPrecise, pct, num, toNum, mascaraMoeda, moedaParaNumero, numeroParaMoeda } from "@/lib/format";
+import { custosProduto, cenarioUnitario, cenarioDesconto, precoComMarketplace, LINHAS_CUSTO, valorAdicional, valorTrabalho, markupsDe } from "@/lib/calc";
+import { money, pct, num, toNum, mascaraMoeda, moedaParaNumero, numeroParaMoeda } from "@/lib/format";
 
 /** Os grupos da tabela de custos — o filtro em cima da tabela. */
 const GRUPOS = [
@@ -83,7 +83,8 @@ export default function Calculadora() {
       trabalhos: d.produto_trabalhos.filter((t) => t.produto_id === produto.id),
       maosObra: d.maos_obra, bens: d.bens_depreciacao,
       tarifaKwh: d.configuracoes[0]?.tarifa_kwh ?? 0,
-    }).custos_totais * toNum(produto.markup_atacado);
+      config: d.configuracoes[0],
+    }).custos_totais * markupsDe(d.configuracoes[0], produto).atacado;
     if (sugerido > 0) persistir({ preco_final_atacado: sugerido }, true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [canal, produto?.id, produto?.usar_preco]);
@@ -163,6 +164,7 @@ export default function Calculadora() {
     maosObra: d.maos_obra,
     bens: d.bens_depreciacao,
     tarifaKwh: d.configuracoes[0]?.tarifa_kwh ?? 0,
+    config: d.configuracoes[0],
   });
 
   // Uma linha por item de custo, com o grupo a que pertence — a tabela abaixo
@@ -221,8 +223,13 @@ export default function Calculadora() {
     );
   };
 
-  const sugeridoAtacado = custosTotais * toNum(produto.markup_atacado);
-  const sugeridoVarejo = custosTotais * toNum(produto.markup_varejo);
+  // O markup mora nos cadastros: mudou lá, muda aqui. O valor gravado no
+  // produto só entra se o negócio ainda não tiver o seu.
+  const geral = d.configuracoes[0];
+  const { varejo: markupVarejo, atacado: markupAtacado } = markupsDe(geral, produto);
+
+  const sugeridoAtacado = custosTotais * markupAtacado;
+  const sugeridoVarejo = custosTotais * markupVarejo;
 
 
   const faixas = d.faixas_atacado.filter((f) => f.produto_id === produto.id);
@@ -255,8 +262,7 @@ export default function Calculadora() {
     return { preco_unitario, lucro_unitario, margem_pct: preco_unitario ? lucro_unitario / preco_unitario : 0 };
   };
 
-  const cfg = d.configuracoes[0];
-  const padraoMarkup = toNum(canal === "atacado" ? cfg?.markup_atacado_padrao : cfg?.markup_varejo_padrao);
+  const cfg = geral;
 
   const prefixo = canal === "atacado" ? "atacado" : "varejo";
   // Mesmo cenário do unitário, multiplicado pelas unidades vendidas.
@@ -334,7 +340,7 @@ export default function Calculadora() {
             canal="varejo"
             rotulo="VAREJO"
             valor={sugeridoVarejo}
-            markup={produto.markup_varejo}
+            markup={markupVarejo}
             ativo={canal === "varejo"}
             definido={produto.preco_final_varejo}
             onSelecionar={() => setCanal("varejo")}
@@ -348,7 +354,7 @@ export default function Calculadora() {
             canal="atacado"
             rotulo="ATACADO"
             valor={sugeridoAtacado}
-            markup={produto.markup_atacado}
+            markup={markupAtacado}
             ativo={canal === "atacado"}
             definido={produto.preco_final_atacado}
             onSelecionar={() => setCanal("atacado")}
@@ -578,10 +584,10 @@ export default function Calculadora() {
                 <span className="ap-figure__val ap-figure__val--lg">{money(unit.preco_unitario)}</span>
               </div>
               <div className="ap-rows" style={{ marginTop: "var(--space-4)" }}>
-                <Linha label="Preço base (custo × markup)" valor={moneyPrecise(base)} />
-                <Linha label="Taxas e custos do marketplace" valor={moneyPrecise(unit.taxas_mkt)} />
-                <Linha label="Custo unitário total" valor={moneyPrecise(unit.custo_unitario)} />
-                <Linha label={`Impostos (${pct(produto.impostos_percent, 2)})`} valor={moneyPrecise(unit.imposto)} />
+                <Linha label="Preço base" valor={money(base)} />
+                <Linha label="Taxas e custos do marketplace" valor={money(unit.taxas_mkt)} />
+                <Linha label="Custo unitário total" valor={money(unit.custo_unitario)} />
+                <Linha label={`Impostos (${pct(produto.impostos_percent, 2)})`} valor={money(unit.imposto)} />
                 <div className="ap-row ap-row--total">
                   <span className="ap-row__label">Lucro líquido</span>
                   <span className="ap-row__val" style={{ color: unit.lucro_liquido < 0 ? "var(--status-danger)" : "var(--text-strong)" }}>
@@ -612,13 +618,13 @@ export default function Calculadora() {
               <div className="ap-figure" style={{ marginTop: "var(--space-4)" }}>
                 <span className="ap-figure__val ap-figure__val--lg">{money(lote.vendas)}</span>
                 <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-body-sm)", color: "var(--text-muted)" }}>
-                  {qtd(qtdVenda)} × {moneyPrecise(unit.preco_unitario)}
+                  {qtd(qtdVenda)} × {money(unit.preco_unitario)}
                 </span>
               </div>
               <div className="ap-rows" style={{ marginTop: "var(--space-4)" }}>
-                <Linha label="Custos totais" valor={moneyPrecise(lote.custos)} />
-                <Linha label={`Impostos (${pct(produto.impostos_percent, 2)})`} valor={moneyPrecise(unit.imposto * qtdVenda)} />
-                <Linha label="Lucro por unidade" valor={moneyPrecise(unit.lucro_liquido)} />
+                <Linha label="Custos totais" valor={money(lote.custos)} />
+                <Linha label={`Impostos (${pct(produto.impostos_percent, 2)})`} valor={money(unit.imposto * qtdVenda)} />
+                <Linha label="Lucro por unidade" valor={money(unit.lucro_liquido)} />
                 <div className="ap-row ap-row--total">
                   <span className="ap-row__label">Lucro líquido do lote</span>
                   <span className="ap-row__val" style={{ color: lote.lucro_liquido < 0 ? "var(--status-danger)" : "var(--text-strong)" }}>

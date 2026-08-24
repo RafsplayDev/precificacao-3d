@@ -343,6 +343,11 @@ html, body { padding: 0; }
   display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-4); margin-top: 10px;
   font-size: var(--text-caption); color: var(--text-muted);
 }
+/* O card da pilha estica junto com o de preços; a legenda desce pro rodapé
+   em vez de deixar um vão embaixo dela. */
+.ap-cardpilha { display: flex; flex-direction: column; }
+.ap-legendas--rodape { margin-top: auto; padding-top: 10px; }
+
 /* No celular a barra é o gráfico principal: mais alta, com a legenda em duas colunas. */
 @media (max-width: 640px) {
   .ap-stack { height: 20px; }

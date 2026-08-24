@@ -287,7 +287,7 @@ export default function Calculadora() {
 
       {/* ---- Assinatura: a pilha de custo e os preços sugeridos, lado a lado ---- */}
       <div className="ap-hero">
-      <Card padding="var(--space-5)">
+      <Card padding="var(--space-5)" className="ap-cardpilha">
         <div className="ap-figuras">
           <div className="ap-figure">
             <span className="dc-eyebrow">CUSTO TOTAL POR UNIDADE</span>
@@ -307,7 +307,7 @@ export default function Calculadora() {
           ))}
           <span style={{ flexGrow: Math.max(unit.margem, 0) / (totalPilha || 1), background: "var(--ink-950)" }} />
         </div>
-        <div className="ap-legendas">
+        <div className="ap-legendas ap-legendas--rodape">
           {GRUPOS.filter((g) => g.id !== "tudo").map((g) => (
             <Legenda key={g.id} cor={g.cor} texto={`${g.label.toLowerCase()} ${money(somaGrupo(g.id))}`} />
           ))}

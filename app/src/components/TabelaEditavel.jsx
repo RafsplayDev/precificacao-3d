@@ -126,7 +126,7 @@ export function TabelaEditavel({ tabela, colunas, linhas, novoRegistro, recarreg
     <div>
       {!semTabela && (
       <div className="ap-tablewrap">
-        <table className="ap-table">
+        <table className="ap-table ap-table--cadastro">
           <thead>
             <tr>
               {colunas.map((col) => (
@@ -149,6 +149,8 @@ export function TabelaEditavel({ tabela, colunas, linhas, novoRegistro, recarreg
                 </td>
               </tr>
             )}
+            {/* no celular cada linha vira cartão: o `data-label` de cada célula
+                repõe o nome da coluna que o cabeçalho escondido deixou de dar */}
             {linhas.map((linha) => (
               <tr key={linha.id} style={{ opacity: salvando === linha.id ? 0.5 : 1 }}>
                 {colunas.map((col) => (
@@ -157,11 +159,12 @@ export function TabelaEditavel({ tabela, colunas, linhas, novoRegistro, recarreg
                     className={col.tipo === "calc" ? "ap-td--num ap-td--calc" : undefined}
                     title={col.tipo === "calc" ? "Calculado a partir dos outros campos" : undefined}
                     style={larguraCol(col, larguras[col.key])}
+                    data-label={col.label}
                   >
                     <Celula linha={linha} coluna={col} onCommit={(v) => gravar(linha, col, v)} />
                   </td>
                 ))}
-                {!semRemover && <td>
+                {!semRemover && <td className="ap-td--acoes">
                   <IconButton
                     variant="ghost" size="sm" aria-label={`Remover ${linha.nome || linha.bem || "registro"}`}
                     onClick={() => setItemParaExcluir(linha)}

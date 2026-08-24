@@ -529,13 +529,23 @@ export default function Calculadora() {
               )}
               <div>
                 <Select
-                  label="Marketplace"
+                  label="Onde vende"
                   value={produto.marketplace_id || ""}
                   onChange={(e) => persistir({ marketplace_id: e.target.value || null })}
                   options={[
-                    { value: "", label: "Venda direta" },
-                    ...d.marketplaces.map((m) => ({ value: m.id, label: m.nome })),
+                    { value: "", label: "Venda direta — sem taxas" },
+                    ...d.marketplaces.map((m) => ({
+                      value: m.id,
+                      label: taxasDoCanal(m) ? `${m.nome} — ${taxasDoCanal(m)}` : m.nome,
+                    })),
                   ]}
+                  hint={
+                    d.marketplaces.length === 0
+                      ? <>Nenhum canal cadastrado. <Link href="/cadastros">Cadastrar marketplace</Link></>
+                      : marketplace
+                        ? `O preço sobe para embutir ${taxasDoCanal(marketplace) || "as taxas do canal"} — sua margem não muda.`
+                        : "O preço vai igual ao preço base: nada é descontado."
+                  }
                 />
               </div>
             </div>
@@ -813,6 +823,14 @@ function CartaoSugerido({
       </AnimatePresence>
     </>
   );
+}
+
+/** Resumo das taxas de um canal: "12,0% + R$ 4,00", ou vazio se não cobra nada. */
+function taxasDoCanal(m) {
+  const partes = [];
+  if (toNum(m?.taxa_percent)) partes.push(pct(m.taxa_percent, 1));
+  if (toNum(m?.preco_fixo)) partes.push(money(m.preco_fixo));
+  return partes.join(" + ");
 }
 
 /** O custo por trás de um sugerido: preço ÷ markup, para prever o novo preço. */

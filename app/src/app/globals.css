@@ -576,6 +576,72 @@ select.ap-cell { width: 100%; min-width: 0; cursor: pointer; }
   .ap-table--custos td[colspan] { grid-column: 1 / -1; grid-row: auto; }
 }
 
+/* ---- Cadastros no celular: cada linha vira um cartão ----
+   São muitas colunas estreitas; empurrar a tabela para o lado esconde metade
+   do registro. Empilhado, cada campo carrega o nome da própria coluna. */
+@media (max-width: 640px) {
+  .ap-tablewrap:has(.ap-table--cadastro) {
+    border: 0; border-radius: 0; background: transparent; overflow: visible;
+  }
+  .ap-table--cadastro, .ap-table--cadastro thead, .ap-table--cadastro tbody,
+  .ap-table--cadastro tr, .ap-table--cadastro td { display: block; }
+  .ap-table--cadastro { min-width: 0; }
+  .ap-table--cadastro thead { display: none; }
+
+  .ap-table--cadastro tbody tr {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-3);
+    padding: var(--space-4);
+    margin-bottom: var(--space-3);
+    border: 1px solid var(--border-hairline);
+    border-radius: var(--radius-card);
+    background: var(--surface-card);
+  }
+  .ap-tablewrap .ap-table--cadastro tbody td {
+    /* as larguras medidas para a tabela não valem no cartão */
+    width: auto !important; min-width: 0 !important; white-space: normal !important;
+    padding: 0 !important; border-top: 0; background: transparent;
+  }
+  /* o primeiro campo é o nome do registro: ocupa a linha toda, sem dividir
+     espaço com a lixeira do canto */
+  .ap-table--cadastro tbody td:first-child { grid-column: 1 / -1; padding-right: 36px !important; }
+  .ap-table--cadastro tbody td:first-child::before { display: none; }
+  .ap-table--cadastro tbody td:first-child .ap-cell {
+    height: 38px; font-size: var(--text-body-md); font-weight: var(--weight-medium);
+    padding-left: 0;
+  }
+  /* o nome da coluna acompanha o campo */
+  .ap-table--cadastro tbody td::before {
+    content: attr(data-label);
+    display: block; margin-bottom: 2px;
+    font-family: var(--font-mono); font-size: var(--text-eyebrow);
+    letter-spacing: var(--ls-eyebrow); text-transform: uppercase;
+    color: var(--text-muted); white-space: nowrap;
+    overflow: hidden; text-overflow: ellipsis;
+  }
+  .ap-table--cadastro tbody td .ap-cell { padding-left: 0; padding-right: 0; }
+  .ap-table--cadastro tbody td.ap-td--num { text-align: left; }
+  .ap-table--cadastro tbody .ap-cell--num { text-align: left; }
+  /* campo calculado continua se distinguindo, agora por fundo próprio */
+  .ap-tablewrap .ap-table--cadastro tbody td.ap-td--calc {
+    background: var(--surface-sunken) !important;
+    border-radius: var(--radius-input);
+    padding: 6px 8px !important;
+  }
+  /* a lixeira sai do fluxo e mora no canto do cartão */
+  .ap-table--cadastro tbody td.ap-td--acoes {
+    position: absolute; top: var(--space-3); right: var(--space-3); grid-column: auto;
+  }
+  .ap-table--cadastro tbody td.ap-td--acoes::before { display: none; }
+  /* estado vazio não é cartão */
+  .ap-table--cadastro tbody tr:has(td[colspan]) {
+    display: block; border: 0; background: transparent; padding: 0;
+  }
+  .ap-table--cadastro tbody td[colspan]::before { display: none; }
+}
+
 .ap-tr--off td { opacity: 0.45; }
 .ap-tr--off .ap-td--num { text-decoration: line-through; }
 

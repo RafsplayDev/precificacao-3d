@@ -167,17 +167,22 @@ function Guia({ passo, indice, total, onProximo, onAnterior, onSair }) {
           </button>
         </div>
 
-        {passo.oferta ? <Oferta /> : (
-          <>
-            <h2 className="ap-tour__titulo">{passo.titulo}</h2>
-            <p className="ap-tour__texto">{passo.texto}</p>
-            {passo.exigeLinha && (
-              <p className={"ap-tour__aviso" + (feito ? " is-ok" : "")}>
-                {feito ? "Pronto, pode seguir." : "Cadastre com os seus números — o tutorial espera."}
-              </p>
-            )}
-          </>
-        )}
+        {/* Só o corpo rola. Quando o cartão inteiro rolava, um texto longo
+            empurrava "Próximo" para fora da área visível e o tutorial ficava
+            sem saída aparente — que foi o que aconteceu no celular. */}
+        <div className="ap-tour__corpo">
+          {passo.oferta ? <Oferta /> : (
+            <>
+              <h2 className="ap-tour__titulo">{passo.titulo}</h2>
+              <p className="ap-tour__texto">{passo.texto}</p>
+              {passo.exigeLinha && (
+                <p className={"ap-tour__aviso" + (feito ? " is-ok" : "")}>
+                  {feito ? "Pronto, pode seguir." : "Cadastre com os seus números — o tutorial espera."}
+                </p>
+              )}
+            </>
+          )}
+        </div>
 
         <div className="ap-tour__acoes">
           {indice > 0 && (
@@ -320,10 +325,15 @@ function useAreaDoAlvo(alvo) {
     const relogio = setInterval(medir, 120);
     window.addEventListener("scroll", medir, true);
     window.addEventListener("resize", medir);
+    // O navegador estrangula timers em aba oculta — o recorte pode ficar
+    // parado enquanto ninguem olha. Ao voltar para a aba, remedimos antes
+    // de a pessoa ver o destaque no lugar antigo.
+    document.addEventListener("visibilitychange", medir);
     return () => {
       clearInterval(relogio);
       window.removeEventListener("scroll", medir, true);
       window.removeEventListener("resize", medir);
+      document.removeEventListener("visibilitychange", medir);
     };
   }, [alvo]);
 

@@ -57,7 +57,10 @@ export const PASSOS = [
     etapa: "cadastro",
     rota: "/cadastros",
     aba: "impressoras",
-    alvo: "cadastros-abas",
+    // O foco é o item do menu, não a régua de abas: este passo apresenta a
+    // tela de Cadastros, e destacar a faixa inteira de abas acendia meia
+    // página sem dizer de onde ela veio.
+    alvo: "nav-cadastros",
     titulo: "Comece pelos cadastros",
     texto:
       "A calculadora puxa tudo daqui. Cada aba é uma parte do custo — vamos pelas principais.",
@@ -68,11 +71,10 @@ export const PASSOS = [
     rota: "/cadastros",
     aba: "impressoras",
     alvo: "cadastros-tabela",
-    titulo: "Comece pela impressora",
+    titulo: "Primeiro a impressora",
     texto:
-      "Clique em Adicionar impressora e preencha com a sua: quanto ela custou, quantas horas por " +
-      "dia ela roda e a potência. Daqui saem o desgaste, a manutenção e o retorno do investimento " +
-      "embutidos em cada peça.",
+      "Clique em Adicionar impressora e preencha com a sua. Esses dados viram o custo de máquina " +
+      "de cada peça.",
     exigeLinha: "impressoras",
   },
   {

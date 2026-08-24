@@ -198,6 +198,34 @@ function Guia({ passo, indice, total, onProximo, onAnterior, onSair }) {
   const area = useAreaDoAlvo(passo.alvo);
   const dialogoAberto = useDialogoAberto();
   const uso = useUso(passo.exigeLinha);
+  const cartao = React.useRef(null);
+  const posicao = usePosicao(area, cartao, passo.id);
+
+  // ----------------------------------------------------------------
+  // Quem avança é o cadastro, não um botão
+  //
+  // Nos passos que pedem uma linha, o "Próximo" era uma saída falsa: dava
+  // para seguir sem cadastrar nada e chegar na calculadora com a tela
+  // vazia — exatamente o que o roteiro existe para evitar. Sem ele, o
+  // passo vira o que promete ser: clique no botão aceso, preencha, e o
+  // tutorial segue sozinho quando a linha existir.
+  //
+  // O ponto de partida é lido na entrada do passo: quem volta para um
+  // passo já cumprido não pode ser empurrado de novo para a frente.
+  // ----------------------------------------------------------------
+  const espera = passo.exigeLinha && ehTeste();
+  const partida = React.useRef(null);
+  // Lido do próprio armazenamento, e não do estado da tela: logo depois de
+  // um "Voltar" o contador ainda traz o número da tabela do passo anterior,
+  // e usá-lo como ponto de partida empurrava a pessoa para a frente de
+  // novo — o botão Voltar não voltava.
+  React.useLayoutEffect(() => {
+    partida.current = espera ? usoDoTeste()[passo.exigeLinha]?.usado || 0 : null;
+  }, [espera, passo.id, passo.exigeLinha]);
+  React.useEffect(() => {
+    if (!espera || partida.current == null) return;
+    if (uso > partida.current) onProximo();
+  }, [espera, uso, onProximo]);
 
   if (dialogoAberto) return null;
 
@@ -210,8 +238,9 @@ function Guia({ passo, indice, total, onProximo, onAnterior, onSair }) {
         : <span className="ap-tour__escuro" aria-hidden="true" />}
       {area && <Bloqueio area={caixa(area)} />}
       <div
+        ref={cartao}
         className={"ap-tour__cartao" + (area ? "" : " ap-tour__cartao--centro")}
-        style={area ? posicaoDoCartao(area) : undefined}
+        style={area ? posicao : undefined}
         role="dialog"
         aria-live="polite"
         aria-label={`Tutorial, passo ${indice + 1} de ${total}`}
@@ -229,10 +258,8 @@ function Guia({ passo, indice, total, onProximo, onAnterior, onSair }) {
         <div className="ap-tour__corpo">
           <h2 className="ap-tour__titulo">{passo.titulo}</h2>
           <p className="ap-tour__texto">{passo.texto}</p>
-          {passo.exigeLinha && (
-            <p className={"ap-tour__aviso" + (feito ? " is-ok" : "")}>
-              {feito ? "Pronto, pode seguir." : "Cadastre com os seus números — o tutorial espera."}
-            </p>
+          {passo.exigeLinha && !feito && (
+            <p className="ap-tour__aviso">Cadastre com os seus números — o tutorial espera.</p>
           )}
         </div>
 
@@ -248,9 +275,11 @@ function Guia({ passo, indice, total, onProximo, onAnterior, onSair }) {
               Pular esta parte
             </button>
           )}
-          <Button size="sm" variant={feito ? "accent" : "secondary"} onClick={onProximo}>
-            {passo.acao || (passo.opcional ? "Cadastrei" : "Próximo")}
-          </Button>
+          {!espera && (
+            <Button size="sm" variant={feito ? "accent" : "secondary"} onClick={onProximo}>
+              {passo.acao || (passo.opcional ? "Cadastrei" : "Próximo")}
+            </Button>
+          )}
         </div>
       </div>
     </>
@@ -374,7 +403,12 @@ function useAreaDoAlvo(alvo) {
       if (!jaRolou) {
         jaRolou = true;
         if (r.top < 80 || r.bottom > window.innerHeight - 80) {
-          el.scrollIntoView({ block: "center", behavior: "smooth" });
+          // Alvo alto (a tabela inteira) ou tela estreita: centralizar
+          // jogava metade dele para debaixo do cartão, que no celular é
+          // um rodapé fixo. Encostar no topo mantém à vista o começo do
+          // alvo — que é onde está o botão que o passo manda apertar.
+          const alto = r.height > window.innerHeight * 0.45;
+          el.scrollIntoView({ block: alto ? "start" : "center", behavior: "smooth" });
         }
       }
     };
@@ -420,17 +454,28 @@ function useDialogoAberto() {
   return aberto;
 }
 
-/** Quantas linhas a pessoa já cadastrou na tabela que este passo pede. */
+/**
+ * Quantas linhas a pessoa já cadastrou na tabela que este passo pede.
+ *
+ * O número vem carimbado com a tabela a que pertence. Sem esse carimbo, o
+ * primeiro instante de um passo novo ainda devolvia a contagem do passo
+ * anterior — e como é essa contagem que faz o tutorial andar sozinho, o
+ * passo seguinte se dava por cumprido antes de a pessoa digitar qualquer
+ * coisa.
+ */
 function useUso(tabela) {
-  const [quantas, setQuantas] = React.useState(0);
+  const [estado, setEstado] = React.useState({ tabela: null, n: 0 });
+
   React.useEffect(() => {
     if (!tabela || !ehTeste()) return;
-    const olhar = () => setQuantas(usoDoTeste()[tabela]?.usado || 0);
+    const olhar = () => setEstado({ tabela, n: usoDoTeste()[tabela]?.usado || 0 });
     olhar();
-    const id = setInterval(olhar, 700);
+    const id = setInterval(olhar, 400);
     return () => clearInterval(id);
   }, [tabela]);
-  return tabela && ehTeste() ? quantas : 1;
+
+  if (!tabela || !ehTeste()) return 1;
+  return estado.tabela === tabela ? estado.n : 0;
 }
 
 const caixa = (a) => ({
@@ -441,27 +486,75 @@ const caixa = (a) => ({
 });
 
 /**
- * O cartão vai abaixo do alvo; se não couber, acima; se não couber em
- * nenhum dos dois, ele encosta na borda de baixo da tela. No celular a
- * conta não vale a pena — largura de sobra não existe e o cartão fica
- * sempre no rodapé, por CSS.
+ * Onde o cartão cabe sem tapar o alvo.
+ *
+ * A conta antiga só olhava para cima e para baixo, com uma altura chutada:
+ * quando o alvo era alto — a tabela inteira de impressoras — nenhum dos
+ * dois lados cabia, o cartão ia para o rodapé da tela e acabava deitado
+ * por cima justamente do lugar onde a pessoa precisava digitar.
+ *
+ * Agora o cartão é medido de verdade e as quatro faixas livres em volta do
+ * alvo entram na disputa. Vence a primeira em que ele cabe inteiro; se
+ * nenhuma couber, vence a maior e o cartão é limitado a ela (o corpo já
+ * rola). O alvo nunca fica coberto — é a única regra que não se negocia
+ * aqui, porque o destaque é o único lugar em que o clique passa.
  */
-function posicaoDoCartao(a) {
-  if (typeof window === "undefined") return undefined;
-  const LARGURA = 380;
-  const ALTURA = 260;
-  const folga = 16;
+function usePosicao(area, cartao, id) {
+  const [tamanho, setTamanho] = React.useState({ largura: 380, altura: 260 });
 
-  const abaixo = a.top + a.height + folga;
-  const acima = a.top - ALTURA - folga;
-  const top = abaixo + ALTURA < window.innerHeight ? abaixo : acima > 0 ? acima : undefined;
+  // Medido a cada passo e a cada mudança do alvo: o texto muda de tamanho
+  // de um passo para outro, e um cartão medido uma vez só erra na próxima.
+  React.useEffect(() => {
+    const el = cartao.current;
+    if (!el) return;
+    const medir = () => {
+      const r = el.getBoundingClientRect();
+      setTamanho((v) =>
+        Math.abs(v.largura - r.width) < 1 && Math.abs(v.altura - r.height) < 1
+          ? v
+          : { largura: r.width, altura: r.height }
+      );
+    };
+    medir();
+    const obs = new ResizeObserver(medir);
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [cartao, id, area]);
 
-  const left = Math.min(
-    Math.max(a.left + a.width / 2 - LARGURA / 2, folga),
-    Math.max(window.innerWidth - LARGURA - folga, folga)
-  );
-
-  return top == null
-    ? { left, bottom: folga, width: LARGURA }
-    : { left, top, width: LARGURA };
+  if (!area || typeof window === "undefined") return undefined;
+  return posicaoDoCartao(caixa(area), tamanho);
 }
+
+function posicaoDoCartao(a, { largura, altura }) {
+  const folga = 16;
+  const tela = { w: window.innerWidth, h: window.innerHeight };
+  const LARGURA = Math.min(380, tela.w - folga * 2);
+
+  // As quatro faixas livres em volta do alvo, na ordem de preferência.
+  const faixas = [
+    { nome: "abaixo", w: tela.w, h: tela.h - (a.top + a.height) },
+    { nome: "acima", w: tela.w, h: a.top },
+    { nome: "direita", w: tela.w - (a.left + a.width), h: tela.h },
+    { nome: "esquerda", w: a.left, h: tela.h },
+  ].map((f) => ({ ...f, w: f.w - folga * 2, h: f.h - folga * 2 }));
+
+  const cabe = faixas.find((f) => f.w >= Math.min(largura, LARGURA) && f.h >= altura);
+  const f = cabe || faixas.reduce((m, x) => (x.w * x.h > m.w * m.h ? x : m));
+
+  const larg = Math.min(LARGURA, Math.max(f.w, 220));
+  const base = { width: larg, maxHeight: Math.max(f.h, 160) };
+
+  if (f.nome === "abaixo" || f.nome === "acima") {
+    const left = presa(a.left + a.width / 2 - larg / 2, folga, tela.w - larg - folga);
+    return f.nome === "abaixo"
+      ? { ...base, left, top: a.top + a.height + folga }
+      : { ...base, left, bottom: tela.h - a.top + folga };
+  }
+
+  const top = presa(a.top + a.height / 2 - altura / 2, folga, tela.h - altura - folga);
+  return f.nome === "direita"
+    ? { ...base, top, left: a.left + a.width + folga }
+    : { ...base, top, right: tela.w - a.left + folga };
+}
+
+const presa = (valor, min, max) => Math.min(Math.max(valor, min), Math.max(min, max));

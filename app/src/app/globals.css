@@ -9,11 +9,15 @@ html, body { padding: 0; }
   --fade-pontas: linear-gradient(to bottom, transparent 0, #000 16px, #000 calc(100% - 16px), transparent 100%);
 }
 
-/* Nada de arrastar e selecionar texto pela interface — só onde se digita. */
+/* Nada de arrastar e selecionar texto pela interface — só onde se digita.
+   E sem o retângulo azul que o navegador do celular pisca a cada toque: os
+   próprios botões já mostram que foram tocados. */
 .ap-shell {
   min-height: 100vh; display: flex; flex-direction: column;
   -webkit-user-select: none; user-select: none;
+  -webkit-tap-highlight-color: transparent;
 }
+.ap-shell * { -webkit-tap-highlight-color: transparent; }
 .ap-shell input, .ap-shell textarea, .ap-shell [contenteditable="true"] {
   -webkit-user-select: text; user-select: text;
 }
@@ -306,6 +310,25 @@ html, body { padding: 0; }
     display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-2) var(--space-4);
   }
 }
+
+/* As escolhas de preço no topo do primeiro card — só no celular. */
+.ap-escolhas { display: none; }
+@media (max-width: 640px) {
+  .ap-escolhas {
+    display: grid; gap: var(--space-2); margin-bottom: var(--space-4);
+  }
+  .ap-escolhas .dc-tabs { width: 100%; }
+  /* No computador o par Sugerido/Definido continua no card de preço de venda;
+     no celular ele já apareceu em cima. */
+  .ap-precovenda__head .dc-tabs { display: none; }
+}
+
+/* ---- Número que rola: cada dígito é uma fita de 0 a 9 ---- */
+.ap-num { display: inline-flex; align-items: flex-start; font-variant-numeric: tabular-nums; line-height: 1; }
+.ap-num__col { display: inline-block; width: 1ch; height: 1em; overflow: hidden; }
+.ap-num__fita { display: block; will-change: transform; }
+.ap-num__d { display: block; height: 1em; line-height: 1em; text-align: center; }
+.ap-num__fixo { display: inline-block; height: 1em; line-height: 1em; white-space: pre; }
 
 /* ---- Números de destaque ---- */
 .ap-figure { display: flex; flex-direction: column; gap: 2px; }

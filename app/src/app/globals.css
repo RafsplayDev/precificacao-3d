@@ -319,7 +319,11 @@ html, body { padding: 0; }
 
 .ap-sectionhead--tight { margin-bottom: var(--space-3); }
 .ap-sectionhead { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); margin-bottom: var(--space-4); }
-.ap-sectionhead h2 { font-size: var(--text-h3); letter-spacing: var(--ls-h3); font-weight: var(--weight-medium); }
+.ap-sectionhead h2 {
+  font-size: var(--text-h3); letter-spacing: var(--ls-h3); font-weight: var(--weight-medium);
+  /* o "i" anda junto do titulo, na mesma linha de base */
+  display: inline-flex; align-items: center; gap: var(--space-2);
+}
 
 /* ---- Linhas de valor (a "planilha" traduzida em UI) ---- */
 .ap-rows { display: flex; flex-direction: column; }
@@ -818,4 +822,180 @@ select.ap-cell {
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+
+
+/* =====================================================================
+   TUTORIAL GUIADO
+   O escuro inteiro é `pointer-events: none` de propósito: o recorte
+   aponta para onde clicar, e a pessoa clica de verdade. Um scrim que
+   engole o clique transformaria o tutorial em apresentação de slides.
+   O z-index fica abaixo do scrim de diálogo (60): quando o formulário
+   de cadastro abre, ele é a tela, e o tutorial se recolhe.
+   ===================================================================== */
+.ap-tour__luz {
+  z-index: 50;
+  pointer-events: none;
+  border-radius: var(--radius-card);
+  box-shadow: 0 0 0 9999px rgba(8, 9, 11, 0.62);
+  outline: 2px solid var(--action-accent);
+  outline-offset: 0;
+  transition: top var(--dur-base) var(--ease-out), left var(--dur-base) var(--ease-out),
+              width var(--dur-base) var(--ease-out), height var(--dur-base) var(--ease-out);
+  animation: ap-tour-surge var(--dur-base) var(--ease-out);
+}
+
+@keyframes ap-tour-surge { from { opacity: 0; } to { opacity: 1; } }
+
+.ap-tour__cartao {
+  position: fixed;
+  z-index: 55;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-5);
+  background: var(--surface-card);
+  border: var(--border-w) solid var(--border-hairline);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-lg);
+  animation: ap-tour-surge var(--dur-base) var(--ease-out);
+}
+
+/* Sem alvo (a abertura e a oferta) o cartão é o centro da tela. */
+.ap-tour__cartao--centro {
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(440px, calc(100vw - var(--space-6) * 2));
+  max-height: calc(100vh - var(--space-8));
+  overflow-y: auto;
+}
+/* O escuro dos passos sem alvo.
+   Elemento irmao, e nao um `::before` do cartao: dentro do contexto de
+   empilhamento que o proprio cartao cria, um filho de z-index negativo
+   pinta por cima do fundo dele — o cartao ficava cinza e o texto
+   secundario, ilegivel. Como irmao, o escuro fica atras, onde deve. */
+.ap-tour__escuro {
+  position: fixed; inset: 0; z-index: 54;
+  background: rgba(8, 9, 11, 0.62);
+  pointer-events: none;
+  animation: ap-tour-surge var(--dur-base) var(--ease-out);
+}
+
+.ap-tour__topo { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); }
+.ap-tour__contador {
+  font-family: var(--font-mono); font-size: var(--text-caption);
+  letter-spacing: 0.08em; color: var(--text-muted);
+}
+.ap-tour__fechar {
+  display: grid; place-items: center; width: 28px; height: 28px;
+  border: 0; background: transparent; color: var(--text-muted);
+  border-radius: var(--radius-xs); cursor: pointer;
+}
+.ap-tour__fechar:hover { background: var(--ink-100); color: var(--text-strong); }
+
+.ap-tour__titulo { font-size: var(--text-h3); font-weight: var(--weight-medium); margin: 0; }
+.ap-tour__texto { color: var(--text-muted); margin: 0; font-size: var(--text-body-sm); }
+
+.ap-tour__aviso {
+  margin: var(--space-1) 0 0;
+  font-family: var(--font-mono); font-size: var(--text-caption);
+  color: var(--status-warning);
+}
+.ap-tour__aviso.is-ok { color: var(--status-success); }
+
+.ap-tour__lista { margin: var(--space-2) 0 0; padding-left: var(--space-5); color: var(--text-muted); font-size: var(--text-body-sm); }
+.ap-tour__lista li { margin-bottom: var(--space-1); }
+
+.ap-tour__preco { display: flex; align-items: baseline; gap: var(--space-2); margin: var(--space-3) 0; }
+.ap-tour__preco strong { font-size: var(--text-h2); font-weight: var(--weight-medium); }
+.ap-tour__preco s, .ap-tour__preco span { color: var(--text-muted); font-size: var(--text-body-sm); }
+
+.ap-tour__rodape { margin: var(--space-2) 0 0; color: var(--text-muted); font-size: var(--text-caption); text-align: center; }
+
+.ap-tour__acoes { display: flex; align-items: center; gap: var(--space-2); margin-top: var(--space-3); }
+.ap-tour__espaco { flex: 1; }
+.ap-tour__voltar, .ap-tour__pular {
+  border: 0; background: transparent; cursor: pointer; padding: 0;
+  color: var(--text-muted); font-size: var(--text-body-sm); text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.ap-tour__voltar:hover, .ap-tour__pular:hover { color: var(--text-strong); }
+
+/* No celular não há largura para cálculo de posição: o cartão é o rodapé. */
+@media (max-width: 720px) {
+  .ap-tour__cartao {
+    left: var(--space-3) !important;
+    right: var(--space-3);
+    top: auto !important;
+    bottom: calc(var(--space-3) + 64px);
+    width: auto !important;
+    max-height: 60vh;
+    overflow-y: auto;
+  }
+  .ap-tour__cartao--centro { top: 50% !important; bottom: auto; transform: translateY(-50%); left: var(--space-3) !important; }
+}
+
+/* ---------------------------------------------------------------------
+   Faixa do modo teste
+   Fica no topo de todas as telas do app porque a pergunta "isso está
+   salvo?" não pode ficar sem resposta em nenhuma delas.
+   --------------------------------------------------------------------- */
+.ap-teste {
+  display: flex; align-items: center; justify-content: center; gap: var(--space-3);
+  flex-wrap: wrap;
+  padding: var(--space-2) var(--space-4);
+  background: var(--surface-accent-soft, var(--ink-100));
+  border-bottom: var(--border-w) solid var(--border-hairline);
+  font-size: var(--text-body-sm);
+  color: var(--text-muted);
+  text-align: center;
+}
+.ap-teste strong { color: var(--text-strong); font-weight: var(--weight-medium); }
+.ap-teste a { color: var(--text-strong); }
+
+
+/* ---------------------------------------------------------------------
+   O "i" de explicacao
+   O balao e um irmao do botao dentro de um `position: relative`, e nao um
+   filho dele: dentro do botao, o texto herdaria o alvo de clique e tocar
+   para ler fecharia o que se acabou de abrir.
+   --------------------------------------------------------------------- */
+.ap-expl { position: relative; display: inline-flex; vertical-align: middle; }
+
+.ap-expl__btn {
+  display: grid; place-items: center;
+  width: 22px; height: 22px; padding: 0;
+  border: 0; background: transparent; cursor: pointer;
+  color: var(--text-muted); border-radius: var(--radius-pill, 999px);
+  transition: color var(--dur-fast) var(--ease-standard), background var(--dur-fast) var(--ease-standard);
+}
+.ap-expl__btn:hover, .ap-expl.is-open .ap-expl__btn { color: var(--text-strong); background: var(--ink-100); }
+.ap-expl__btn:focus-visible { outline: 2px solid var(--border-focus); outline-offset: 2px; }
+
+.ap-expl__balao {
+  position: absolute; top: calc(100% + 6px); left: 0; z-index: 65;
+  width: max-content; max-width: min(320px, calc(100vw - var(--space-8)));
+  padding: var(--space-3) var(--space-4);
+  background: var(--surface-card);
+  border: var(--border-w) solid var(--border-hairline);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-md);
+  color: var(--text-muted);
+  font-size: var(--text-body-sm);
+  line-height: 1.45;
+  text-transform: none; letter-spacing: normal; font-weight: var(--weight-regular);
+  opacity: 0; visibility: hidden;
+  transform: translateY(-4px);
+  transition: opacity var(--dur-fast) var(--ease-standard),
+              transform var(--dur-fast) var(--ease-standard),
+              visibility var(--dur-fast);
+}
+.ap-expl.is-open .ap-expl__balao {
+  opacity: 1; visibility: visible; transform: translateY(0);
+}
+
+/* Perto da borda direita o balao sairia da tela: no celular ele se ancora
+   pela direita do icone, que fica sempre a esquerda do cartao. */
+@media (max-width: 720px) {
+  .ap-expl__balao { max-width: calc(100vw - var(--space-10)); }
 }

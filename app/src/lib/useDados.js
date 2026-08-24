@@ -1,6 +1,9 @@
 "use client";
 import React from "react";
 import { supabase } from "./supabaseClient";
+import { ehTeste } from "./modo";
+import { listarLocal, inserirLocal, atualizarLocal, removerLocal, temDadosDeTeste } from "./dadosLocais";
+import { migrarTesteParaConta } from "./migrarTeste";
 
 const TABELAS = [
   ["impressoras", "nome"],
@@ -29,6 +32,26 @@ export function useDados() {
   const carregar = React.useCallback(async () => {
     setCarregando(true);
     try {
+      if (ehTeste()) {
+        // No teste o "banco" é o localStorage. A leitura é síncrona, mas a
+        // função continua async para as telas não precisarem saber disso.
+        setDados(Object.fromEntries(TABELAS.map(([t, ord]) => [t, listarLocal(t, ord)])));
+        setErro(null);
+        return;
+      }
+
+      // A licença acabou de ser liberada e o teste ficou para trás: o que
+      // a pessoa digitou antes de pagar sobe agora, antes da primeira
+      // leitura — senão ela veria a tela vazia e acharia que perdeu tudo.
+      if (temDadosDeTeste()) {
+        try {
+          await migrarTesteParaConta();
+        } catch {
+          // Falhou? Os dados locais continuam guardados e a próxima carga
+          // tenta de novo. Travar o app por causa disso seria pior.
+        }
+      }
+
       const res = await Promise.all(
         TABELAS.map(([t, ord]) => supabase.from(t).select("*").order(ord))
       );
@@ -65,23 +88,35 @@ export function useDados() {
     setDados((atual) => ({ ...atual, [tabela]: (atual[tabela] || []).filter((l) => l.id !== id) }));
   }, []);
 
-  return { ...dados, carregando, erro, recarregar: carregar, aplicar, remover };
+  return { ...dados, carregando, erro, teste: ehTeste(), recarregar: carregar, aplicar, remover };
 }
+
+/**
+ * As três escritas do app inteiro.
+ *
+ * Toda tela passa por aqui — é por isso que o modo teste coube num `if`:
+ * trocar o destino da escrita neste ponto troca o destino de tudo, sem que
+ * TabelaEditavel, produtos ou a calculadora precisem saber que existe um
+ * modo teste. O formato do retorno é o mesmo dos dois lados.
+ */
 
 /** Escreve uma linha e devolve o registro atualizado. */
 export async function salvarLinha(tabela, id, campos) {
+  if (ehTeste()) return atualizarLocal(tabela, id, campos);
   const { data, error } = await supabase.from(tabela).update(campos).eq("id", id).select().single();
   if (error) throw error;
   return data;
 }
 
 export async function inserirLinha(tabela, campos) {
+  if (ehTeste()) return inserirLocal(tabela, campos);
   const { data, error } = await supabase.from(tabela).insert(campos).select().single();
   if (error) throw error;
   return data;
 }
 
 export async function removerLinha(tabela, id) {
+  if (ehTeste()) return removerLocal(tabela, id);
   const { error } = await supabase.from(tabela).delete().eq("id", id);
   if (error) throw error;
 }
@@ -89,6 +124,11 @@ export async function removerLinha(tabela, id) {
 export function tratarMensagemErro(e, tabela) {
   if (!e) return "Ocorreu um erro inesperado.";
   const code = e.code;
+
+  // O limite do teste não é uma falha do banco: a mensagem já vem pronta,
+  // escrita para quem está decidindo se compra.
+  if (code === "LIMITE_TESTE") return e.message;
+
   const msg = String(e.message || e);
 
   const isUnique = code === "23505" || msg.includes("unique constraint") || msg.includes("duplicate key");

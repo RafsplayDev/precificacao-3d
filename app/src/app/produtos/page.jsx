@@ -5,6 +5,7 @@ import { Card, Button, Icon, IconButton, Badge, Tabs, Dialog, Input } from "@/de
 import { useDados, inserirLinha, salvarLinha, removerLinha, tratarMensagemErro } from "@/lib/useDados";
 import { TabelaEditavel } from "@/components/TabelaEditavel";
 import { useToast } from "@/components/AppShell";
+import { useTutorial } from "@/components/Tutorial";
 import { custosProduto, valorAdicional, valorTrabalho } from "@/lib/calc";
 import { money } from "@/lib/format";
 
@@ -21,6 +22,13 @@ export default function Produtos() {
   const toast = useToast();
   const [sel, setSel] = React.useState("");
   const [aba, setAba] = React.useState("pecas");
+  const { passo } = useTutorial();
+
+  // Mesmo acordo dos cadastros: o passo diz qual seção do produto ele está
+  // explicando, e a tela abre essa seção.
+  React.useEffect(() => {
+    if (passo?.abaProduto) setAba(passo.abaProduto);
+  }, [passo?.abaProduto]);
   const [nomeando, setNomeando] = React.useState(null); // "novo" | "renomear"
   const [nomeRascunho, setNomeRascunho] = React.useState("");
   const [sugestaoNome, setSugestaoNome] = React.useState("");
@@ -168,7 +176,7 @@ export default function Produtos() {
             <h1 style={{ marginTop: 6 }}>Seus produtos</h1>
             <p>Cada produto tem as próprias peças e insumos. Abra um para cadastrar o que ele leva.</p>
           </div>
-          <Button variant="accent" icon={<Icon name="plus" size={16} />} onClick={abrirNovoProduto}>
+          <Button variant="accent" icon={<Icon name="plus" size={16} />} onClick={abrirNovoProduto} data-tutorial="produtos-novo">
             Novo produto
           </Button>
         </div>
@@ -334,7 +342,7 @@ export default function Produtos() {
       </div>
 
       {aba === "pecas" && (
-        <Card padding="var(--space-6)">
+        <Card padding="var(--space-6)" data-tutorial="produto-pecas">
           <div className="ap-sectionhead ap-sectionhead--tight">
             <h2>Peças impressas</h2>
           </div>
@@ -371,7 +379,7 @@ export default function Produtos() {
       )}
 
       {aba === "insumos" && (
-        <Card padding="var(--space-6)">
+        <Card padding="var(--space-6)" data-tutorial="produto-insumos">
           <div className="ap-sectionhead">
             <h2>Insumos e custos adicionais</h2>
             <span className="ap-row__val">{money(c.custos_adicionais)}</span>
@@ -406,7 +414,7 @@ export default function Produtos() {
       )}
 
       {aba === "trabalho" && (
-        <Card padding="var(--space-6)">
+        <Card padding="var(--space-6)" data-tutorial="produto-trabalho">
           <div className="ap-sectionhead">
             <h2>Mão de obra</h2>
             <span className="ap-row__val">{money(c.custos_trabalho)}</span>

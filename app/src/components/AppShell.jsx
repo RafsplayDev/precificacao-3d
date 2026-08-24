@@ -7,11 +7,13 @@ import { motion, useReducedMotion } from "motion/react";
 import { Toast, Icon } from "@/design-system";
 import { supabase } from "@/lib/supabaseClient";
 import { irPara } from "@/lib/navegar";
+import { TutorialProvider, useTutorial } from "@/components/Tutorial";
+import { ehTeste } from "@/lib/modo";
 
 const NAV = [
-  { href: "/", label: "Calculadora", icone: "calculator" },
-  { href: "/produtos", label: "Produtos", icone: "box" },
-  { href: "/cadastros", label: "Cadastros", icone: "layers" },
+  { href: "/", label: "Calculadora", icone: "calculator", tour: "nav-calculadora" },
+  { href: "/produtos", label: "Produtos", icone: "box", tour: "nav-produtos" },
+  { href: "/cadastros", label: "Cadastros", icone: "layers", tour: "nav-cadastros" },
   { href: "/concorrentes", label: "Concorrentes", icone: "store" },
 ];
 
@@ -25,6 +27,14 @@ const ToastCtx = React.createContext(() => {});
 export const useToast = () => React.useContext(ToastCtx);
 
 export function AppShell({ children }) {
+  return (
+    <TutorialProvider>
+      <Casca>{children}</Casca>
+    </TutorialProvider>
+  );
+}
+
+function Casca({ children }) {
   const pathname = usePathname();
   const reduzido = useReducedMotion();
   const [toasts, setToasts] = React.useState([]);
@@ -41,6 +51,10 @@ export function AppShell({ children }) {
   ], [extras.afiliado, extras.admin]);
 
   const publica = SEM_MENU.some((p) => pathname === p || pathname.startsWith(p + "/"));
+  // Só depois da montagem: no servidor não existe cookie para ler, e
+  // decidir antes faria a faixa piscar em quem já pagou.
+  const [teste, setTeste] = React.useState(false);
+  React.useEffect(() => setTeste(ehTeste()), [pathname]);
 
   React.useEffect(() => {
     if (publica) return;
@@ -68,6 +82,10 @@ export function AppShell({ children }) {
 
   async function sair() {
     await supabase.auth.signOut();
+    // O carimbo do modo dura 24h e não tem por que sobreviver à sessão que
+    // o gerou: deixá-lo para trás faria a próxima pessoa neste navegador
+    // ser tratada como se estivesse no teste de outra.
+    document.cookie = "dc_modo=; Max-Age=0; path=/";
     irPara("/entrar");
   }
 
@@ -82,6 +100,7 @@ export function AppShell({ children }) {
           key={n.href}
           href={n.href}
           aria-current={atual ? "page" : undefined}
+          data-tutorial={n.tour}
         >
           {atual && (
             <motion.span
@@ -139,6 +158,7 @@ export function AppShell({ children }) {
                   <div className={"ap-gaveta" + (aberto === "perfil" ? " is-open" : "")}>
                     <div className="ap-conta">
                       <span className="ap-conta__email">{conta.email}</span>
+                      <RepetirTutorial />
                       <button type="button" onClick={sair}>Sair</button>
                     </div>
                   </div>
@@ -153,6 +173,8 @@ export function AppShell({ children }) {
         {!publica && (
           <nav className="ap-tabbar" aria-label="Seções">{links(true)}</nav>
         )}
+
+        {!publica && teste && <FaixaTeste />}
 
         <main className="ap-main">{children}</main>
 
@@ -169,5 +191,36 @@ export function AppShell({ children }) {
         </div>
       </div>
     </ToastCtx.Provider>
+  );
+}
+
+/**
+ * A faixa do teste.
+ *
+ * Ela diz a coisa que a pessoa mais precisa saber e que nenhuma tela
+ * mostra sozinha: o que ela está digitando não está na conta dela, está
+ * neste navegador. Esconder isso até a hora da compra seria vender uma
+ * surpresa ruim — e a frase seguinte, de que os dados sobem junto, é o que
+ * transforma o aviso em motivo para continuar.
+ */
+function FaixaTeste() {
+  return (
+    <div className="ap-teste">
+      <span>
+        <strong>Teste grátis.</strong> Seus dados ficam salvos só neste navegador — ao
+        liberar o acesso, tudo sobe para a sua conta.
+      </span>
+      <Link href="/assinar">Liberar acesso</Link>
+    </div>
+  );
+}
+
+/** Ver o tutorial de novo — de dentro da gaveta da conta, onde ninguém tropeça nele. */
+function RepetirTutorial() {
+  const { iniciar } = useTutorial();
+  return (
+    <button type="button" onClick={iniciar}>
+      Ver o tutorial
+    </button>
   );
 }

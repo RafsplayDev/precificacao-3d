@@ -293,7 +293,7 @@ export default function Calculadora() {
 
       {/* ---- Assinatura: a pilha de custo e os preços sugeridos, lado a lado ---- */}
       <div className="ap-hero">
-      <Card padding="var(--space-5)" className="ap-cardpilha">
+      <Card padding="var(--space-5)" className="ap-cardpilha" data-tutorial="calc-pilha">
         <div className="ap-figuras">
           <div className="ap-figure">
             <span className="dc-eyebrow">CUSTO TOTAL POR UNIDADE</span>
@@ -335,7 +335,7 @@ export default function Calculadora() {
           />
         </div>
 
-        <div className="ap-sugeridos">
+        <div className="ap-sugeridos" data-tutorial="calc-sugeridos">
           <CartaoSugerido
             canal="varejo"
             rotulo="VAREJO"
@@ -374,7 +374,7 @@ export default function Calculadora() {
       <div className="ap-grid ap-grid--main">
         {/* ============ COLUNA ESQUERDA: CUSTOS ============ */}
         <div style={{ display: "grid", gap: "var(--space-6)", alignContent: "start" }}>
-          <Card padding="var(--space-6)">
+          <Card padding="var(--space-6)" data-tutorial="calc-custos">
             <div className="ap-sectionhead">
               <h2>Custos de produção</h2>
               {pecas.length > 1 ? (
@@ -502,7 +502,7 @@ export default function Calculadora() {
 
         {/* ============ COLUNA DIREITA: PREÇO ============ */}
         <div style={{ display: "grid", gap: "var(--space-6)", alignContent: "start" }}>
-          <Card padding="var(--space-6)">
+          <Card padding="var(--space-6)" data-tutorial="calc-preco">
             <div className="ap-sectionhead ap-precovenda__head">
               <h2>Preço de venda</h2>
               <Tabs

@@ -168,6 +168,10 @@ function Formulario() {
 
         <p className="ap-auth__rodape">
           <Link href="/vendas">Conhecer a Precificação 3D</Link>
+          {" · "}
+          {/* A saída para quem caiu aqui sem querer criar conta ainda: o
+              tutorial roda sem cadastro e mostra o preço de uma peça real. */}
+          <Link href="/tutorial">Testar sem cadastro</Link>
         </p>
       </Card>
     </div>

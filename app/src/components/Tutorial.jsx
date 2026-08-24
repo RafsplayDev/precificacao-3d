@@ -21,6 +21,11 @@ import { usoDoTeste } from "@/lib/dadosLocais";
  * não de aba. Uma cópia vai no cookie `dc_tour`, que é o que o middleware
  * lê para manter essas telas abertas a quem ainda não criou conta.
  *
+ * O tutorial nunca começa sozinho: quem o liga é a página /tutorial (o
+ * link que o afiliado divulga) ou o botão na gaveta da conta. Enquanto ele
+ * partia de qualquer visita ao app, quem já tinha conta topava com o
+ * roteiro toda vez que abria o site em outro navegador.
+ *
  * O roteiro termina na calculadora e acaba ali: nada de cartão vendendo
  * acesso no último passo. Quem gostou do preço que viu encontra o convite
  * na faixa do teste e segue pelo caminho normal — criar conta, depois
@@ -74,6 +79,17 @@ function lerEstado() {
   }
 }
 
+/**
+ * Ligar o tutorial de fora do React.
+ *
+ * A página /tutorial precisa deixar o roteiro armado *antes* de trocar de
+ * endereço, e nesse momento o provider da tela seguinte ainda nem montou.
+ * Gravar estado e cookie aqui é o que faz o primeiro passo já chegar de pé.
+ */
+export function iniciarTutorial() {
+  gravarEstado({ estado: "ativo", indice: 0 });
+}
+
 function gravarEstado(estado) {
   marcarTour(estado.estado === "ativo" ? "ativo" : "fim");
   try {
@@ -93,9 +109,6 @@ export function TutorialProvider({ children }) {
     const salvo = lerEstado();
     if (salvo?.estado === "ativo" && Number.isInteger(salvo.indice)) {
       setIndice(salvo.indice);
-      marcarTour("ativo");
-    } else if (!salvo && ehTeste()) {
-      setIndice(0);
       marcarTour("ativo");
     } else if (salvo) {
       // O cookie vence em um dia e o localStorage não: sem este reforço,

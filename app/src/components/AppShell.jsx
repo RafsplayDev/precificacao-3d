@@ -21,7 +21,7 @@ const NAV = [
  * Páginas que existem antes do acesso liberado. Elas se bastam: mostrar o
  * menu do app para quem ainda não pagou seria oferecer portas fechadas.
  */
-const SEM_MENU = ["/entrar", "/assinar", "/vendas"];
+const SEM_MENU = ["/entrar", "/assinar", "/vendas", "/tutorial"];
 
 const ToastCtx = React.createContext(() => {});
 export const useToast = () => React.useContext(ToastCtx);

@@ -57,7 +57,7 @@ export default async function VendasPage() {
               conta, com a impressora e o filamento de quem está lendo. Pedir
               cadastro aqui era cobrar confiança de quem ainda não viu um
               preço sair. */}
-          <Link href="/" className="dc-btn dc-btn--primary dc-btn--lg">
+          <Link href="/tutorial" className="dc-btn dc-btn--primary dc-btn--lg">
             Testar agora, sem cadastro
           </Link>
           <span>
@@ -101,7 +101,7 @@ export default async function VendasPage() {
           Não é assinatura. Você paga uma vez e o acesso é seu. Pix ou cartão, pelo
           Mercado Pago.
         </p>
-        <Link href="/" className="dc-btn dc-btn--primary dc-btn--lg">
+        <Link href="/tutorial" className="dc-btn dc-btn--primary dc-btn--lg">
           Testar agora, sem cadastro
         </Link>
         <p className="ap-vendas__entrar">

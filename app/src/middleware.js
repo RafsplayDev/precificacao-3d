@@ -10,13 +10,20 @@ const SEM_LICENCA = ["/assinar", "/sair"];
 /**
  * As telas do app que o tutorial percorre.
  *
- * Quem chega sem conta entra por aqui: o tutorial acontece antes do
- * cadastro, com os números da pessoa, e o "banco" é o localStorage do
- * navegador (lib/dadosLocais.js). Pedir e-mail e senha antes de a
- * calculadora mostrar um preço era cobrar confiança de quem ainda não viu
- * nada funcionar.
+ * Quem chega sem conta entra por aqui, vindo de /tutorial: o tutorial
+ * acontece antes do cadastro, com os números da pessoa, e o "banco" é o
+ * localStorage do navegador (lib/dadosLocais.js). Pedir e-mail e senha
+ * antes de a calculadora mostrar um preço era cobrar confiança de quem
+ * ainda não viu nada funcionar.
  */
 const APP = ["/", "/produtos", "/cadastros", "/concorrentes"];
+
+/**
+ * A porta do tutorial: o endereço que o afiliado divulga. Fica aberta a
+ * qualquer um, com ou sem conta — é ela que arma o roteiro e manda a pessoa
+ * para o primeiro passo.
+ */
+const PORTA_TUTORIAL = "/tutorial";
 
 /**
  * O tutorial termina na calculadora, e é ali que a pessoa fica livre para
@@ -86,23 +93,34 @@ export async function middleware(req) {
     // ----------------------------------------------------------------
     // Visitante sem conta: o tutorial primeiro
     //
-    // Enquanto o tutorial está em andamento (ou nem começou), as telas que
-    // ele percorre ficam abertas — senão o roteiro esbarraria na tela de
-    // login no primeiro passo. Terminado o tutorial, só a calculadora
-    // continua livre: ela mostra o preço que a pessoa acabou de montar. As
-    // outras pedem conta, com `proximo` para a pessoa voltar exatamente
-    // para onde tentou ir.
+    // Enquanto o tutorial está em andamento, as telas que ele percorre
+    // ficam abertas — senão o roteiro esbarraria na tela de login no
+    // primeiro passo. Terminado o tutorial, só a calculadora continua
+    // livre: ela mostra o preço que a pessoa acabou de montar. As outras
+    // pedem conta, com `proximo` para a pessoa voltar exatamente para onde
+    // tentou ir.
     // ----------------------------------------------------------------
+    const tour = req.cookies.get(COOKIE_TOUR)?.value;
     const noApp = comeca(pathname, APP);
-    const tourAcabou = req.cookies.get(COOKIE_TOUR)?.value === "fim";
 
-    if (noApp && (!tourAcabou || pathname === LIVRE_SEM_CONTA)) {
+    // A porta do tutorial é o único endereço que abre para quem chega sem
+    // nada: nem conta, nem tutorial começado.
+    if (pathname === PORTA_TUTORIAL) {
       marcarModo(res, "teste");
       return res;
     }
 
+    // Tutorial rolando: as telas do roteiro ficam abertas. Terminado (ou
+    // abandonado), sobra a calculadora — o preço que a pessoa montou.
+    if (noApp && (tour === "ativo" || (tour && pathname === LIVRE_SEM_CONTA))) {
+      marcarModo(res, "teste");
+      return res;
+    }
+
+    // Sem tutorial nenhum na bagagem, a raiz volta a ser o que sempre foi
+    // para quem não entrou: a porta da conta.
     const destino = new URL("/entrar", req.url);
-    if (noApp) destino.searchParams.set("modo", "criar");
+    if (noApp && tour) destino.searchParams.set("modo", "criar");
     if (pathname !== "/") destino.searchParams.set("proximo", pathname);
     return NextResponse.redirect(destino);
   }

@@ -31,7 +31,10 @@ export default function AfiliadoPage() {
 
   const link =
     afiliado && typeof window !== "undefined"
-      ? `${window.location.origin}/vendas?ref=${afiliado.codigo}`
+      ? // O link leva direto ao tutorial, não à vitrine: quem clica já sai
+        // precificando uma peça sua. A indicação continua gravada no
+        // primeiro request, seja qual for a página de chegada.
+        `${window.location.origin}/tutorial?ref=${afiliado.codigo}`
       : "";
 
   const aPagar = comissoes
@@ -99,7 +102,8 @@ export default function AfiliadoPage() {
       <Card>
         <h2>Seu link</h2>
         <p className="ap-afiliado__dica">
-          Quem abrir este link fica ligado a você por 30 dias, mesmo que compre depois.
+          Ele abre o tutorial: quem clica já precifica uma peça sem criar conta. A
+          indicação fica ligada a você por 30 dias, mesmo que a compra venha depois.
         </p>
         <div className="ap-afiliado__link">
           <code>{link}</code>

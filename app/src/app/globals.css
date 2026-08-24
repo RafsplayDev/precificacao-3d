@@ -569,6 +569,9 @@ select.ap-cell { width: 100%; min-width: 0; cursor: pointer; }
   .ap-table--custos td:nth-child(5) { grid-column: 3; text-align: right !important; }
   /* o cabeçalho guarda só o "marcar tudo" e o rótulo da coluna do item */
   .ap-table--custos thead th:nth-child(4), .ap-table--custos thead th:nth-child(5) { display: none; }
+  /* empilhado, o fundo cinza das células do cabeçalho virava uma faixa solta
+     ao lado da checkbox — parecia sombra. Sem tabela, não há o que separar. */
+  .ap-tablewrap .ap-table--custos thead th { background: transparent; }
   /* estado vazio ocupa a linha inteira */
   .ap-table--custos td[colspan] { grid-column: 1 / -1; grid-row: auto; }
 }

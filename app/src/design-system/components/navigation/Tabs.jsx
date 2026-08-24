@@ -29,6 +29,10 @@ export function Tabs({ items = [], value, onChange, variant = "pill", className 
         ? React.createElement(motion.span, {
             key: "p",
             layoutId: "tab-" + grupo,
+            // Só a troca de aba move o realce: sem isso qualquer re-render que
+            // desloque a fila (um número que muda de largura, por exemplo)
+            // fazia a pílula deslizar sozinha.
+            layoutDependency: value,
             className: "dc-tab__pilula",
             "aria-hidden": true,
             transition: reduzido

@@ -90,7 +90,7 @@
 .dc-tabs--underline .dc-tab--on{color:var(--text-strong);border-bottom-color:var(--fil-magenta)}
 .dc-tab__count{font-family:var(--font-mono);font-size:var(--text-caption);color:inherit;opacity:.6}
 
-.dc-dialog__scrim{position:fixed;inset:0;background:rgba(8,9,11,.5);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;padding:var(--space-6);z-index:60;animation:dc-fade var(--dur-base) var(--ease-out)}
+.dc-dialog__scrim{position:fixed;inset:0;transition:top var(--dur-base) var(--ease-out),height var(--dur-base) var(--ease-out);background:rgba(8,9,11,.5);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;padding:var(--space-6);z-index:60;animation:dc-fade var(--dur-base) var(--ease-out)}
 .dc-dialog{width:100%;max-width:460px;max-height:100%;display:flex;flex-direction:column;background:var(--surface-card);border-radius:var(--radius-lg);box-shadow:var(--shadow-lg);padding:var(--space-6);animation:dc-rise var(--dur-base) var(--ease-out)}
 .dc-dialog__head{flex:0 0 auto;display:flex;align-items:flex-start;justify-content:space-between;gap:var(--space-4)}
 .dc-dialog__title{font-family:var(--font-display);font-size:var(--text-h3);letter-spacing:var(--ls-h3);color:var(--text-strong)}

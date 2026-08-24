@@ -301,17 +301,17 @@ export default function Calculadora() {
             </span>
           </div>
         </div>
-        <div className="ap-pilha" aria-hidden>
+        <div className="ap-stack" aria-hidden>
           {GRUPOS.filter((g) => g.id !== "tudo").map((g) => (
             <span key={g.id} style={{ flexGrow: Math.max(somaGrupo(g.id), 0) / (totalPilha || 1), background: g.cor }} />
           ))}
           <span style={{ flexGrow: Math.max(unit.margem, 0) / (totalPilha || 1), background: "var(--ink-950)" }} />
         </div>
-        <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginTop: 10, fontSize: "var(--text-caption)", color: "var(--text-muted)" }}>
+        <div className="ap-legendas">
           {GRUPOS.filter((g) => g.id !== "tudo").map((g) => (
-            <Legenda key={g.id} cor={g.cor} texto={g.label.toLowerCase()} />
+            <Legenda key={g.id} cor={g.cor} texto={`${g.label.toLowerCase()} ${money(somaGrupo(g.id))}`} />
           ))}
-          <Legenda cor="var(--ink-950)" texto="margem" />
+          <Legenda cor="var(--ink-950)" texto={`margem ${money(Math.max(unit.margem, 0))}`} />
         </div>
       </Card>
 

@@ -316,10 +316,10 @@ export default function Calculadora() {
       </Card>
 
       <Card padding="var(--space-5)">
-        <div className="ap-sectionhead ap-sectionhead--tight"><h2>Preço sugerido</h2></div>
+        <div className="ap-sectionhead ap-sectionhead--tight ap-so-pc"><h2>Preço sugerido</h2></div>
 
-        {/* No celular as duas escolhas que mandam no resto da tela vêm aqui em
-            cima; no computador elas seguem onde sempre estiveram. */}
+        {/* No celular a escolha entre sugerido e definido vem aqui em cima, no
+            lugar do título; varejo e atacado já são os dois cards abaixo. */}
         <div className="ap-escolhas">
           <Tabs
             items={[
@@ -328,14 +328,6 @@ export default function Calculadora() {
             ]}
             value={produto.usar_preco}
             onChange={(v) => persistir({ usar_preco: v }, true)}
-          />
-          <Tabs
-            items={[
-              { id: "varejo", label: "Varejo" },
-              { id: "atacado", label: "Atacado" },
-            ]}
-            value={canal}
-            onChange={setCanal}
           />
         </div>
 
@@ -347,8 +339,14 @@ export default function Calculadora() {
             markup={produto.markup_varejo}
             padrao={toNum(cfg?.markup_varejo_padrao)}
             ativo={canal === "varejo"}
+            definido={produto.preco_final_varejo}
             onSelecionar={() => setCanal("varejo")}
             onMarkup={(v) => persistir({ markup_varejo: v })}
+            onDefinido={
+              produto.usar_preco === "Final"
+                ? (v) => persistir({ preco_final_varejo: v })
+                : undefined
+            }
           />
           <CartaoSugerido
             canal="atacado"
@@ -357,8 +355,14 @@ export default function Calculadora() {
             markup={produto.markup_atacado}
             padrao={toNum(cfg?.markup_atacado_padrao)}
             ativo={canal === "atacado"}
+            definido={produto.preco_final_atacado}
             onSelecionar={() => setCanal("atacado")}
             onMarkup={(v) => persistir({ markup_atacado: v })}
+            onDefinido={
+              produto.usar_preco === "Final"
+                ? (v) => persistir({ preco_final_atacado: v })
+                : undefined
+            }
           />
         </div>
         <div className="ap-rows" style={{ marginTop: "var(--space-4)" }}>
@@ -663,11 +667,30 @@ export default function Calculadora() {
 }
 
 /**
- * Bloco de preço sugerido: clicar escolhe o canal, o lápis (que aparece no
- * hover) abre o markup para edição ali mesmo.
+ * Bloco de preço do canal: clicar escolhe o canal e o lápis (que aparece no
+ * hover) edita ali mesmo — o markup quando o preço é sugerido, o próprio
+ * preço quando é definido.
  */
-function CartaoSugerido({ canal, rotulo, valor, markup, padrao, ativo, onSelecionar, onMarkup }) {
+function CartaoSugerido({
+  canal, rotulo, valor, markup, padrao, ativo, definido, onSelecionar, onMarkup, onDefinido,
+}) {
   const [editando, setEditando] = React.useState(false);
+  // Em "preço definido" o card mostra e edita o preço; em "sugerido", o markup.
+  const emDefinido = typeof onDefinido === "function";
+  const mostrado = emDefinido ? (toNum(definido) || valor) : valor;
+  const [texto, setTexto] = React.useState("");
+
+  const abrirEdicao = (e) => {
+    e.stopPropagation();
+    setTexto(emDefinido ? numeroParaMoeda(mostrado) : String(toNum(markup)));
+    setEditando(true);
+  };
+
+  const salvar = () => {
+    setEditando(false);
+    if (emDefinido) onDefinido(moedaParaNumero(texto));
+    else onMarkup(toNum(texto));
+  };
 
   return (
     <div
@@ -678,37 +701,50 @@ function CartaoSugerido({ canal, rotulo, valor, markup, padrao, ativo, onSelecio
       onKeyDown={(e) => {
         if (!editando && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); onSelecionar(); }
       }}
-      title={`Custo × ${num(markup)} · padrão do negócio ${num(padrao, 1)}×`}
+      title={
+        emDefinido
+          ? `Preço definido para ${rotulo.toLowerCase()} — sugerido ${money(valor)}`
+          : `Custo × ${num(markup)} · padrão do negócio ${num(padrao, 1)}×`
+      }
     >
       <span className="ap-sugerido__topo">
         <span className="dc-eyebrow">{rotulo}</span>
 
         {editando ? (
           <>
-          <span className="ap-sugerido__markup ap-sugerido__markup--fixo">×</span>
-          <input
-            className="ap-sugerido__input"
-            autoFocus
-            size={4}
-            inputMode="decimal"
-            defaultValue={String(toNum(markup))}
-            onClick={(e) => e.stopPropagation()}
-            onBlur={(e) => { setEditando(false); onMarkup(toNum(e.target.value)); }}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") e.currentTarget.blur();
-              if (e.key === "Escape") { e.currentTarget.value = String(toNum(markup)); e.currentTarget.blur(); }
-            }}
-          />
+            <span className="ap-sugerido__markup ap-sugerido__markup--fixo">
+              {emDefinido ? "R$" : "×"}
+            </span>
+            <input
+              className="ap-sugerido__input"
+              autoFocus
+              size={emDefinido ? 7 : 4}
+              inputMode={emDefinido ? "numeric" : "decimal"}
+              value={texto}
+              onClick={(e) => e.stopPropagation()}
+              onChange={(e) => setTexto(emDefinido ? mascaraMoeda(e.target.value) : e.target.value)}
+              onBlur={salvar}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") e.currentTarget.blur();
+                if (e.key === "Escape") { setEditando(false); }
+              }}
+            />
           </>
         ) : (
           <>
-            <span className="ap-sugerido__markup">× {num(markup)}</span>
+            <span className="ap-sugerido__markup">
+              {emDefinido ? "definido" : `× ${num(markup)}`}
+            </span>
             <IconButton
               className="ap-sugerido__editar"
               variant="ghost"
               size="sm"
-              label={`Editar markup de ${rotulo.toLowerCase()}`}
-              onClick={(e) => { e.stopPropagation(); setEditando(true); }}
+              label={
+                emDefinido
+                  ? `Editar preço de ${rotulo.toLowerCase()}`
+                  : `Editar markup de ${rotulo.toLowerCase()}`
+              }
+              onClick={abrirEdicao}
             >
               <Icon name="pencil" size={13} />
             </IconButton>
@@ -716,7 +752,7 @@ function CartaoSugerido({ canal, rotulo, valor, markup, padrao, ativo, onSelecio
         )}
       </span>
 
-      <NumeroRolante texto={money(valor)} className="ap-figure__val" />
+      <NumeroRolante texto={money(mostrado)} className="ap-figure__val" />
       {/* fica invisível quando não é o canal escolhido, mas segura a altura */}
       <span className="ap-sugerido__estado" aria-hidden={!ativo}>
         {ativo && <><Icon name="check" size={12} strokeWidth={3} /> selecionado</>}

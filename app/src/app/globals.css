@@ -835,9 +835,11 @@ select.ap-cell {
 
 /* =====================================================================
    TUTORIAL GUIADO
-   O escuro inteiro é `pointer-events: none` de propósito: o recorte
-   aponta para onde clicar, e a pessoa clica de verdade. Um scrim que
-   engole o clique transformaria o tutorial em apresentação de slides.
+   O escuro em si é `pointer-events: none`: quem engole o clique fora do
+   destaque são as travas (.ap-tour__trava), que cercam o recorte sem
+   cobri-lo. Assim a pessoa clica de verdade no que está aceso — e só
+   nele. O menu sobe acima do escuro durante o tutorial porque vários
+   passos pedem justamente para trocar de tela por ele.
    O z-index fica abaixo do scrim de diálogo (60): quando o formulário
    de cadastro abre, ele é a tela, e o tutorial se recolhe.
    ===================================================================== */
@@ -902,11 +904,19 @@ select.ap-cell {
    pinta por cima do fundo dele — o cartao ficava cinza e o texto
    secundario, ilegivel. Como irmao, o escuro fica atras, onde deve. */
 .ap-tour__escuro {
-  position: fixed; inset: 0; z-index: 54;
+  position: fixed; inset: 0; z-index: 51;
   background: rgba(8, 9, 11, 0.62);
-  pointer-events: none;
   animation: ap-tour-surge var(--dur-base) var(--ease-out);
 }
+
+/* As quatro faixas em volta do recorte: invisíveis, e é nelas que morre
+   o clique dado fora do destaque. */
+.ap-tour__trava { position: fixed; z-index: 51; }
+
+/* Menu aceso e clicável durante o tutorial: acima do escuro (50/51),
+   abaixo do cartão (55). */
+body[data-tutorial="on"] .ap-header,
+body[data-tutorial="on"] .ap-tabbar { z-index: 52; }
 
 .ap-tour__topo { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); }
 /* Avanço: o nome da etapa e três barras, uma por etapa. Sem número —

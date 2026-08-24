@@ -47,9 +47,9 @@ export const PASSOS = [
     texto:
       "Use os dados reais: sua impressora, seu filamento, sua conta de luz. No fim você vai " +
       "saber o valor de venda da sua peça.",
-    // As três etapas aparecem só aqui, escritas por extenso: é a promessa
-    // do caminho inteiro, feita antes de a pessoa dar o primeiro passo.
-    etapas: true,
+    // A abertura não mostra etapa nem barra: antes de começar não há
+    // avanço nenhum para relatar, e a promessa do caminho é o texto.
+    semAvanco: true,
     acao: "Começar",
   },
   {
@@ -58,10 +58,9 @@ export const PASSOS = [
     rota: "/cadastros",
     aba: "impressoras",
     alvo: "cadastros-abas",
-    titulo: "Tudo que a calculadora usa mora aqui",
+    titulo: "Comece pelos cadastros",
     texto:
-      "Cada aba é um pedaço do seu custo. Vamos passar pelas que importam agora e pular as " +
-      "que você pode preencher depois.",
+      "A calculadora puxa tudo daqui. Cada aba é uma parte do custo — vamos pelas principais.",
   },
   {
     id: "impressora",

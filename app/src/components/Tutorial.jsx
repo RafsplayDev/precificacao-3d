@@ -142,6 +142,18 @@ export function TutorialProvider({ children }) {
     gravarEstado({ estado: "ativo", indice: 0 });
   }, []);
 
+  // O marcador no body é o que levanta o menu acima do escuro: durante o
+  // tutorial ele fica aceso junto com o alvo, porque vários passos pedem
+  // para a pessoa trocar de tela por ele.
+  React.useEffect(() => {
+    const ligado = indice != null && noApp;
+    if (ligado) document.body.dataset.tutorial = "on";
+    else delete document.body.dataset.tutorial;
+    return () => {
+      delete document.body.dataset.tutorial;
+    };
+  }, [indice, noApp]);
+
   // Cada passo sabe em que tela mora. Trocar de tela é do tutorial, não da
   // pessoa: quem está sendo guiado não deveria precisar achar o menu.
   React.useEffect(() => {
@@ -196,6 +208,7 @@ function Guia({ passo, indice, total, onProximo, onAnterior, onSair }) {
       {area
         ? <span className="ap-tour__luz" style={{ ...caixa(area), position: "fixed" }} aria-hidden="true" />
         : <span className="ap-tour__escuro" aria-hidden="true" />}
+      {area && <Bloqueio area={caixa(area)} />}
       <div
         className={"ap-tour__cartao" + (area ? "" : " ap-tour__cartao--centro")}
         style={area ? posicaoDoCartao(area) : undefined}
@@ -204,7 +217,7 @@ function Guia({ passo, indice, total, onProximo, onAnterior, onSair }) {
         aria-label={`Tutorial, passo ${indice + 1} de ${total}`}
       >
         <div className="ap-tour__topo">
-          <Avanco indice={indice} />
+          {passo.semAvanco ? <span /> : <Avanco indice={indice} />}
           <button type="button" className="ap-tour__fechar" onClick={onSair} aria-label="Sair do tutorial">
             <Icon name="x" size={16} />
           </button>
@@ -216,15 +229,6 @@ function Guia({ passo, indice, total, onProximo, onAnterior, onSair }) {
         <div className="ap-tour__corpo">
           <h2 className="ap-tour__titulo">{passo.titulo}</h2>
           <p className="ap-tour__texto">{passo.texto}</p>
-          {passo.etapas && (
-            <ol className="ap-tour__etapas">
-              {ETAPAS.map((e, i) => (
-                <li key={e.id}>
-                  <strong>{i + 1}. {e.nome}</strong> {RESUMO[e.id]}
-                </li>
-              ))}
-            </ol>
-          )}
           {passo.exigeLinha && (
             <p className={"ap-tour__aviso" + (feito ? " is-ok" : "")}>
               {feito ? "Pronto, pode seguir." : "Cadastre com os seus números — o tutorial espera."}
@@ -253,14 +257,35 @@ function Guia({ passo, indice, total, onProximo, onAnterior, onSair }) {
   );
 }
 
-/* --------------------------- o avanço ---------------------------- */
+/**
+ * O que fica fora do destaque não recebe clique.
+ *
+ * Antes o escuro inteiro era `pointer-events: none` e a pessoa podia mexer
+ * em qualquer canto da tela no meio do roteiro — abrir outro cadastro,
+ * trocar de aba, sair do caminho e não achar mais o caminho de volta. Agora
+ * o clique só passa em dois lugares: o recorte iluminado e o menu (que os
+ * passos usam para trocar de tela). O menu sobe por CSS, acima do escuro;
+ * aqui ficam as quatro faixas que cercam o recorte.
+ *
+ * Quatro faixas, e não um retângulo com furo: um elemento só teria de ter
+ * um buraco de verdade para deixar o clique passar, e nenhuma propriedade
+ * de CSS faz isso sem `clip-path` — que recorta a pintura, não a área de
+ * toque.
+ */
+function Bloqueio({ area }) {
+  const faixas = [
+    { top: 0, left: 0, right: 0, height: Math.max(0, area.top) },
+    { top: area.top + area.height, left: 0, right: 0, bottom: 0 },
+    { top: area.top, left: 0, width: Math.max(0, area.left), height: area.height },
+    { top: area.top, left: area.left + area.width, right: 0, height: area.height },
+  ];
 
-/** O que cada etapa faz, em uma linha, na modal de abertura. */
-const RESUMO = {
-  cadastro: "sua impressora, seu filamento, sua conta de luz.",
-  produto: "a peça que você quer vender, em gramas e horas.",
-  calculadora: "o custo real e o preço de venda.",
-};
+  return faixas.map((f, i) => (
+    <span key={i} className="ap-tour__trava" style={f} aria-hidden="true" />
+  ));
+}
+
+/* --------------------------- o avanço ---------------------------- */
 
 /**
  * Quanto falta, sem contar passos.
@@ -272,11 +297,12 @@ const RESUMO = {
  */
 function Avanco({ indice }) {
   const atual = PASSOS[indice]?.etapa;
+  const numero = ETAPAS.findIndex((e) => e.id === atual);
 
   return (
     <div className="ap-tour__avanco">
       <span className="ap-tour__etapa">
-        {ETAPAS.find((e) => e.id === atual)?.nome}
+        {numero + 1} - {ETAPAS[numero]?.nome}
       </span>
       <span className="ap-tour__barras" aria-hidden="true">
         {ETAPAS.map((e) => (

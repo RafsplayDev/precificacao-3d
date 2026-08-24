@@ -835,19 +835,18 @@ select.ap-cell {
 
 /* =====================================================================
    TUTORIAL GUIADO
-   O escuro em si é `pointer-events: none`: quem engole o clique fora do
-   destaque são as travas (.ap-tour__trava), que cercam o recorte sem
-   cobri-lo. Assim a pessoa clica de verdade no que está aceso — e só
-   nele. O menu sobe acima do escuro durante o tutorial porque vários
-   passos pedem justamente para trocar de tela por ele.
+   O cinza e a trava são a mesma coisa: as quatro faixas (.ap-tour__trava)
+   cercam o recorte, pintam tudo o que sobra e engolem o clique. Como elas
+   ficam acima do cabeçalho e da barra do rodapé, o menu escurece junto —
+   e quando o passo pede para tocar num item do menu, é o recorte que o
+   deixa aceso e clicável, ele sozinho.
    O z-index fica abaixo do scrim de diálogo (60): quando o formulário
    de cadastro abre, ele é a tela, e o tutorial se recolhe.
    ===================================================================== */
 .ap-tour__luz {
-  z-index: 50;
+  z-index: 54;
   pointer-events: none;
   border-radius: var(--radius-card);
-  box-shadow: 0 0 0 9999px rgba(8, 9, 11, 0.62);
   outline: 2px solid var(--action-accent);
   outline-offset: 0;
   transition: top var(--dur-base) var(--ease-out), left var(--dur-base) var(--ease-out),
@@ -868,11 +867,11 @@ select.ap-cell {
    junto — repetido em todos os quadros para não clarear no meio do pulso.
    --------------------------------------------------------------------- */
 @keyframes ap-tour-pulso {
-  0%   { box-shadow: 0 0 0 9999px rgba(8, 9, 11, 0.62), 0 0 0 0 rgba(255, 45, 111, 0.55); }
-  14%  { box-shadow: 0 0 0 9999px rgba(8, 9, 11, 0.62), 0 0 0 10px rgba(255, 45, 111, 0); }
-  28%  { box-shadow: 0 0 0 9999px rgba(8, 9, 11, 0.62), 0 0 0 0 rgba(255, 45, 111, 0.45); }
-  42%  { box-shadow: 0 0 0 9999px rgba(8, 9, 11, 0.62), 0 0 0 10px rgba(255, 45, 111, 0); }
-  100% { box-shadow: 0 0 0 9999px rgba(8, 9, 11, 0.62), 0 0 0 0 rgba(255, 45, 111, 0); }
+  0%   { box-shadow: 0 0 0 0 rgba(255, 45, 111, 0.55); }
+  14%  { box-shadow: 0 0 0 10px rgba(255, 45, 111, 0); }
+  28%  { box-shadow: 0 0 0 0 rgba(255, 45, 111, 0.45); }
+  42%  { box-shadow: 0 0 0 10px rgba(255, 45, 111, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(255, 45, 111, 0); }
 }
 .ap-tour__luz--pulsa {
   animation: ap-tour-surge var(--dur-base) var(--ease-out),
@@ -929,19 +928,19 @@ select.ap-cell {
    pinta por cima do fundo dele — o cartao ficava cinza e o texto
    secundario, ilegivel. Como irmao, o escuro fica atras, onde deve. */
 .ap-tour__escuro {
-  position: fixed; inset: 0; z-index: 51;
+  position: fixed; inset: 0; z-index: 53;
   background: rgba(8, 9, 11, 0.62);
   animation: ap-tour-surge var(--dur-base) var(--ease-out);
 }
 
-/* As quatro faixas em volta do recorte: invisíveis, e é nelas que morre
-   o clique dado fora do destaque. */
-.ap-tour__trava { position: fixed; z-index: 51; }
-
-/* Menu aceso e clicável durante o tutorial: acima do escuro (50/51),
-   abaixo do cartão (55). */
-body[data-tutorial="on"] .ap-header,
-body[data-tutorial="on"] .ap-tabbar { z-index: 52; }
+/* As quatro faixas em volta do recorte: são o cinza da tela e são onde
+   morre o clique dado fora do destaque. Acima do cabeçalho e da barra do
+   rodapé (40) de propósito — no tutorial o menu escurece como o resto. */
+.ap-tour__trava {
+  position: fixed; z-index: 53;
+  background: rgba(8, 9, 11, 0.62);
+  animation: ap-tour-surge var(--dur-base) var(--ease-out);
+}
 
 .ap-tour__topo { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); }
 /* Avanço: o nome da etapa e três barras, uma por etapa. Sem número —
@@ -969,6 +968,13 @@ body[data-tutorial="on"] .ap-tabbar { z-index: 52; }
   display: flex; flex-direction: column; gap: var(--space-1);
   font-size: var(--text-body-sm); color: var(--text-muted);
 }
+/* O mesmo pulso, agora no botão que fecha o cadastro: quando os campos
+   que o tutorial pede estão preenchidos, é ele o próximo toque. */
+.dc-btn.is-pulsando {
+  animation: ap-tour-pulso 3.6s var(--ease-out) infinite;
+}
+@media (prefers-reduced-motion: reduce) { .dc-btn.is-pulsando { animation: none; } }
+
 .ap-tour__etapas strong { color: var(--text-strong); font-weight: var(--weight-medium); }
 .ap-tour__fechar {
   display: grid; place-items: center; width: 28px; height: 28px;

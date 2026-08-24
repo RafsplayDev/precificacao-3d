@@ -61,6 +61,10 @@ export const PASSOS = [
     // tela de Cadastros, e destacar a faixa inteira de abas acendia meia
     // página sem dizer de onde ela veio.
     alvo: "nav-cadastros",
+    // Quem avança é o toque no próprio menu. Um "Próximo" ao lado seria a
+    // saída fácil, e a pessoa terminaria o passo sem nunca ter visto onde
+    // fica a porta de que o texto está falando.
+    aoClicar: true,
     titulo: "Comece pelos cadastros",
     texto:
       "A calculadora puxa tudo daqui. Cada aba é uma parte do custo — vamos pelas principais.",

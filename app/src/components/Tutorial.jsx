@@ -142,18 +142,6 @@ export function TutorialProvider({ children }) {
     gravarEstado({ estado: "ativo", indice: 0 });
   }, []);
 
-  // O marcador no body é o que levanta o menu acima do escuro: durante o
-  // tutorial ele fica aceso junto com o alvo, porque vários passos pedem
-  // para a pessoa trocar de tela por ele.
-  React.useEffect(() => {
-    const ligado = indice != null && noApp;
-    if (ligado) document.body.dataset.tutorial = "on";
-    else delete document.body.dataset.tutorial;
-    return () => {
-      delete document.body.dataset.tutorial;
-    };
-  }, [indice, noApp]);
-
   // Cada passo sabe em que tela mora. Trocar de tela é do tutorial, não da
   // pessoa: quem está sendo guiado não deveria precisar achar o menu.
   React.useEffect(() => {
@@ -213,7 +201,9 @@ function Guia({ passo, indice, total, onProximo, onAnterior, onSair }) {
   // O ponto de partida é lido na entrada do passo: quem volta para um
   // passo já cumprido não pode ser empurrado de novo para a frente.
   // ----------------------------------------------------------------
-  const espera = passo.exigeLinha && ehTeste();
+  // Passos em que o tutorial não oferece botão: quem anda é a ação da
+  // pessoa — cadastrar a linha, ou tocar no que está aceso.
+  const espera = (passo.exigeLinha && ehTeste()) || passo.aoClicar;
   const partida = React.useRef(null);
   // Lido do próprio armazenamento, e não do estado da tela: logo depois de
   // um "Voltar" o contador ainda traz o número da tabela do passo anterior,
@@ -223,9 +213,22 @@ function Guia({ passo, indice, total, onProximo, onAnterior, onSair }) {
     partida.current = espera ? usoDoTeste()[passo.exigeLinha]?.usado || 0 : null;
   }, [espera, passo.id, passo.exigeLinha]);
   React.useEffect(() => {
-    if (!espera || partida.current == null) return;
+    if (!passo.exigeLinha || !espera || partida.current == null) return;
     if (uso > partida.current) onProximo();
-  }, [espera, uso, onProximo]);
+  }, [passo.exigeLinha, espera, uso, onProximo]);
+
+  // O passo que espera um toque escuta o clique no documento inteiro e
+  // pergunta se ele caiu dentro do alvo. Escutar no elemento não serviria:
+  // ele é remedido a cada instante e pode ser trocado por outro igual (o
+  // mesmo item existe no menu do topo e na barra do rodapé).
+  React.useEffect(() => {
+    if (!passo.aoClicar || !passo.alvo) return;
+    const ouvir = (ev) => {
+      if (ev.target.closest?.(`[data-tutorial="${passo.alvo}"]`)) onProximo();
+    };
+    document.addEventListener("click", ouvir, true);
+    return () => document.removeEventListener("click", ouvir, true);
+  }, [passo.aoClicar, passo.alvo, onProximo]);
 
   if (dialogoAberto) return null;
 

@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import { Button, Card, Input } from "@/design-system";
+import { Button, Card, Input, Switch } from "@/design-system";
 import { supabase } from "@/lib/supabaseClient";
 import { reais } from "@/lib/produto";
 
@@ -15,6 +15,40 @@ async function chamar(url, metodo, corpo) {
   return dados;
 }
 
+/** 3490 → "34,90", para o campo aceitar o formato que se digita. */
+function moeda(centavos) {
+  if (centavos == null || centavos === "") return "";
+  return (Number(centavos) / 100).toFixed(2).replace(".", ",");
+}
+
+/**
+ * ISO do banco → valor de <input type="datetime-local">.
+ *
+ * O input não aceita fuso nem segundos, e exige hora LOCAL. Passar o ISO
+ * cru deixa o campo em branco sem avisar, e a promoção parece ter perdido
+ * as datas que na verdade continuam gravadas.
+ */
+function paraCampoData(iso) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const pad = (n) => String(n).padStart(2, "0");
+  return (
+    `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}` +
+    `T${pad(d.getHours())}:${pad(d.getMinutes())}`
+  );
+}
+
+const PRECOS_VAZIO = {
+  preco: "",
+  comissao: "",
+  promo_ativa: false,
+  promo_preco: "",
+  promo_rotulo: "",
+  promo_inicio: "",
+  promo_fim: "",
+};
+
 export default function AdminPage() {
   const [ehAdmin, setEhAdmin] = React.useState(null);
   const [afiliados, setAfiliados] = React.useState([]);
@@ -25,6 +59,8 @@ export default function AdminPage() {
   const [emailCortesia, setEmailCortesia] = React.useState("");
   const [ocupado, setOcupado] = React.useState(false);
   const [mostrarTudo, setMostrarTudo] = React.useState(false);
+  const [precos, setPrecos] = React.useState(PRECOS_VAZIO);
+  const [precosCarregados, setPrecosCarregados] = React.useState(false);
 
   const recarregar = React.useCallback(async () => {
     const [{ data: af }, { data: pg }] = await Promise.all([
@@ -37,6 +73,21 @@ export default function AdminPage() {
     ]);
     setAfiliados(af || []);
     setVendas(pg || []);
+
+    const r = await fetch("/api/admin/precos");
+    if (r.ok) {
+      const { precificacao: c } = await r.json();
+      setPrecos({
+        preco: moeda(c?.preco_centavos),
+        comissao: moeda(c?.comissao_centavos),
+        promo_ativa: !!c?.promo_ativa,
+        promo_preco: moeda(c?.promo_preco_centavos),
+        promo_rotulo: c?.promo_rotulo || "",
+        promo_inicio: paraCampoData(c?.promo_inicio),
+        promo_fim: paraCampoData(c?.promo_fim),
+      });
+      setPrecosCarregados(true);
+    }
   }, []);
 
   React.useEffect(() => {
@@ -126,6 +177,103 @@ export default function AdminPage() {
 
       {msg && <p className="ap-auth__aviso">{msg}</p>}
       {erro && <p className="ap-auth__erro">{erro}</p>}
+
+      <Card>
+        <h2>Preço e promoções</h2>
+        <p className="ap-afiliado__dica">
+          Vale na hora, sem publicar de novo: a página de vendas, a tela de liberar
+          acesso e a cobrança no Mercado Pago passam a usar o valor salvo aqui.
+        </p>
+
+        {!precosCarregados ? (
+          <p>Carregando a precificação…</p>
+        ) : (
+          <>
+            <div className="ap-admin__precos">
+              <Input
+                id="preco-normal"
+                label="Preço de tabela"
+                inputMode="decimal"
+                prefix="R$"
+                value={precos.preco}
+                onChange={(e) => setPrecos((p) => ({ ...p, preco: e.target.value }))}
+              />
+              <Input
+                id="preco-comissao"
+                label="Comissão do afiliado"
+                inputMode="decimal"
+                prefix="R$"
+                hint="Vale para afiliados novos; quem já é afiliado mantém a dele."
+                value={precos.comissao}
+                onChange={(e) => setPrecos((p) => ({ ...p, comissao: e.target.value }))}
+              />
+            </div>
+
+            <div className="ap-admin__promo-topo">
+              <Switch
+                label="Promoção ligada"
+                checked={precos.promo_ativa}
+                onChange={(v) => setPrecos((p) => ({ ...p, promo_ativa: v }))}
+              />
+              {precos.promo_ativa && (
+                <span className="ap-admin__promo-resumo">
+                  Aparece como <s>{precos.preco || "—"}</s>{" "}
+                  <strong>R$ {precos.promo_preco || "—"}</strong>
+                </span>
+              )}
+            </div>
+
+            {precos.promo_ativa && (
+              <div className="ap-admin__precos">
+                <Input
+                  id="promo-preco"
+                  label="Preço promocional"
+                  inputMode="decimal"
+                  prefix="R$"
+                  value={precos.promo_preco}
+                  onChange={(e) => setPrecos((p) => ({ ...p, promo_preco: e.target.value }))}
+                />
+                <Input
+                  id="promo-rotulo"
+                  label="Selo da oferta"
+                  placeholder="Black Friday"
+                  hint="Substitui o “Acesso vitalício” enquanto a promoção durar."
+                  value={precos.promo_rotulo}
+                  onChange={(e) => setPrecos((p) => ({ ...p, promo_rotulo: e.target.value }))}
+                />
+                <Input
+                  id="promo-inicio"
+                  label="Começa em"
+                  type="datetime-local"
+                  hint="Em branco: já vale."
+                  value={precos.promo_inicio}
+                  onChange={(e) => setPrecos((p) => ({ ...p, promo_inicio: e.target.value }))}
+                />
+                <Input
+                  id="promo-fim"
+                  label="Termina em"
+                  type="datetime-local"
+                  hint="Em branco: até você desligar."
+                  value={precos.promo_fim}
+                  onChange={(e) => setPrecos((p) => ({ ...p, promo_fim: e.target.value }))}
+                />
+              </div>
+            )}
+
+            <Button
+              disabled={ocupado}
+              onClick={() =>
+                acao(async () => {
+                  await chamar("/api/admin/precos", "PATCH", precos);
+                  return "Precificação salva.";
+                })
+              }
+            >
+              Salvar precificação
+            </Button>
+          </>
+        )}
+      </Card>
 
       <Card>
         <h2>Convidar afiliado</h2>

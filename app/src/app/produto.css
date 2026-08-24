@@ -212,3 +212,23 @@
   cursor: pointer;
 }
 .ap-admin__cabeca-lista button:hover { color: inherit; }
+
+/* ---- Preço e promoções (admin) ---- */
+.ap-admin__precos {
+  display: grid; gap: var(--space-4);
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  margin-bottom: var(--space-4);
+}
+.ap-admin__promo-topo {
+  display: flex; align-items: center; gap: var(--space-4);
+  flex-wrap: wrap; margin-bottom: var(--space-4);
+}
+.ap-admin__promo-resumo { font-size: var(--text-body-sm); color: var(--text-muted); }
+.ap-admin__promo-resumo s { color: var(--text-faint); }
+.ap-admin__promo-resumo strong { color: var(--text-strong); }
+
+/* O preço antigo riscado, na vitrine e no paywall. */
+.ap-vendas__de, .ap-paywall__de {
+  color: var(--text-faint); font-weight: 400;
+  margin-right: var(--space-2);
+}

@@ -4,7 +4,7 @@ import { useSearchParams } from "next/navigation";
 import { Button, Card } from "@/design-system";
 import { supabase } from "@/lib/supabaseClient";
 import { irPara } from "@/lib/navegar";
-import { PRECO_CENTAVOS, reais } from "@/lib/produto";
+import { PRECO_PADRAO, normalizarPreco, reais } from "@/lib/produto";
 
 const INCLUI = [
   "Custo real por peça: material, energia, desgaste, falhas e acabamento",
@@ -22,6 +22,24 @@ function Conteudo() {
   const [enviando, setEnviando] = React.useState(false);
   const [erro, setErro] = React.useState(null);
   const [conferindo, setConferindo] = React.useState(retorno === "sucesso");
+  const [preco, setPreco] = React.useState(PRECO_PADRAO);
+
+  // O preço vem de vw_preco, a mesma vista que o checkout consulta na hora
+  // de cobrar — é o que garante que o valor no botão e o valor no Mercado
+  // Pago sejam o mesmo, promoção ligada ou não.
+  React.useEffect(() => {
+    let vivo = true;
+    supabase
+      .from("vw_preco")
+      .select("*")
+      .maybeSingle()
+      .then(({ data }) => {
+        if (vivo) setPreco(normalizarPreco(data));
+      });
+    return () => {
+      vivo = false;
+    };
+  }, []);
 
   // ------------------------------------------------------------------
   // Esperando o pagamento cair
@@ -117,7 +135,11 @@ function Conteudo() {
   return (
     <div className="ap-paywall">
       <Card>
-        <span className="ap-paywall__selo">Acesso vitalício</span>
+        <span className="ap-paywall__selo">
+          {preco.em_promocao
+            ? preco.promo_rotulo || "Oferta por tempo limitado"
+            : "Acesso vitalício"}
+        </span>
         <h1>Libere sua calculadora</h1>
         <p className="ap-paywall__sub">
           Sua conta já existe. Falta só liberar o acesso — pagamento único, sem
@@ -125,7 +147,10 @@ function Conteudo() {
         </p>
 
         <div className="ap-paywall__preco">
-          <strong>{reais(PRECO_CENTAVOS)}</strong>
+          {preco.em_promocao && (
+            <s className="ap-paywall__de">{reais(preco.cheio_centavos)}</s>
+          )}
+          <strong>{reais(preco.vigente_centavos)}</strong>
           <span>uma vez só</span>
         </div>
 

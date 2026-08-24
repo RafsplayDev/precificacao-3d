@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { MercadoPagoConfig, Preference } from "mercadopago";
 import { supabaseServidor, supabaseAdmin } from "@/lib/supabaseServer";
-import { PRECO_CENTAVOS, NOME_PRODUTO } from "@/lib/produto";
+import { NOME_PRODUTO } from "@/lib/produto";
+import { precoParaCobrar } from "@/lib/precos";
 
 export const dynamic = "force-dynamic";
 
@@ -30,6 +31,9 @@ export async function POST(req) {
   }
 
   const admin = supabaseAdmin();
+
+  // O preço sai do banco na hora da cobrança, nunca do que a tela mandou.
+  const precoCentavos = await precoParaCobrar();
 
   // Já pagou? Cobrar de novo por acesso vitalício seria cobrar duas vezes
   // pela mesma coisa.
@@ -64,7 +68,7 @@ export async function POST(req) {
     .insert({
       user_id: user.id,
       email: user.email,
-      valor_centavos: PRECO_CENTAVOS,
+      valor_centavos: precoCentavos,
       status: "pendente",
       afiliado_id: afiliadoId,
     })
@@ -87,7 +91,7 @@ export async function POST(req) {
             title: NOME_PRODUTO,
             quantity: 1,
             currency_id: "BRL",
-            unit_price: PRECO_CENTAVOS / 100,
+            unit_price: precoCentavos / 100,
           },
         ],
         // Sem payer: o Mercado Pago pergunta ao comprador quem ele é.

@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { Button, Card, Input } from "@/design-system";
 import { supabase } from "@/lib/supabaseClient";
 import { irPara, caminhoInterno } from "@/lib/navegar";
+import { urlDoSite } from "@/lib/site";
 
 function traduzirErro(e) {
   const m = String(e?.message || e || "").toLowerCase();
@@ -26,7 +27,12 @@ function Formulario() {
   const [nome, setNome] = React.useState("");
   const [email, setEmail] = React.useState("");
   const [senha, setSenha] = React.useState("");
-  const [erro, setErro] = React.useState(null);
+  const [erro, setErro] = React.useState(
+    params.get("confirmacao") === "falhou"
+      ? "Este link de confirmação já foi usado ou venceu. Entre com seu e-mail e senha; " +
+          "se ainda não deu, crie a conta de novo para receber outro link."
+      : null
+  );
   const [aviso, setAviso] = React.useState(null);
   const [enviando, setEnviando] = React.useState(false);
 
@@ -42,7 +48,13 @@ function Formulario() {
         const { data, error } = await supabase.auth.signUp({
           email: email.trim(),
           password: senha,
-          options: { data: { nome: nome.trim() } },
+          options: {
+            data: { nome: nome.trim() },
+            // Sem isto o link do e-mail usa a "Site URL" do painel do
+            // Supabase — que aponta para o localhost do desenvolvimento e
+            // deixa quem se cadastra em produção sem como confirmar a conta.
+            emailRedirectTo: `${urlDoSite()}/auth/callback?proximo=${encodeURIComponent(proximo)}`,
+          },
         });
         if (error) throw error;
 

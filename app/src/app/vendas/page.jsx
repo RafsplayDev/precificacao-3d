@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { PRECO_CENTAVOS, reais } from "@/lib/produto";
+import { reais } from "@/lib/produto";
+import { lerPreco } from "@/lib/precos";
 
 export const metadata = {
   title: "Precificação 3D — pare de chutar o preço das suas peças",
@@ -36,7 +37,12 @@ const INCLUI = [
   "Comparação com concorrentes",
 ];
 
-export default function VendasPage() {
+// A vitrine é pública e o preço muda pelo painel, então ela não pode ser
+// congelada no build: uma promoção ligada às 20h precisa aparecer às 20h.
+export const dynamic = "force-dynamic";
+
+export default async function VendasPage() {
+  const preco = await lerPreco();
   return (
     <div className="ap-vendas">
       <section className="ap-vendas__hero">
@@ -51,7 +57,10 @@ export default function VendasPage() {
             Quero minha calculadora
           </Link>
           <span>
-            {reais(PRECO_CENTAVOS)} uma vez só · sem mensalidade
+            {preco.em_promocao && (
+              <s className="ap-vendas__de">{reais(preco.cheio_centavos)}</s>
+            )}{" "}
+            {reais(preco.vigente_centavos)} uma vez só · sem mensalidade
           </span>
         </div>
       </section>
@@ -75,7 +84,15 @@ export default function VendasPage() {
       </section>
 
       <section className="ap-vendas__fecho">
-        <h2>{reais(PRECO_CENTAVOS)}, uma vez.</h2>
+        {preco.em_promocao && (
+          <span className="ap-paywall__selo">
+            {preco.promo_rotulo || "Oferta por tempo limitado"}
+          </span>
+        )}
+        <h2>
+          {preco.em_promocao && <s className="ap-vendas__de">{reais(preco.cheio_centavos)}</s>}
+          {reais(preco.vigente_centavos)}, uma vez.
+        </h2>
         <p>
           Não é assinatura. Você paga uma vez e o acesso é seu. Pix ou cartão, pelo
           Mercado Pago.

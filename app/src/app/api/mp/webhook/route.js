@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import crypto from "node:crypto";
 import { MercadoPagoConfig, Payment } from "mercadopago";
 import { supabaseAdmin } from "@/lib/supabaseServer";
-import { COMISSAO_CENTAVOS } from "@/lib/produto";
+import { lerComissao } from "@/lib/precos";
 
 export const dynamic = "force-dynamic";
 
@@ -248,7 +248,7 @@ export async function POST(req) {
         {
           afiliado_id: pagamento.afiliado_id,
           pagamento_id: pagamento.id,
-          valor_centavos: af?.comissao_centavos ?? COMISSAO_CENTAVOS,
+          valor_centavos: af?.comissao_centavos ?? (await lerComissao()),
           status: "a_pagar",
         },
         { onConflict: "pagamento_id", ignoreDuplicates: true }

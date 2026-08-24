@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { exigirAdmin, gerarCodigo } from "@/lib/admin";
-import { COMISSAO_CENTAVOS } from "@/lib/produto";
+import { lerComissao } from "@/lib/precos";
 
 export const dynamic = "force-dynamic";
 
@@ -42,6 +42,11 @@ export async function POST(req) {
     );
   }
 
+  // A comissão vem da precificação vigente e fica gravada na linha do
+  // afiliado: um reajuste depois não deve mexer no que foi combinado com
+  // quem já estava indicando.
+  const comissao = await lerComissao();
+
   // O código é aleatório e unique; a colisão é improvável mas possível, e
   // aqui ela custa uma retentativa em vez de um erro na cara do usuário.
   for (let tentativa = 0; tentativa < 5; tentativa++) {
@@ -50,7 +55,7 @@ export async function POST(req) {
       .insert({
         user_id: perfil.id,
         codigo: gerarCodigo(),
-        comissao_centavos: COMISSAO_CENTAVOS,
+        comissao_centavos: comissao,
       })
       .select()
       .single();

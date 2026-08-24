@@ -9,11 +9,15 @@ html, body { padding: 0; }
   --fade-pontas: linear-gradient(to bottom, transparent 0, #000 16px, #000 calc(100% - 16px), transparent 100%);
 }
 
-/* Nada de arrastar e selecionar texto pela interface — só onde se digita. */
+/* Nada de arrastar e selecionar texto pela interface — só onde se digita.
+   E sem o retângulo azul que o navegador do celular pisca a cada toque: os
+   próprios botões já mostram que foram tocados. */
 .ap-shell {
   min-height: 100vh; display: flex; flex-direction: column;
   -webkit-user-select: none; user-select: none;
+  -webkit-tap-highlight-color: transparent;
 }
+.ap-shell * { -webkit-tap-highlight-color: transparent; }
 .ap-shell input, .ap-shell textarea, .ap-shell [contenteditable="true"] {
   -webkit-user-select: text; user-select: text;
 }

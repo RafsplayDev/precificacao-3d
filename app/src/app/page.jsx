@@ -337,11 +337,9 @@ export default function Calculadora() {
             rotulo="VAREJO"
             valor={sugeridoVarejo}
             markup={produto.markup_varejo}
-            padrao={toNum(cfg?.markup_varejo_padrao)}
             ativo={canal === "varejo"}
             definido={produto.preco_final_varejo}
             onSelecionar={() => setCanal("varejo")}
-            onMarkup={(v) => persistir({ markup_varejo: v })}
             onDefinido={
               produto.usar_preco === "Final"
                 ? (v) => persistir({ preco_final_varejo: v })
@@ -353,11 +351,9 @@ export default function Calculadora() {
             rotulo="ATACADO"
             valor={sugeridoAtacado}
             markup={produto.markup_atacado}
-            padrao={toNum(cfg?.markup_atacado_padrao)}
             ativo={canal === "atacado"}
             definido={produto.preco_final_atacado}
             onSelecionar={() => setCanal("atacado")}
-            onMarkup={(v) => persistir({ markup_atacado: v })}
             onDefinido={
               produto.usar_preco === "Final"
                 ? (v) => persistir({ preco_final_atacado: v })
@@ -662,7 +658,7 @@ export default function Calculadora() {
  * preço quando é definido.
  */
 function CartaoSugerido({
-  canal, rotulo, valor, markup, padrao, ativo, definido, onSelecionar, onMarkup, onDefinido,
+  canal, rotulo, valor, markup, ativo, definido, onSelecionar, onDefinido,
 }) {
   const [editando, setEditando] = React.useState(false);
   const reduzido = useReducedMotion();
@@ -673,13 +669,14 @@ function CartaoSugerido({
   const mostrado = emDefinido ? (toNum(definido) || valor) : valor;
 
   // Enquanto edita, os valores vivem aqui: só vão para o banco ao concluir.
-  const [markupLocal, setMarkupLocal] = React.useState(toNum(markup));
   const [precoLocal, setPrecoLocal] = React.useState(toNum(definido) || valor);
   const [digitandoPreco, setDigitandoPreco] = React.useState(false);
+  // O custo por trás do sugerido: preço ÷ markup. Serve para dizer o que o
+  // preço definido representa sobre ele.
+  const custo = custoDoMarkup(valor, markup);
 
   const abrir = (e) => {
     e.stopPropagation();
-    setMarkupLocal(toNum(markup));
     setPrecoLocal(toNum(definido) || valor);
     setDigitandoPreco(false);
     setEditando(true);
@@ -687,7 +684,6 @@ function CartaoSugerido({
 
   const concluir = () => {
     setEditando(false);
-    if (toNum(markupLocal) !== toNum(markup)) onMarkup(toNum(markupLocal));
     if (emDefinido && toNum(precoLocal) !== toNum(definido)) onDefinido(toNum(precoLocal));
   };
 
@@ -719,20 +715,23 @@ function CartaoSugerido({
           title={
             emDefinido
               ? `Preço definido para ${rotulo.toLowerCase()} — sugerido ${money(valor)}`
-              : `Custo × ${num(markup)} · padrão do negócio ${num(padrao, 1)}×`
+              : `Custo × ${num(markup)}`
           }
         >
           <span className="ap-sugerido__topo">
             <span className="dc-eyebrow">{rotulo}</span>
-            <IconButton
-              className="ap-sugerido__editar"
-              variant="ghost"
-              size="sm"
-              label={`Editar ${rotulo.toLowerCase()}`}
-              onClick={abrir}
-            >
-              <Icon name="pencil" size={13} />
-            </IconButton>
+            {/* No sugerido não há o que editar aqui: o preço vem do markup. */}
+            {emDefinido && (
+              <IconButton
+                className="ap-sugerido__editar"
+                variant="ghost"
+                size="sm"
+                label={`Editar preço de ${rotulo.toLowerCase()}`}
+                onClick={abrir}
+              >
+                <Icon name="pencil" size={13} />
+              </IconButton>
+            )}
           </span>
 
           <NumeroRolante texto={money(mostrado)} className="ap-figure__val" />
@@ -766,17 +765,13 @@ function CartaoSugerido({
             >
               <span className="ap-sugerido__topo">
                 <span className="dc-eyebrow">{rotulo}</span>
-                <IconButton variant="ghost" size="sm" label="Concluir" onClick={concluir}>
-                  <Icon name="x" size={14} />
-                </IconButton>
               </span>
 
               {/* Em "preço definido" o próprio número é o campo: tocar nele
-                  abre o teclado, sem repetir o valor num campo embaixo. */}
-              {emDefinido ? (
-                digitandoPreco ? (
-                  <span className="ap-sugerido__precolinha">
-                    <span className="ap-figure__val" aria-hidden="true">R$</span>
+                  abre o teclado ali mesmo. */}
+              {digitandoPreco ? (
+                <span className="ap-sugerido__precolinha">
+                  <span className="ap-figure__val" aria-hidden="true">R$</span>
                   <input
                     className="ap-figure__val ap-sugerido__preco"
                     autoFocus
@@ -787,34 +782,25 @@ function CartaoSugerido({
                     onBlur={() => setDigitandoPreco(false)}
                     onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); }}
                   />
-                  </span>
-                ) : (
-                  <button
-                    type="button"
-                    className="ap-sugerido__precobtn"
-                    onClick={() => setDigitandoPreco(true)}
-                    aria-label={`Preço definido ${money(toNum(precoLocal))} — tocar para editar`}
-                  >
-                    <NumeroRolante texto={money(toNum(precoLocal))} className="ap-figure__val" />
-                  </button>
-                )
+                </span>
               ) : (
-                <NumeroRolante
-                  texto={money(custoDoMarkup(valor, markup) * toNum(markupLocal))}
-                  className="ap-figure__val"
-                />
+                <button
+                  type="button"
+                  className="ap-sugerido__precobtn"
+                  onClick={() => setDigitandoPreco(true)}
+                  aria-label={`Preço definido ${money(toNum(precoLocal))} — tocar para editar`}
+                >
+                  <NumeroRolante texto={money(toNum(precoLocal))} className="ap-figure__val" />
+                  <Icon name="pencil" size={16} />
+                </button>
               )}
 
-              <div className="ap-sugerido__campos">
-                <CampoNumero
-                  label="Markup"
-                  sufixo="×"
-                  hint={`padrão do negócio ${num(padrao, 1)}×`}
-                  value={markupLocal}
-                  onChange={setMarkupLocal}
-                  onCommit={setMarkupLocal}
-                />
-              </div>
+              {/* Quanto esse preço representa sobre o custo — só para saber. */}
+              <span className="ap-sugerido__equivale">
+                {custo > 0
+                  ? `equivale a × ${num(toNum(precoLocal) / custo)} sobre o custo de ${money(custo)}`
+                  : "sem custo cadastrado para comparar"}
+              </span>
 
               <Button onClick={concluir}>Concluir</Button>
             </motion.div>

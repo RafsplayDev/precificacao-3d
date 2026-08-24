@@ -82,11 +82,16 @@
 .dc-tabs{display:inline-flex;gap:var(--space-1)}
 .dc-tabs--underline{display:flex;gap:var(--space-6);border-bottom:var(--border-w) solid var(--border-hairline)}
 .dc-tab{display:inline-flex;align-items:center;gap:var(--space-2);border:0;background:transparent;cursor:pointer;font-family:var(--font-body);font-size:var(--text-body-md);color:var(--text-muted);transition:color var(--dur-fast) var(--ease-standard),background var(--dur-fast) var(--ease-standard)}
-.dc-tabs--pill .dc-tab{height:34px;padding:0 14px;border-radius:var(--radius-pill)}
-.dc-tabs--pill .dc-tab:hover{background:var(--surface-sunken);color:var(--text-strong)}
-.dc-tabs--pill .dc-tab--on{background:var(--ink-950);color:var(--text-inverse)}
+.dc-tabs--pill .dc-tab{position:relative;height:34px;padding:0 14px;border-radius:var(--radius-pill)}
+/* o cinza é só para quem tem mouse: no toque ele ficava grudado depois do clique */
+@media (hover:hover){.dc-tabs--pill .dc-tab:hover{background:var(--surface-sunken);color:var(--text-strong)}}
+.dc-tabs--pill .dc-tab--on{color:var(--text-inverse)}
+.dc-tabs--pill .dc-tab--on:hover{background:transparent;color:var(--text-inverse)}
+/* o realce que desliza entre as abas; o rótulo fica por cima dele */
+.dc-tab__pilula{position:absolute;inset:0;border-radius:var(--radius-pill);background:var(--ink-950)}
+.dc-tab__rot,.dc-tab__count{position:relative}
 .dc-tabs--underline .dc-tab{height:40px;padding:0;border-bottom:2px solid transparent;margin-bottom:-1px}
-.dc-tabs--underline .dc-tab:hover{color:var(--text-strong)}
+@media (hover:hover){.dc-tabs--underline .dc-tab:hover{color:var(--text-strong)}}
 .dc-tabs--underline .dc-tab--on{color:var(--text-strong);border-bottom-color:var(--fil-magenta)}
 .dc-tab__count{font-family:var(--font-mono);font-size:var(--text-caption);color:inherit;opacity:.6}
 

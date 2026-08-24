@@ -291,11 +291,11 @@ export default function Calculadora() {
         <div className="ap-figuras">
           <div className="ap-figure">
             <span className="dc-eyebrow">CUSTO TOTAL POR UNIDADE</span>
-            <span className="ap-figure__val ap-figure__val--lg">{money(custosTotais)}</span>
+            <NumeroRolante texto={money(custosTotais)} className="ap-figure__val ap-figure__val--lg" />
           </div>
           <div className="ap-figure ap-figure--accent ap-figure--dir">
             <span className="dc-eyebrow">MARGEM NO {canal === "atacado" ? "ATACADO" : "VAREJO"}</span>
-            <span className="ap-figure__val ap-figure__val--lg">{money(unit.margem)}</span>
+            <NumeroRolante texto={money(unit.margem)} className="ap-figure__val ap-figure__val--lg" />
             <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-body-sm)", color: "var(--text-muted)" }}>
               {pct(unit.margem_pct)} do preço
             </span>
@@ -317,6 +317,28 @@ export default function Calculadora() {
 
       <Card padding="var(--space-5)">
         <div className="ap-sectionhead ap-sectionhead--tight"><h2>Preço sugerido</h2></div>
+
+        {/* No celular as duas escolhas que mandam no resto da tela vêm aqui em
+            cima; no computador elas seguem onde sempre estiveram. */}
+        <div className="ap-escolhas">
+          <Tabs
+            items={[
+              { id: "Sugerido", label: "Sugerido" },
+              { id: "Final", label: "Preço definido" },
+            ]}
+            value={produto.usar_preco}
+            onChange={(v) => persistir({ usar_preco: v }, true)}
+          />
+          <Tabs
+            items={[
+              { id: "varejo", label: "Varejo" },
+              { id: "atacado", label: "Atacado" },
+            ]}
+            value={canal}
+            onChange={setCanal}
+          />
+        </div>
+
         <div className="ap-sugeridos">
           <CartaoSugerido
             canal="varejo"
@@ -477,7 +499,7 @@ export default function Calculadora() {
         {/* ============ COLUNA DIREITA: PREÇO ============ */}
         <div style={{ display: "grid", gap: "var(--space-6)", alignContent: "start" }}>
           <Card padding="var(--space-6)">
-            <div className="ap-sectionhead">
+            <div className="ap-sectionhead ap-precovenda__head">
               <h2>Preço de venda</h2>
               <Tabs
                 items={[
@@ -694,7 +716,7 @@ function CartaoSugerido({ canal, rotulo, valor, markup, padrao, ativo, onSelecio
         )}
       </span>
 
-      <span className="ap-figure__val">{money(valor)}</span>
+      <NumeroRolante texto={money(valor)} className="ap-figure__val" />
       {/* fica invisível quando não é o canal escolhido, mas segura a altura */}
       <span className="ap-sugerido__estado" aria-hidden={!ativo}>
         {ativo && <><Icon name="check" size={12} strokeWidth={3} /> selecionado</>}
@@ -845,6 +867,51 @@ function qtd(v) {
 }
 
 /* ---------- pedaços de UI ---------- */
+
+/* ---------- número que rola ao trocar de valor ---------- */
+
+/** Uma coluna com os dez dígitos; ela desliza até o que deve aparecer. */
+function Digito({ valor, mola }) {
+  return (
+    <span className="ap-num__col" aria-hidden="true">
+      <motion.span
+        className="ap-num__fita"
+        animate={{ y: `${valor * -10}%` }}
+        transition={mola}
+      >
+        {["0","1","2","3","4","5","6","7","8","9"].map((d) => (
+          <span key={d} className="ap-num__d">{d}</span>
+        ))}
+      </motion.span>
+    </span>
+  );
+}
+
+/**
+ * Recebe o texto já formatado ("R$ 12,34") e rola só os dígitos — trocar de
+ * produto vira um movimento, não um pisca-troca. Vírgula, ponto e "R$" ficam
+ * parados no lugar.
+ */
+function NumeroRolante({ texto, className = "" }) {
+  const reduzido = useReducedMotion();
+  const t = String(texto);
+  if (reduzido) return <span className={className}>{t}</span>;
+
+  const mola = { type: "spring", stiffness: 260, damping: 30, mass: 0.7 };
+  return (
+    <span className={`ap-num ${className}`.trim()}>
+      {/* o valor inteiro fica no rótulo: leitor de tela não lê fita de dígitos */}
+      <span className="dc-sr-only">{t}</span>
+      {t.split("").map((ch, i) =>
+        ch >= "0" && ch <= "9"
+          ? <Digito key={i} valor={Number(ch)} mola={mola} />
+          : <span key={i} className="ap-num__fixo" aria-hidden="true">{ch}</span>
+      )}
+    </span>
+  );
+}
+
+
 
 /** Filtra por nome, ignorando acento e caixa — "coracao" acha "CORAÇÃO". */
 function semAcento(t) {

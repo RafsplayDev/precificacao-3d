@@ -23,18 +23,38 @@
  * de obra são reais, mas nem todo mundo usa, e travar o tutorial neles
  * custaria a compra de quem só quer ver o preço sair.
  */
+/**
+ * As três etapas do roteiro, na ordem em que acontecem.
+ *
+ * Elas existem para responder à pergunta que todo tutorial longo provoca:
+ * "quanto falta?". Dezoito passos numerados assustam; três etapas com nome
+ * — Cadastro, Produto, Calculadora — descrevem um caminho que a pessoa
+ * reconhece, e a barra de cada uma mostra o avanço sem transformar o
+ * tutorial numa contagem regressiva.
+ */
+export const ETAPAS = [
+  { id: "cadastro", nome: "Cadastro" },
+  { id: "produto", nome: "Produto" },
+  { id: "calculadora", nome: "Calculadora" },
+];
+
 export const PASSOS = [
   {
     id: "inicio",
+    etapa: "cadastro",
     rota: "/cadastros",
-    titulo: "Vamos precificar uma peça sua de verdade",
+    titulo: "Descubra quanto cobrar pela sua peça",
     texto:
-      "São sete minutos. Use dados reais — a sua impressora, o filamento que está na bancada, " +
-      "a sua conta de luz. No fim você vai ter o preço de uma peça sua, não de um exemplo.",
+      "Use os dados reais: sua impressora, seu filamento, sua conta de luz. No fim você vai " +
+      "saber o valor de venda da sua peça.",
+    // As três etapas aparecem só aqui, escritas por extenso: é a promessa
+    // do caminho inteiro, feita antes de a pessoa dar o primeiro passo.
+    etapas: true,
     acao: "Começar",
   },
   {
     id: "abas",
+    etapa: "cadastro",
     rota: "/cadastros",
     aba: "impressoras",
     alvo: "cadastros-abas",
@@ -45,6 +65,7 @@ export const PASSOS = [
   },
   {
     id: "impressora",
+    etapa: "cadastro",
     rota: "/cadastros",
     aba: "impressoras",
     alvo: "cadastros-tabela",
@@ -57,6 +78,7 @@ export const PASSOS = [
   },
   {
     id: "filamento",
+    etapa: "cadastro",
     rota: "/cadastros",
     aba: "filamentos",
     alvo: "cadastros-tabela",
@@ -68,6 +90,7 @@ export const PASSOS = [
   },
   {
     id: "tarifa",
+    etapa: "cadastro",
     rota: "/cadastros",
     aba: "geral",
     alvo: "geral-energia",
@@ -78,6 +101,7 @@ export const PASSOS = [
   },
   {
     id: "markup",
+    etapa: "cadastro",
     rota: "/cadastros",
     aba: "geral",
     alvo: "geral-markup",
@@ -88,6 +112,7 @@ export const PASSOS = [
   },
   {
     id: "insumos",
+    etapa: "cadastro",
     rota: "/cadastros",
     aba: "insumos",
     alvo: "cadastros-tabela",
@@ -99,6 +124,7 @@ export const PASSOS = [
   },
   {
     id: "maoobra",
+    etapa: "cadastro",
     rota: "/cadastros",
     aba: "maos_obra",
     alvo: "cadastros-tabela",
@@ -110,6 +136,7 @@ export const PASSOS = [
   },
   {
     id: "ir-produtos",
+    etapa: "cadastro",
     rota: "/cadastros",
     alvo: "nav-produtos",
     titulo: "A base está pronta",
@@ -120,6 +147,7 @@ export const PASSOS = [
   },
   {
     id: "novo-produto",
+    etapa: "produto",
     rota: "/produtos",
     alvo: "produtos-novo",
     titulo: "Crie o seu produto",
@@ -130,6 +158,7 @@ export const PASSOS = [
   },
   {
     id: "pecas",
+    etapa: "produto",
     rota: "/produtos",
     abaProduto: "pecas",
     alvo: "produto-pecas",
@@ -140,6 +169,7 @@ export const PASSOS = [
   },
   {
     id: "prod-insumos",
+    etapa: "produto",
     rota: "/produtos",
     abaProduto: "insumos",
     alvo: "produto-insumos",
@@ -151,6 +181,7 @@ export const PASSOS = [
   },
   {
     id: "prod-trabalho",
+    etapa: "produto",
     rota: "/produtos",
     abaProduto: "trabalho",
     alvo: "produto-trabalho",
@@ -162,6 +193,7 @@ export const PASSOS = [
   },
   {
     id: "ir-calculadora",
+    etapa: "produto",
     rota: "/produtos",
     alvo: "nav-calculadora",
     titulo: "Pronto para ver o preço",
@@ -170,6 +202,7 @@ export const PASSOS = [
   },
   {
     id: "calc-pilha",
+    etapa: "calculadora",
     rota: "/",
     alvo: "calc-pilha",
     titulo: "O custo real da sua peça",
@@ -179,6 +212,7 @@ export const PASSOS = [
   },
   {
     id: "calc-custos",
+    etapa: "calculadora",
     rota: "/",
     alvo: "calc-custos",
     titulo: "Linha por linha, sem mistério",
@@ -188,6 +222,7 @@ export const PASSOS = [
   },
   {
     id: "calc-sugeridos",
+    etapa: "calculadora",
     rota: "/",
     alvo: "calc-sugeridos",
     titulo: "O preço sugerido",
@@ -197,6 +232,7 @@ export const PASSOS = [
   },
   {
     id: "calc-preco",
+    etapa: "calculadora",
     rota: "/",
     alvo: "calc-preco",
     titulo: "O que sobra no seu bolso",

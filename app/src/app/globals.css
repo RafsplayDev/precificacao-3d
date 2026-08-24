@@ -909,10 +909,32 @@ select.ap-cell {
 }
 
 .ap-tour__topo { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); }
-.ap-tour__contador {
+/* Avanço: o nome da etapa e três barras, uma por etapa. Sem número —
+   contar passos fazia o tutorial parecer mais longo do que é. */
+.ap-tour__avanco { display: flex; flex-direction: column; gap: 6px; min-width: 0; flex: 1; }
+.ap-tour__etapa {
   font-family: var(--font-mono); font-size: var(--text-caption);
-  letter-spacing: 0.08em; color: var(--text-muted);
+  letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted);
 }
+.ap-tour__barras { display: flex; gap: 4px; max-width: 180px; }
+.ap-tour__barra {
+  flex: 1; height: 3px; border-radius: 999px;
+  background: var(--ink-100); overflow: hidden;
+}
+.ap-tour__barra i {
+  display: block; height: 100%; width: 100%;
+  background: var(--surface-accent);
+  transform-origin: left center; transform: scaleX(0);
+  transition: transform var(--dur-base) var(--ease-out);
+}
+
+/* As três etapas por extenso, só na modal de abertura. */
+.ap-tour__etapas {
+  margin: var(--space-3) 0 0; padding: 0; list-style: none;
+  display: flex; flex-direction: column; gap: var(--space-1);
+  font-size: var(--text-body-sm); color: var(--text-muted);
+}
+.ap-tour__etapas strong { color: var(--text-strong); font-weight: var(--weight-medium); }
 .ap-tour__fechar {
   display: grid; place-items: center; width: 28px; height: 28px;
   border: 0; background: transparent; color: var(--text-muted);
@@ -965,23 +987,6 @@ select.ap-cell {
   }
 }
 
-/* ---------------------------------------------------------------------
-   Faixa do modo teste
-   Fica no topo de todas as telas do app porque a pergunta "isso está
-   salvo?" não pode ficar sem resposta em nenhuma delas.
-   --------------------------------------------------------------------- */
-.ap-teste {
-  display: flex; align-items: center; justify-content: center; gap: var(--space-3);
-  flex-wrap: wrap;
-  padding: var(--space-2) var(--space-4);
-  background: var(--surface-accent-soft, var(--ink-100));
-  border-bottom: var(--border-w) solid var(--border-hairline);
-  font-size: var(--text-body-sm);
-  color: var(--text-muted);
-  text-align: center;
-}
-.ap-teste strong { color: var(--text-strong); font-weight: var(--weight-medium); }
-.ap-teste a { color: var(--text-strong); }
 
 
 /* ---------------------------------------------------------------------

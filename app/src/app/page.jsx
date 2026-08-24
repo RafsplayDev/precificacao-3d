@@ -453,7 +453,7 @@ export default function Calculadora() {
                         <td style={{ color: "var(--text-muted)", fontSize: "var(--text-body-sm)" }}>
                           {GRUPOS.find((g) => g.id === i.grupo)?.label}
                         </td>
-                        <td className="ap-td--num" style={{ textAlign: "right" }}>{moneyPrecise(i.valor)}</td>
+                        <td className="ap-td--num" style={{ textAlign: "right" }}>{money(i.valor)}</td>
                         <td className="ap-td--num" style={{ textAlign: "right", color: "var(--text-muted)" }}>
                           {i.ativo ? pct((Number(i.valor) || 0) / (custosTotais || 1)) : "—"}
                         </td>
@@ -472,7 +472,7 @@ export default function Calculadora() {
                     {detalhePeca && grupo !== "tudo" ? " · " : ""}
                     {grupo !== "tudo" ? GRUPOS.find((g) => g.id === grupo)?.label : ""}
                   </span>
-                  <span className="ap-row__val">{moneyPrecise(somaVisivel)}</span>
+                  <span className="ap-row__val">{money(somaVisivel)}</span>
                 </div>
               )}
               {desligados > 0 && (
@@ -481,13 +481,13 @@ export default function Calculadora() {
                     Fora do cálculo
                   </span>
                   <span className="ap-row__val" style={{ color: "var(--text-muted)" }}>
-                    −{moneyPrecise(c.custos_totais - custosTotais)}
+                    −{money(c.custos_totais - custosTotais)}
                   </span>
                 </div>
               )}
               <div className="ap-row ap-row--total">
                 <span className="ap-row__label">Custos totais</span>
-                <span className="ap-row__val">{moneyPrecise(custosTotais)}</span>
+                <span className="ap-row__val">{money(custosTotais)}</span>
               </div>
             </div>
           </Card>

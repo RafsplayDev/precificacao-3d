@@ -537,6 +537,36 @@ select.ap-cell { width: 100%; min-width: 0; cursor: pointer; }
   .ap-table--custos { min-width: 0; }
 }
 
+/* No celular a tabela deixa de ser tabela: cada custo vira um bloco de duas
+   linhas — nome em cima, valor e percentual embaixo — em vez de obrigar o
+   dedo a arrastar a tela para o lado. */
+@media (max-width: 640px) {
+  .ap-table--custos, .ap-table--custos thead, .ap-table--custos tbody,
+  .ap-table--custos tr, .ap-table--custos th, .ap-table--custos td { display: block; }
+  .ap-table--custos tr {
+    display: grid;
+    grid-template-columns: 26px minmax(0, 1fr) auto;
+    align-items: center;
+    column-gap: 10px; row-gap: 2px;
+    padding: var(--space-3) var(--space-4);
+    border-top: 1px solid var(--border-hairline);
+  }
+  .ap-table--custos thead tr { border-top: 0; }
+  .ap-table--custos th, .ap-table--custos td { padding: 0 !important; border-top: 0; }
+  .ap-table--custos td:nth-child(1), .ap-table--custos th:nth-child(1) {
+    grid-row: 1 / span 2; width: auto;
+  }
+  .ap-table--custos td:nth-child(2), .ap-table--custos th:nth-child(2) {
+    grid-column: 2 / 4; width: auto;
+  }
+  .ap-table--custos td:nth-child(4) { grid-column: 2; text-align: left !important; }
+  .ap-table--custos td:nth-child(5) { grid-column: 3; text-align: right !important; }
+  /* o cabeçalho guarda só o "marcar tudo" e o rótulo da coluna do item */
+  .ap-table--custos thead th:nth-child(4), .ap-table--custos thead th:nth-child(5) { display: none; }
+  /* estado vazio ocupa a linha inteira */
+  .ap-table--custos td[colspan] { grid-column: 1 / -1; grid-row: auto; }
+}
+
 .ap-tr--off td { opacity: 0.45; }
 .ap-tr--off .ap-td--num { text-decoration: line-through; }
 

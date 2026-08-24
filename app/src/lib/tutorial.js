@@ -85,8 +85,7 @@ export const PASSOS = [
     alvo: "cadastros-tabela",
     titulo: "Agora o filamento",
     texto:
-      "Peso do carretel e quanto você pagou nele. O custo por grama sai da divisão e é ele que " +
-      "transforma os gramas da sua peça em reais.",
+      "Peso do carretel, quanto você pagou nele… Daí sai o custo por grama de cada peça.",
     exigeLinha: "filamentos",
   },
   {

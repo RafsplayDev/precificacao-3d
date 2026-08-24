@@ -234,7 +234,11 @@ function Guia({ passo, indice, total, onProximo, onAnterior, onSair }) {
   return (
     <>
       {area
-        ? <span className="ap-tour__luz" style={{ ...caixa(area), position: "fixed" }} aria-hidden="true" />
+        ? <span
+            className={"ap-tour__luz" + (espera ? " ap-tour__luz--pulsa" : "")}
+            style={{ ...caixa(area), position: "fixed" }}
+            aria-hidden="true"
+          />
         : <span className="ap-tour__escuro" aria-hidden="true" />}
       {area && <Bloqueio area={caixa(area)} />}
       <div
@@ -258,9 +262,6 @@ function Guia({ passo, indice, total, onProximo, onAnterior, onSair }) {
         <div className="ap-tour__corpo">
           <h2 className="ap-tour__titulo">{passo.titulo}</h2>
           <p className="ap-tour__texto">{passo.texto}</p>
-          {passo.exigeLinha && !feito && (
-            <p className="ap-tour__aviso">Cadastre com os seus números — o tutorial espera.</p>
-          )}
         </div>
 
         <div className="ap-tour__acoes">

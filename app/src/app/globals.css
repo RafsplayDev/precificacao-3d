@@ -857,6 +857,31 @@ select.ap-cell {
 
 @keyframes ap-tour-surge { from { opacity: 0; } to { opacity: 1; } }
 
+/* ---------------------------------------------------------------------
+   O pulso do destaque
+   Nos passos que esperam uma ação, o contorno bate de tempos em tempos —
+   é o "clique aqui" que o texto amarelo dizia por escrito, agora no
+   próprio lugar do clique. O ciclo é longo e a batida, curta: um brilho
+   contínuo vira ruído em dez segundos, e quem está lendo o cartão não
+   precisa de nada piscando ao lado.
+   O escuro em volta vem do mesmo box-shadow, então ele entra na animação
+   junto — repetido em todos os quadros para não clarear no meio do pulso.
+   --------------------------------------------------------------------- */
+@keyframes ap-tour-pulso {
+  0%   { box-shadow: 0 0 0 9999px rgba(8, 9, 11, 0.62), 0 0 0 0 rgba(255, 45, 111, 0.55); }
+  14%  { box-shadow: 0 0 0 9999px rgba(8, 9, 11, 0.62), 0 0 0 10px rgba(255, 45, 111, 0); }
+  28%  { box-shadow: 0 0 0 9999px rgba(8, 9, 11, 0.62), 0 0 0 0 rgba(255, 45, 111, 0.45); }
+  42%  { box-shadow: 0 0 0 9999px rgba(8, 9, 11, 0.62), 0 0 0 10px rgba(255, 45, 111, 0); }
+  100% { box-shadow: 0 0 0 9999px rgba(8, 9, 11, 0.62), 0 0 0 0 rgba(255, 45, 111, 0); }
+}
+.ap-tour__luz--pulsa {
+  animation: ap-tour-surge var(--dur-base) var(--ease-out),
+             ap-tour-pulso 3.6s var(--ease-out) infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ap-tour__luz--pulsa { animation: ap-tour-surge var(--dur-base) var(--ease-out); }
+}
+
 .ap-tour__cartao {
   position: fixed;
   z-index: 55;

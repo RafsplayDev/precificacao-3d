@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Card, Button, Icon, IconButton, Badge, Tabs, Dialog, Input } from "@/design-system";
 import { useDados, inserirLinha, salvarLinha, removerLinha, tratarMensagemErro } from "@/lib/useDados";
 import { TabelaEditavel } from "@/components/TabelaEditavel";
+import { Explicacao } from "@/components/Explicacao";
 import { useToast } from "@/components/AppShell";
 import { useTutorial } from "@/components/Tutorial";
 import { custosProduto, valorAdicional, valorTrabalho } from "@/lib/calc";
@@ -370,16 +371,21 @@ export default function Produtos() {
 
       {aba === "pecas" && (
         <Card padding="var(--space-6)" data-tutorial="produto-pecas">
+          {/* O parágrafo virou "i", como nos cadastros: ele é útil na
+              primeira visita e empurra a tabela para baixo em todas as
+              outras — no celular, para fora da tela. */}
           <div className="ap-sectionhead ap-sectionhead--tight">
-            <h2>Peças impressas</h2>
+            <h2>
+              Peças impressas
+              <Explicacao rotulo="Como funciona: peças impressas">
+                Uma linha por peça que sai da impressora. Material, energia, manutenção e falhas saem daqui.
+                Se mais de uma unidade sai na mesma mesa, informe o tempo e o peso da impressão inteira
+                e preencha <strong>Un. por impressão</strong> — os custos são divididos e viram custo por unidade.
+                A tarifa de energia é a mesma para todas as peças e fica em{" "}
+                <Link href="/cadastros">Cadastros › Geral</Link>.
+              </Explicacao>
+            </h2>
           </div>
-          <p className="ap-hint">
-            Uma linha por peça que sai da impressora. Material, energia, manutenção e falhas saem daqui.
-            Se mais de uma unidade sai na mesma mesa, informe o tempo e o peso da impressão inteira
-            e preencha <strong>Un. por impressão</strong> — os custos são divididos e viram custo por unidade.
-            A tarifa de energia é a mesma para todas as peças e fica em{" "}
-            <Link href="/cadastros">Cadastros › Geral</Link>.
-          </p>
           <TabelaEditavel
             tabela="pecas"
             rotulo="peça"
@@ -410,15 +416,17 @@ export default function Produtos() {
       {aba === "insumos" && (
         <Card padding="var(--space-6)" data-tutorial="produto-insumos">
           <div className="ap-sectionhead">
-            <h2>Insumos e custos adicionais</h2>
+            <h2>
+              Insumos e custos adicionais
+              <Explicacao rotulo="Como funciona: insumos e custos adicionais">
+                Escolha um insumo cadastrado e diga quanto entra em cada produto, na unidade dele — 2 argolas,
+                15 ml de tinta, 0,4 m de fita. O valor vem do custo por unidade.
+                Sem insumo, digite o valor à mão. Novos insumos ficam em{" "}
+                <Link href="/cadastros">Cadastros › Insumos</Link>.
+              </Explicacao>
+            </h2>
             <span className="ap-row__val">{money(c.custos_adicionais)}</span>
           </div>
-          <p className="ap-hint">
-            Escolha um insumo cadastrado e diga quanto entra em cada produto, na unidade dele — 2 argolas,
-            15 ml de tinta, 0,4 m de fita. O valor vem do custo por unidade.
-            Sem insumo, digite o valor à mão. Novos insumos ficam em{" "}
-            <Link href="/cadastros">Cadastros › Insumos</Link>.
-          </p>
           <TabelaEditavel
             tabela="custos_adicionais"
             rotulo="insumo"
@@ -445,15 +453,17 @@ export default function Produtos() {
       {aba === "trabalho" && (
         <Card padding="var(--space-6)" data-tutorial="produto-trabalho">
           <div className="ap-sectionhead">
-            <h2>Mão de obra</h2>
+            <h2>
+              Mão de obra
+              <Explicacao rotulo="Como funciona: mão de obra">
+                Quantos minutos deste produto são de produção, acabamento e modelagem. O valor sai do custo/hora
+                cadastrado em <Link href="/cadastros">Cadastros › Mão de obra</Link>.
+                Se os minutos são de um lote inteiro — tirar e limpar a mesa que rendeu 10 peças, por exemplo —
+                preencha <strong>Un. atendidas</strong> e o valor vira o de uma unidade.
+              </Explicacao>
+            </h2>
             <span className="ap-row__val">{money(c.custos_trabalho)}</span>
           </div>
-          <p className="ap-hint">
-            Quantos minutos deste produto são de produção, acabamento e modelagem. O valor sai do custo/hora
-            cadastrado em <Link href="/cadastros">Cadastros › Mão de obra</Link>.
-            Se os minutos são de um lote inteiro — tirar e limpar a mesa que rendeu 10 peças, por exemplo —
-            preencha <strong>Un. atendidas</strong> e o valor vira o de uma unidade.
-          </p>
           <TabelaEditavel
             tabela="produto_trabalhos"
             rotulo="trabalho"

@@ -941,6 +941,9 @@ select.ap-cell {
   background: rgba(8, 9, 11, 0.62);
   animation: ap-tour-surge var(--dur-base) var(--ease-out);
 }
+/* A tampa sobre o próprio alvo, nos passos que só mostram: escurece nada,
+   segura o clique do mesmo jeito. */
+.ap-tour__trava--vidro { background: transparent; }
 
 .ap-tour__topo { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); }
 /* Avanço: o nome da etapa e três barras, uma por etapa. Sem número —

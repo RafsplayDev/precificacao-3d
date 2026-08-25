@@ -151,34 +151,38 @@ export const PASSOS = [
     texto: "Todo custo já está cadastrado. Toque em Calculadora para ver o preço da sua peça.",
   },
   {
+    // O preço primeiro, e o custo depois.
+    //
+    // A ordem antiga era a da planilha: custo, linhas, preço. Mas quem
+    // chegou até aqui veio atrás de uma resposta — "por quanto eu vendo?"
+    // —, e fazê-la esperar três cartões por ela era pedir paciência de
+    // quem já deu sete minutos. Com o preço na tela, o custo deixa de ser
+    // lição de casa e vira explicação de um número que ela já quer
+    // entender.
+    id: "calc-sugeridos",
+    etapa: "calculadora",
+    rota: "/",
+    alvo: "calc-sugeridos",
+    titulo: "O preço sugerido",
+    texto: "Aqui está o preço da sua peça, no varejo e no atacado.",
+  },
+  {
     id: "calc-pilha",
     etapa: "calculadora",
     rota: "/",
     alvo: "calc-pilha",
     titulo: "O custo real da sua peça",
     texto:
-      "Este é o número que quase ninguém tem: tudo que sai do seu bolso para essa peça existir. " +
-      "A barra colorida mostra de onde vem cada pedaço — e quanto sobra de margem.",
+      "Tudo que sai do seu bolso para essa peça existir. A barra mostra de onde vem cada pedaço.",
   },
   {
     id: "calc-custos",
     etapa: "calculadora",
     rota: "/",
     alvo: "calc-custos",
-    titulo: "Linha por linha, sem mistério",
+    titulo: "Linha por linha",
     texto:
-      "Material, energia, desgaste, falhas, seu tempo. Desmarque uma linha e veja o preço mudar " +
-      "na hora — é assim que você descobre o que está te custando caro.",
-  },
-  {
-    id: "calc-sugeridos",
-    etapa: "calculadora",
-    rota: "/",
-    alvo: "calc-sugeridos",
-    titulo: "O preço sugerido",
-    texto:
-      "Custo vezes markup, no varejo e no atacado. Prefere fechar num valor redondo? Troque para " +
-      "Preço definido e a calculadora mostra a margem que sobra.",
+      "Cada custo que entra na peça. Você pode desmarcar qualquer um e o preço se ajusta na hora.",
   },
   {
     id: "calc-preco",
@@ -187,9 +191,8 @@ export const PASSOS = [
     alvo: "calc-preco",
     titulo: "O que sobra no seu bolso",
     texto:
-      "Taxa de marketplace e imposto entram aqui, no preço final — não na sua margem. Este é o " +
-      "lucro líquido de verdade. Daqui em diante a calculadora é sua: mexa nos números e veja o " +
-      "preço responder.",
+      "Escolha onde você vende e a calculadora desconta as taxas e impostos. O número final é o " +
+      "seu lucro de verdade.",
     acao: "Terminei",
   },
 ];

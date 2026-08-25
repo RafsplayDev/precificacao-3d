@@ -42,7 +42,9 @@ export const PASSOS = [
   {
     id: "inicio",
     etapa: "cadastro",
-    rota: "/cadastros",
+    // Abre na calculadora, e não na tela de cadastros: é dela que a pessoa
+    // vai sentir falta de dados, e é para ela que o roteiro volta no fim.
+    rota: "/",
     titulo: "Descubra quanto cobrar pela sua peça",
     texto:
       "Use os dados reais: sua impressora, seu filamento, sua conta de luz. No fim você vai " +
@@ -55,8 +57,10 @@ export const PASSOS = [
   {
     id: "abas",
     etapa: "cadastro",
-    rota: "/cadastros",
-    aba: "impressoras",
+    // O passo acontece fora dos Cadastros de propósito: mandar tocar num
+    // menu já aberto não ensina nada. Aqui a pessoa está na calculadora,
+    // toca em Cadastros e a tela muda — o caminho fica sabido, não dito.
+    rota: "/",
     // O foco é o item do menu, não a régua de abas: este passo apresenta a
     // tela de Cadastros, e destacar a faixa inteira de abas acendia meia
     // página sem dizer de onde ela veio.

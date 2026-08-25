@@ -238,12 +238,17 @@ export function TabelaEditavel({ tabela, colunas, linhas, novoRegistro, recarreg
                 onChange={(v) =>
                   setNovo((n) => {
                     const campos = { ...n.campos, [col.key]: v };
+                    let base = n.base;
                     const extras = col.aoMudar ? col.aoMudar(paraBanco(v, col), campos) : null;
                     for (const [k, val] of Object.entries(extras || {})) {
                       const alvo = camposDoForm.find((c) => c.key === k);
+                      // Fora do formulário o valor vai direto para a linha:
+                      // é assim que o formulário curto do tutorial preenche
+                      // sozinho um campo que ele nem mostra.
                       if (alvo) campos[k] = paraTexto(val, alvo);
+                      else base = { ...base, [k]: val };
                     }
-                    return { ...n, campos };
+                    return { ...n, base, campos };
                   })
                 }
                 onEnter={() => !criando && !faltando && adicionar()}

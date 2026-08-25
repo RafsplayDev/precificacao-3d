@@ -135,41 +135,20 @@ export const PASSOS = [
     alvo: "produto-pecas",
     titulo: "As peças impressas",
     texto:
-      "Abra o produto e adicione uma peça: tempo de impressão, peso em gramas, qual impressora e " +
-      "qual filamento. Material, energia, manutenção e falhas saem tudo dessas quatro respostas.",
-  },
-  {
-    id: "prod-insumos",
-    etapa: "produto",
-    rota: "/produtos",
-    abaProduto: "insumos",
-    alvo: "produto-insumos",
-    titulo: "O que mais entra nesta peça",
-    texto:
-      "Escolha um insumo cadastrado e diga a quantidade na unidade dele — 2 argolas, 15 ml de " +
-      "tinta. O valor vem do custo por unidade.",
-    opcional: true,
-  },
-  {
-    id: "prod-trabalho",
-    etapa: "produto",
-    rota: "/produtos",
-    abaProduto: "trabalho",
-    alvo: "produto-trabalho",
-    titulo: "Quantos minutos seus",
-    texto:
-      "Diga quantos minutos de produção e de acabamento esta peça leva. Se os minutos são de um " +
-      "lote, preencha as unidades atendidas e o valor vira o de uma peça só.",
-    opcional: true,
+      "Vamos cadastrar a primeira peça do seu produto: tempo, peso, impressora e filamento.",
+    exigeLinha: "pecas",
   },
   {
     id: "ir-calculadora",
     etapa: "produto",
     rota: "/produtos",
     alvo: "nav-calculadora",
+    // Sem botão: quem abre a calculadora é a pessoa, no menu. Insumos e mão
+    // de obra ficaram para depois — nenhum dos dois muda o fato de que o
+    // preço já pode aparecer, e cada um era mais uma parada antes dele.
+    aoClicar: true,
     titulo: "Pronto para ver o preço",
-    texto: "Todo custo já está cadastrado. Agora é só olhar o resultado.",
-    acao: "Ver o preço",
+    texto: "Todo custo já está cadastrado. Toque em Calculadora para ver o preço da sua peça.",
   },
   {
     id: "calc-pilha",

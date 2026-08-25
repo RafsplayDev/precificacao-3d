@@ -22,7 +22,7 @@ export default function Produtos() {
   const toast = useToast();
   const [sel, setSel] = React.useState("");
   const [aba, setAba] = React.useState("pecas");
-  const { passo } = useTutorial();
+  const { passo, ativo } = useTutorial();
 
   // Mesmo acordo dos cadastros: o passo diz qual seção do produto ele está
   // explicando, e a tela abre essa seção.
@@ -261,6 +261,7 @@ export default function Produtos() {
         {nomeando && (
           <DialogNome
             modo={nomeando}
+            curto={ativo}
             valor={nomeRascunho}
             placeholder={sugestaoNome}
             onChange={setNomeRascunho}
@@ -496,9 +497,17 @@ function Mini({ rotulo, valor }) {
 }
 
 /** Diálogo único de nome — usado tanto para criar quanto para renomear. */
-function DialogNome({ modo, valor, onChange, descricao, onChangeDescricao, salvando, onClose, onConfirmar, placeholder }) {
+/**
+ * `curto` é o modo tutorial: só o nome, e o nome digitado de verdade.
+ *
+ * A descrição não entra em conta nenhuma e o roteiro está pedindo uma
+ * coisa só. Aceitar o placeholder ("Produto 3") como resposta criaria um
+ * produto sem nome — a pessoa chegaria à calculadora sem reconhecer o que
+ * está precificando.
+ */
+function DialogNome({ modo, valor, onChange, descricao, onChangeDescricao, salvando, onClose, onConfirmar, placeholder, curto = false }) {
   const criar = modo === "novo";
-  const podeSalvar = Boolean(valor.trim() || placeholder);
+  const podeSalvar = Boolean(valor.trim() || (placeholder && !curto));
   return (
     <Dialog
       open={true}
@@ -508,7 +517,13 @@ function DialogNome({ modo, valor, onChange, descricao, onChangeDescricao, salva
       footer={
         <>
           <Button variant="secondary" size="sm" disabled={salvando} onClick={onClose}>Cancelar</Button>
-          <Button variant="accent" size="sm" disabled={salvando || !podeSalvar} onClick={onConfirmar}>
+          <Button
+            variant="accent"
+            size="sm"
+            disabled={salvando || !podeSalvar}
+            className={curto && podeSalvar && !salvando ? "is-pulsando" : ""}
+            onClick={onConfirmar}
+          >
             {salvando ? "Salvando..." : criar ? "Criar produto" : "Salvar"}
           </Button>
         </>
@@ -523,12 +538,14 @@ function DialogNome({ modo, valor, onChange, descricao, onChangeDescricao, salva
           onChange={(e) => onChange(e.target.value)}
           onKeyDown={(e) => { if (e.key === "Enter" && podeSalvar && !salvando) onConfirmar(); }}
         />
-        <Input
-          label="Descrição"
-          value={descricao}
-          onChange={(e) => onChangeDescricao(e.target.value)}
-          onKeyDown={(e) => { if (e.key === "Enter" && podeSalvar && !salvando) onConfirmar(); }}
-        />
+        {!curto && (
+          <Input
+            label="Descrição"
+            value={descricao}
+            onChange={(e) => onChangeDescricao(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter" && podeSalvar && !salvando) onConfirmar(); }}
+          />
+        )}
       </div>
     </Dialog>
   );

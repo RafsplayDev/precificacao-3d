@@ -124,9 +124,7 @@ export const PASSOS = [
     rota: "/produtos",
     alvo: "produtos-novo",
     titulo: "Crie o seu produto",
-    texto:
-      "Dê o nome do que você vende de verdade. Um produto pode ter várias peças impressas — o " +
-      "vaso e a base, o corpo e a tampa.",
+    texto: "Clique em Novo produto e dê o nome de um produto que você quer vender.",
     exigeLinha: "produtos",
   },
   {

@@ -11,6 +11,9 @@ import { money } from "@/lib/format";
 
 const CATEGORIAS = { Producao: "Produção", Acabamento: "Acabamento", Modelagem: "Modelagem" };
 
+/** O que o tutorial pergunta sobre a peça — e só. */
+const CAMPOS_PECA_CURTOS = ["nome", "tempo_impressao_horas", "peso_gr"];
+
 const ABAS = [
   { id: "pecas", label: "Peças" },
   { id: "insumos", label: "Insumos e custos" },
@@ -82,6 +85,21 @@ export default function Produtos() {
     { key: "total", label: "Total", tipo: "calc", formato: "moeda",
       valor: (linha) => valorAdicional(linha, d.insumos) },
   ];
+  /**
+   * Metros de filamento por grama, tirados do carretel cadastrado.
+   *
+   * O comprimento não entra em nenhum custo — quem paga a conta é o peso —,
+   * mas é um campo que ninguém sabe responder de cabeça. No tutorial ele
+   * some do formulário e é preenchido por esta média, coerente com o
+   * carretel que a própria pessoa acabou de cadastrar.
+   */
+  const metrosPorGrama = React.useMemo(() => {
+    const f = d.filamentos[0];
+    const gramas = Number(f?.peso_carretel_kg) * 1000;
+    const metros = Number(f?.comprimento_carretel_m);
+    return gramas > 0 && metros > 0 ? metros / gramas : 0.335;
+  }, [d.filamentos]);
+
   const trabalhos = produto ? d.produto_trabalhos.filter((t) => t.produto_id === produto.id) : [];
   const c = produto ? calcular(produto) : null;
 
@@ -286,10 +304,18 @@ export default function Produtos() {
       options: d.filamentos.map((f) => ({ value: f.id, label: f.nome })) },
     { key: "comprimento_m", label: "Compr. (m)", tipo: "numero" },
     { key: "tempo_impressao_horas", label: "Tempo (min)", tipo: "minutos" },
-    { key: "peso_gr", label: "Peso (g)", tipo: "numero" },
+    { key: "peso_gr", label: "Peso (g)", tipo: "numero",
+      // No formulário curto do tutorial o comprimento não aparece; ele vem
+      // do peso, pela média do carretel cadastrado.
+      aoMudar: (valor) => ({ comprimento_m: Math.round(Number(valor) * metrosPorGrama * 10) / 10 }) },
     { key: "unidades_por_impressao", label: "Un. por impressão", tipo: "numero" },
     { key: "percent_acabamento", label: "Acabamento (%)", tipo: "percent" },
   ];
+
+  // O formulário curto do tutorial: nome, tempo e peso. Impressora e
+  // filamento já vêm escolhidos (no teste existe um de cada), e o resto
+  // fica nos padrões que a linha nova sempre trouxe.
+  const colunasPecaCurtas = colunasPecas.filter((c) => CAMPOS_PECA_CURTOS.includes(c.key));
 
   return (
     <div className="ap-wrap">
@@ -358,6 +384,8 @@ export default function Produtos() {
             tabela="pecas"
             rotulo="peça"
             colunas={colunasPecas}
+            colunasFormulario={ativo ? colunasPecaCurtas : undefined}
+            obrigatorios={ativo ? CAMPOS_PECA_CURTOS : undefined}
             linhas={pecas}
             recarregar={d.recarregar}
             aplicar={d.aplicar}

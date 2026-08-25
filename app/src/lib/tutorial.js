@@ -103,49 +103,19 @@ export const PASSOS = [
       "Já deixamos uma média aqui. Se tiver a fatura por perto, troque pelo seu kWh.",
   },
   {
-    id: "markup",
+    id: "extras",
     etapa: "cadastro",
     rota: "/cadastros",
-    aba: "geral",
-    alvo: "geral-markup",
-    titulo: "Quanto você quer multiplicar",
-    texto:
-      "O markup é o que separa custo de preço. 2,0 no varejo e 1,5 no atacado são um ponto de " +
-      "partida honesto; ajuste depois de ver o preço sair.",
-  },
-  {
-    id: "insumos",
-    etapa: "cadastro",
-    rota: "/cadastros",
-    aba: "insumos",
-    alvo: "cadastros-tabela",
-    titulo: "Argola, saquinho, tinta",
-    texto:
-      "O que entra na peça mas não sai da impressora. Diga quanto pagou e quanto veio no pacote " +
-      "— o custo por unidade sai sozinho. Não usa nada disso? Pule.",
-    opcional: true,
-  },
-  {
-    id: "maoobra",
-    etapa: "cadastro",
-    rota: "/cadastros",
-    aba: "maos_obra",
-    alvo: "cadastros-tabela",
-    titulo: "O seu tempo vale dinheiro",
-    texto:
-      "Lixar, pintar, montar, modelar. Cadastre pelo menos um tipo de trabalho com o valor da sua " +
-      "hora — é o custo que some das planilhas e come a margem inteira.",
-    opcional: true,
-  },
-  {
-    id: "ir-produtos",
-    etapa: "cadastro",
-    rota: "/cadastros",
-    alvo: "nav-produtos",
-    titulo: "A base está pronta",
-    texto:
-      "Impressora, filamento e tarifa valem para o negócio inteiro — você não mexe mais nisso. " +
-      "Agora vamos montar a peça que você quer vender.",
+    aba: "impressoras",
+    alvo: "cadastros-abas",
+    // A régua de abas aparece acesa, mas fechada: aqui ela é uma vitrine do
+    // que existe, não um convite a sair do caminho. Markup, insumos e mão de
+    // obra são reais e ninguém precisa deles para ver o primeiro preço —
+    // cada um deles era um passo em que o roteiro parava.
+    semToque: true,
+    pulsaAcao: true,
+    titulo: "Extras",
+    texto: "Você ainda pode cadastrar insumos, markup, mão de obra e etc.",
     acao: "Ir para Produtos",
   },
   {

@@ -244,6 +244,12 @@ function Guia({ passo, indice, total, onProximo, onAnterior, onSair }) {
           />
         : <span className="ap-tour__escuro" aria-hidden="true" />}
       {area && <Bloqueio area={caixa(area)} />}
+      {/* Passo de vitrine: o alvo fica aceso, mas a tampa transparente por
+          cima faz o clique morrer nele também. Sem isso, "só olhe" viraria
+          um convite a abrir uma aba e perder o fio do roteiro. */}
+      {area && passo.semToque && (
+        <span className="ap-tour__trava ap-tour__trava--vidro" style={caixa(area)} aria-hidden="true" />
+      )}
       <div
         ref={cartao}
         className={"ap-tour__cartao" + (area ? "" : " ap-tour__cartao--centro")}
@@ -280,7 +286,12 @@ function Guia({ passo, indice, total, onProximo, onAnterior, onSair }) {
             </button>
           )}
           {!espera && (
-            <Button size="sm" variant={feito ? "accent" : "secondary"} onClick={onProximo}>
+            <Button
+              size="sm"
+              variant={feito ? "accent" : "secondary"}
+              className={passo.pulsaAcao ? "is-pulsando" : ""}
+              onClick={onProximo}
+            >
               {passo.acao || (passo.opcional ? "Cadastrei" : "Próximo")}
             </Button>
           )}

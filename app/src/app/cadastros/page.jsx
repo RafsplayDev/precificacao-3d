@@ -172,10 +172,9 @@ const SECOES_GERAL = [
     id: "energia",
     titulo: "Energia",
     texto: "A tarifa é a mesma para tudo que você imprime — vem da sua conta de luz, não da peça. O custo de energia de cada peça é horas × potência da impressora × esta tarifa.",
-    colunas: [
-      { key: "tarifa_kwh", label: "Tarifa kWh (R$)", tipo: "moeda" },
-      { key: "concessionaria", label: "Concessionária", tipo: "texto", estica: true },
-    ],
+    // Só a tarifa. O nome da concessionária não entra em conta nenhuma —
+    // era um campo a preencher que não mudava um centavo do preço.
+    colunas: [{ key: "tarifa_kwh", label: "Tarifa kWh (R$)", tipo: "moeda", estica: true }],
   },
   {
     id: "markup",

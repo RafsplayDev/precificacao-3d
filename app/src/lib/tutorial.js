@@ -98,10 +98,9 @@ export const PASSOS = [
     rota: "/cadastros",
     aba: "geral",
     alvo: "geral-energia",
-    titulo: "A sua conta de luz",
+    titulo: "Sua conta de luz",
     texto:
-      "Pegue o valor do kWh na última fatura. É o único número aqui que não muda de peça para " +
-      "peça — e é o que a maioria esquece de cobrar.",
+      "Já deixamos uma média aqui. Se tiver a fatura por perto, troque pelo seu kWh.",
   },
   {
     id: "markup",

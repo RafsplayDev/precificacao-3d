@@ -81,9 +81,14 @@ export const PASSOS = [
     alvo: "cadastros-tabela",
     titulo: "Primeiro a impressora",
     texto:
-      "Clique em Adicionar impressora e preencha com a sua. Esses dados viram o custo de máquina " +
-      "de cada peça.",
+      "Preencha com a sua impressora. Esses dados viram o custo de máquina de cada peça.\n" +
+      "Toque em Adicionar impressora.",
     exigeLinha: "impressoras",
+    destaque: "Adicionar impressora",
+    // Os cadastros obrigatórios ganham o feixe no botão: a tabela chega
+    // vazia e nada nela diz por onde se começa. Os passos que só explicam
+    // não têm — quando o brilho aparece, é porque há um clique a dar.
+    feixe: true,
   },
   {
     id: "filamento",
@@ -93,8 +98,11 @@ export const PASSOS = [
     alvo: "cadastros-tabela",
     titulo: "Agora o filamento",
     texto:
-      "Peso do carretel, quanto você pagou nele… Daí sai o custo por grama de cada peça.",
+      "Peso do carretel, quanto você pagou nele… Daí sai o custo por grama de cada peça.\n" +
+      "Toque em Adicionar filamento.",
     exigeLinha: "filamentos",
+    destaque: "Adicionar filamento",
+    feixe: true,
   },
   {
     id: "tarifa",
@@ -127,6 +135,8 @@ export const PASSOS = [
     etapa: "produto",
     rota: "/produtos",
     alvo: "produtos-novo",
+    // Cumprido, o passo aponta para o produto em vez do botão.
+    alvoFeito: "produto-criado",
     titulo: "Crie o seu produto",
     texto: "Clique em Novo produto e dê o nome de um produto que você quer vender.",
     exigeLinha: "produtos",
@@ -139,8 +149,11 @@ export const PASSOS = [
     alvo: "produto-pecas",
     titulo: "As peças impressas",
     texto:
-      "Vamos cadastrar a primeira peça do seu produto: tempo, peso, impressora e filamento.",
+      "Vamos cadastrar a primeira peça do seu produto: tempo, peso, impressora e filamento.\n" +
+      "Toque em Adicionar peça.",
     exigeLinha: "pecas",
+    destaque: "Adicionar peça",
+    feixe: true,
   },
   {
     id: "ir-calculadora",

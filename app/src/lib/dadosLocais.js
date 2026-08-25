@@ -69,7 +69,7 @@ const PADROES = {
   bens_depreciacao: { valor_aquisicao: 0, vida_util_meses: 12, taxa_anual: 0.1 },
   produtos: {
     descricao: null, imagem_url: null, hrs_trabalhadas: 1, custo_hora: 0,
-    markup_atacado: 1.5, markup_varejo: 2, preco_final_atacado: 0, preco_final_varejo: 0,
+    markup_atacado: 2, markup_varejo: 3, preco_final_atacado: 0, preco_final_varejo: 0,
     usar_preco: "Sugerido", marketplace_id: null, impostos_percent: 0,
     qtd_atacado: 100, desconto_atacado: 0, ajuste_custo_atacado: 0, ajuste_custo_atacado_pct: 0,
     qtd_varejo: 100, desconto_varejo: 0, ajuste_custo_varejo: 0,
@@ -81,9 +81,9 @@ const PADROES = {
   },
   custos_adicionais: { nome: null, valor: 0, insumo_id: null, quantidade: 0 },
   produto_trabalhos: { mao_obra_id: null, minutos: 0, unidades: 1 },
-  faixas_atacado: { qtd_min: 1, markup: 1.5, preco_final: 0 },
+  faixas_atacado: { qtd_min: 1, markup: 2, preco_final: 0 },
   concorrentes: { link: null, preco: 0 },
-  configuracoes: { tarifa_kwh: 0.95, concessionaria: null, markup_varejo_padrao: 2, markup_atacado_padrao: 1.5, qtd_atacado_padrao: 10 },
+  configuracoes: { tarifa_kwh: 0.95, concessionaria: null, markup_varejo_padrao: 3, markup_atacado_padrao: 2, qtd_atacado_padrao: 10 },
 };
 
 const n = (v) => (Number.isFinite(Number(v)) ? Number(v) : 0);

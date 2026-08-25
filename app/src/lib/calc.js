@@ -94,8 +94,8 @@ export function valorTrabalho(trabalho, maosObra = []) {
  */
 export function markupsDe(config, produto) {
   return {
-    varejo: n(config?.markup_varejo_padrao) || n(produto?.markup_varejo) || 2,
-    atacado: n(config?.markup_atacado_padrao) || n(produto?.markup_atacado) || 1.5,
+    varejo: n(config?.markup_varejo_padrao) || n(produto?.markup_varejo) || 3,
+    atacado: n(config?.markup_atacado_padrao) || n(produto?.markup_atacado) || 2,
   };
 }
 

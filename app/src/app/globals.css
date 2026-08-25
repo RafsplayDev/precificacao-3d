@@ -848,7 +848,10 @@ select.ap-cell {
   pointer-events: none;
   border-radius: var(--radius-card);
   outline: 2px solid var(--action-accent);
-  outline-offset: 0;
+  /* Negativo de propósito: o rosa encosta no botão (16 - 12 = 4px de folga) e
+     os 12px restantes ficam acesos por fora dele, separando o contorno da
+     borda do recorte. */
+  outline-offset: -12px;
   transition: top var(--dur-base) var(--ease-out), left var(--dur-base) var(--ease-out),
               width var(--dur-base) var(--ease-out), height var(--dur-base) var(--ease-out);
   animation: ap-tour-surge var(--dur-base) var(--ease-out);
@@ -858,27 +861,80 @@ select.ap-cell {
 
 /* ---------------------------------------------------------------------
    O pulso do destaque
-   Nos passos que esperam uma ação, o contorno bate de tempos em tempos —
-   é o "clique aqui" que o texto amarelo dizia por escrito, agora no
-   próprio lugar do clique. O ciclo é longo e a batida, curta: um brilho
-   contínuo vira ruído em dez segundos, e quem está lendo o cartão não
-   precisa de nada piscando ao lado.
-   O escuro em volta vem do mesmo box-shadow, então ele entra na animação
-   junto — repetido em todos os quadros para não clarear no meio do pulso.
+   O anel rosa fica parado — ele é a marca do lugar, e marca que se mexe
+   sozinha o tempo todo vira ruído. De tempos em tempos um eco sai dele,
+   se abre pelos 12px de área acesa e some. A onda é um box-shadow no
+   ::after, não um `scale`: assim ela anda sempre os mesmos 12px, num
+   botão largo do menu ou num campo estreito da tabela.
+   O ciclo é longo e a batida, curta: quem está lendo o cartão precisa
+   conseguir ignorar o que pisca ao lado.
    --------------------------------------------------------------------- */
+.ap-tour__luz--pulsa::after {
+  content: "";
+  position: absolute;
+  inset: 12px; /* em cima do anel, que o outline-offset negativo deixou aqui */
+  border-radius: max(0px, calc(var(--radius-card) - 12px));
+  animation: ap-tour-pulso 3.4s var(--ease-out) infinite;
+}
 @keyframes ap-tour-pulso {
-  0%   { box-shadow: 0 0 0 0 rgba(255, 45, 111, 0.55); }
-  14%  { box-shadow: 0 0 0 10px rgba(255, 45, 111, 0); }
-  28%  { box-shadow: 0 0 0 0 rgba(255, 45, 111, 0.45); }
-  42%  { box-shadow: 0 0 0 10px rgba(255, 45, 111, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(255, 45, 111, 0); }
+  0%   { box-shadow: 0 0 0 0 rgba(255, 45, 111, 0.5); }
+  22%  { box-shadow: 0 0 0 12px rgba(255, 45, 111, 0); }
+  100% { box-shadow: 0 0 0 12px rgba(255, 45, 111, 0); }
 }
 .ap-tour__luz--pulsa {
-  animation: ap-tour-surge var(--dur-base) var(--ease-out),
-             ap-tour-pulso 3.6s var(--ease-out) infinite;
+  animation: ap-tour-surge var(--dur-base) var(--ease-out);
 }
 @media (prefers-reduced-motion: reduce) {
-  .ap-tour__luz--pulsa { animation: ap-tour-surge var(--dur-base) var(--ease-out); }
+  .ap-tour__luz--pulsa::after { animation: none; }
+}
+
+/* ---------------------------------------------------------------------
+   O feixe no botão "Adicionar"
+   No primeiro cadastro o recorte acende a tabela inteira, e tabela vazia
+   não diz por onde se começa. O feixe atravessa só o botão, de tempos em
+   tempos: é uma segunda seta, dentro da área já acesa, apontando o clique
+   que o texto do cartão pede. A faixa é um gradiente inclinado passando
+   por cima — o botão não muda de cor nem de tamanho, então ele continua
+   sendo o mesmo botão de sempre quando o tutorial sai.
+   --------------------------------------------------------------------- */
+.ap-feixe {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate; /* prende o feixe ao botão, sem vazar por cima do texto vizinho */
+}
+.ap-feixe::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 45%;
+  pointer-events: none;
+  background: linear-gradient(
+    100deg,
+    rgba(255, 45, 111, 0) 0%,
+    rgba(255, 45, 111, 0.32) 50%,
+    rgba(255, 45, 111, 0) 100%
+  );
+  animation: ap-feixe-passa 3.4s var(--ease-out) infinite;
+}
+/* Sai de fora da borda esquerda e some fora da direita; o resto do ciclo
+   ele fica estacionado lá, para o brilho ser um evento e não um estado. */
+@keyframes ap-feixe-passa {
+  0%   { left: -60%; opacity: 0; }
+  10%  { opacity: 1; }
+  32%  { left: 115%; opacity: 0; }
+  100% { left: 115%; opacity: 0; }
+}
+
+/* O mesmo rosa, agora no texto do cartão: o nome do botão em destaque e o
+   botão em destaque na tela são a mesma informação, dita duas vezes. */
+.ap-tour__realce {
+  color: var(--action-accent);
+  font-weight: var(--weight-medium);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ap-feixe::after { animation: none; opacity: 0; }
 }
 
 .ap-tour__cartao {
@@ -944,6 +1000,13 @@ select.ap-cell {
 /* A tampa sobre o próprio alvo, nos passos que só mostram: escurece nada,
    segura o clique do mesmo jeito. */
 .ap-tour__trava--vidro { background: transparent; }
+/* Nas telas estreitas o vidro se afasta: a régua de abas não cabe e
+   precisa rolar com o dedo, e um pano por cima transforma o arrasto em
+   nada. Quem impede o toque de virar navegação, aí, é o guarda de clique
+   do tutorial — ele deixa passar o gesto e engole a batida. */
+@media (max-width: 720px) {
+  .ap-tour__trava--vidro { pointer-events: none; }
+}
 
 .ap-tour__topo { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); }
 /* Avanço: o nome da etapa e três barras, uma por etapa. Sem número —
@@ -987,7 +1050,13 @@ select.ap-cell {
 .ap-tour__fechar:hover { background: var(--ink-100); color: var(--text-strong); }
 
 .ap-tour__titulo { font-size: var(--text-h3); font-weight: var(--weight-medium); margin: 0; }
-.ap-tour__texto { color: var(--text-muted); margin: 0; font-size: var(--text-body-sm); }
+.ap-tour__texto {
+  color: var(--text-muted); margin: 0; font-size: var(--text-body-sm);
+  /* A instrução de toque vem depois de uma quebra no roteiro: ela é a única
+     frase do cartão que pede ação, e sozinha na linha ela se lê como
+     ação — no meio do parágrafo, ela era mais uma explicação. */
+  white-space: pre-line;
+}
 
 .ap-tour__aviso {
   margin: var(--space-1) 0 0;

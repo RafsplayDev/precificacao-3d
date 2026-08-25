@@ -33,6 +33,24 @@ export default function Produtos() {
   React.useEffect(() => {
     if (passo?.abaProduto) setAba(passo.abaProduto);
   }, [passo?.abaProduto]);
+
+  // O passo fala de dentro do produto, mas quem está na lista não está
+  // dentro de nenhum: basta recarregar a página para `sel` voltar a vazio,
+  // e aí o tutorial pede uma peça apontando para uma seção que não existe
+  // na tela. Como o teste grátis tem um produto só, abrir o que existe é
+  // sempre a escolha certa — e é o que a pessoa faria a seguir de qualquer
+  // jeito.
+  // Uma vez por passo, e não sempre: quem fecha o produto de propósito para
+  // olhar a lista não pode ser puxado de volta para dentro a cada quadro.
+  const jaAbriu = React.useRef(null);
+  React.useEffect(() => {
+    if (!passo?.abaProduto || sel) return;
+    if (jaAbriu.current === passo.id) return;
+    const unico = d.produtos[0];
+    if (!unico) return;
+    jaAbriu.current = passo.id;
+    setSel(unico.id);
+  }, [passo?.abaProduto, passo?.id, sel, d.produtos]);
   const [nomeando, setNomeando] = React.useState(null); // "novo" | "renomear"
   const [nomeRascunho, setNomeRascunho] = React.useState("");
   const [sugestaoNome, setSugestaoNome] = React.useState("");
@@ -132,9 +150,9 @@ export default function Produtos() {
           descricao: descRascunho.trim() || null,
           hrs_trabalhadas: 0,
           custo_hora: 0,
-          // produto novo nasce com o markup do negócio; sem configuração, 1,5 e 2,0
-          markup_atacado: Number(cfg?.markup_atacado_padrao) || 1.5,
-          markup_varejo: Number(cfg?.markup_varejo_padrao) || 2,
+          // produto novo nasce com o markup do negócio; sem configuração, 2,0 e 3,0
+          markup_atacado: Number(cfg?.markup_atacado_padrao) || 2,
+          markup_varejo: Number(cfg?.markup_varejo_padrao) || 3,
           qtd_atacado: Number(cfg?.qtd_atacado_padrao) || 10,
         });
         d.aplicar("produtos", p);
@@ -216,7 +234,7 @@ export default function Produtos() {
           </div>
         ) : (
           <div className="ap-cards">
-            {d.produtos.map((p) => {
+            {d.produtos.map((p, i) => {
               const cc = calcular(p);
               const qPecas = d.pecas.filter((x) => x.produto_id === p.id).length;
               const qAdic = d.custos_adicionais.filter((x) => x.produto_id === p.id).length;
@@ -226,6 +244,10 @@ export default function Produtos() {
                   interactive
                   padding="var(--space-5)"
                   className="ap-prodcard"
+                  /* O tutorial acende este card quando a pessoa volta ao
+                     passo do produto já criado — mostrar o que nasceu ali
+                     diz mais que reacender o botão que ela já apertou. */
+                  data-tutorial={i === 0 ? "produto-criado" : undefined}
                   role="button"
                   tabIndex={0}
                   aria-label={`Abrir ${p.nome}`}
@@ -550,7 +572,7 @@ function DialogNome({ modo, valor, onChange, descricao, onChangeDescricao, salva
     <Dialog
       open={true}
       title={criar ? "Novo produto" : "Editar produto"}
-      description={criar ? "Como este produto se chama? Dá para mudar depois." : "O nome precisa ser único."}
+      description={criar ? "Como este produto se chama? É possível alterar depois." : "O nome precisa ser único."}
       onClose={onClose}
       footer={
         <>

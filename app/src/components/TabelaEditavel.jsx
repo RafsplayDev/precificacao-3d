@@ -196,7 +196,13 @@ export function TabelaEditavel({ tabela, colunas, linhas, novoRegistro, recarreg
 
       {novoRegistro && !semBotao && (
         <div style={{ marginTop: "var(--space-4)" }}>
-          <Button variant="secondary" size="sm" icon={<Icon name="plus" size={16} />} onClick={abrirFormulario}>
+          {/* O tutorial acha este botão pelo atributo para passar o feixe de
+              luz nele — pelo mesmo motivo dos alvos de passo: seletor de
+              classe quebra em silêncio quando o CSS muda. */}
+          <Button
+            variant="secondary" size="sm" icon={<Icon name="plus" size={16} />}
+            onClick={abrirFormulario} data-tutorial-acao="adicionar"
+          >
             Adicionar {rotulo}
           </Button>
         </div>

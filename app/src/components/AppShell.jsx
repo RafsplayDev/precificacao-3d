@@ -156,7 +156,7 @@ function Casca({ children }) {
                 <nav className="ap-nav" aria-label="Seções">{links(false)}</nav>
 
                 {/* Sem conta a gaveta continua existindo: é ali que mora o
-                    "ver o tutorial de novo" e o convite para se cadastrar.
+                    "ver o tutorial" e o convite para se cadastrar.
                     Um botão de perfil que abre o vazio seria pior que não
                     ter botão. */}
                 {(conta || logado === false) && (
@@ -165,7 +165,10 @@ function Casca({ children }) {
                       <span className="ap-conta__email">
                         {conta ? conta.email : "Você está no teste grátis"}
                       </span>
-                      <RepetirTutorial />
+                      {/* Só no teste: o tutorial é a demonstração de quem
+                          ainda não comprou. Quem já tem conta passou por ele
+                          e não precisa do atalho ocupando a gaveta. */}
+                      {!conta && <RepetirTutorial />}
                       {conta ? (
                         <button type="button" onClick={sair}>Sair</button>
                       ) : (

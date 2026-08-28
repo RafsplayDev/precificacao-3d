@@ -19,6 +19,8 @@ const TABELAS = [
   ["produto_trabalhos", "created_at"],
   ["faixas_atacado", "qtd_min"],
   ["concorrentes", "created_at"],
+  ["gastos", "data"],
+  ["vendas", "data"],
 ];
 
 const VAZIO = Object.fromEntries(TABELAS.map(([t]) => [t, []]));

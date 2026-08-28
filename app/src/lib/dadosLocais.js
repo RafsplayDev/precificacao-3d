@@ -1,4 +1,5 @@
 "use client";
+import { hojeISO } from "./format";
 
 /**
  * O banco do modo teste.
@@ -41,6 +42,8 @@ export const LIMITES = {
   produto_trabalhos: 3,
   faixas_atacado: 2,
   concorrentes: 3,
+  gastos: 5,
+  vendas: 5,
 };
 
 /** Como chamar cada coisa quando o limite estoura. */
@@ -57,7 +60,12 @@ const NOMES = {
   produto_trabalhos: ["linha de mão de obra", "linhas de mão de obra"],
   faixas_atacado: ["faixa de atacado", "faixas de atacado"],
   concorrentes: ["concorrente", "concorrentes"],
+  gastos: ["gasto", "gastos"],
+  vendas: ["venda", "vendas"],
 };
+
+/** A data de hoje, no formato da coluna `date` do Postgres. */
+const hoje = hojeISO;
 
 /** Valores que o banco preencheria sozinho quando o formulário não manda. */
 const PADROES = {
@@ -83,6 +91,11 @@ const PADROES = {
   produto_trabalhos: { mao_obra_id: null, minutos: 0, unidades: 1 },
   faixas_atacado: { qtd_min: 1, markup: 2, preco_final: 0 },
   concorrentes: { link: null, preco: 0 },
+  gastos: { data: hoje(), categoria: "Outros", descricao: null, valor: 0 },
+  vendas: {
+    data: hoje(), produto_id: null, descricao: null, cliente: null,
+    quantidade: 1, preco_unitario: 0, custo_unitario: 0, taxas: 0,
+  },
   configuracoes: { tarifa_kwh: 0.95, concessionaria: null, markup_varejo_padrao: 3, markup_atacado_padrao: 2, qtd_atacado_padrao: 10 },
 };
 
@@ -104,6 +117,11 @@ const CALCULADOS = {
   filamentos: (l) => ({ custo_por_grama: dividir(l.custo_brl, n(l.peso_carretel_kg) * 1000) }),
   insumos: (l) => ({ custo_unitario: dividir(l.valor_pago, l.qtd_pecas) }),
   maos_obra: (l) => ({ custo_minuto: n(l.custo_hora) / 60 }),
+  vendas: (l) => ({
+    receita: n(l.quantidade) * n(l.preco_unitario),
+    custo_total: n(l.quantidade) * n(l.custo_unitario),
+    lucro: n(l.quantidade) * n(l.preco_unitario) - n(l.quantidade) * n(l.custo_unitario) - n(l.taxas),
+  }),
   bens_depreciacao: (l) => ({
     vida_util_anos: n(l.vida_util_meses) / 12,
     depreciacao_mensal: dividir(l.valor_aquisicao, l.vida_util_meses),
@@ -119,6 +137,15 @@ const NOME_UNICO = {
 /** O `on delete cascade`: apagar o pai apaga os filhos. */
 const FILHOS = {
   produtos: ["pecas", "custos_adicionais", "produto_trabalhos", "faixas_atacado", "concorrentes"],
+};
+
+/**
+ * O `on delete set null`: apagar o produto do catálogo não pode apagar o
+ * histórico de que ele foi vendido. A venda solta o vínculo e guarda o
+ * preço e o custo daquele dia.
+ */
+const DESVINCULAR = {
+  produtos: [["vendas", "produto_id"]],
 };
 
 /** O `on delete restrict`: quem está em uso não sai. */
@@ -270,6 +297,11 @@ export function removerLocal(tabela, id) {
   banco[tabela] = (banco[tabela] || []).filter((l) => l.id !== id);
   for (const filha of FILHOS[tabela] || []) {
     banco[filha] = (banco[filha] || []).filter((l) => l.produto_id !== id);
+  }
+  for (const [filha, coluna] of DESVINCULAR[tabela] || []) {
+    banco[filha] = (banco[filha] || []).map((l) =>
+      l[coluna] === id ? { ...l, [coluna]: null } : l
+    );
   }
   gravar(banco);
 }

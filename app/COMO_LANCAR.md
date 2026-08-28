@@ -10,6 +10,7 @@ No SQL Editor do Supabase, rode **na ordem**:
 
 1. `supabase/migrations/0018_multi_tenant.sql`
 2. `supabase/migrations/0020_produto.sql`
+3. `supabase/migrations/0023_gestao.sql` — as tabelas de gastos e vendas da tela de Gestão
 
 A partir da 0018 cada linha do banco pertence a uma conta, e **os dados que já
 existiam ficam invisíveis** — inclusive para você. Eles não foram apagados; só

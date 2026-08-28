@@ -1145,3 +1145,52 @@ select.ap-cell {
 @media (max-width: 720px) {
   .ap-expl__balao { max-width: calc(100vw - var(--space-10)); }
 }
+
+/* ---- Gestão: gastos, vendas e o que sobrou ---- */
+
+/* O recorte de tempo. Botões e não abas: as abas logo abaixo separam vendas
+   de gastos, e duas filas de aba na mesma tela não diriam qual manda em qual. */
+.ap-periodo {
+  display: flex; flex-wrap: wrap; gap: var(--space-2); margin-bottom: var(--space-4);
+}
+.ap-periodo__btn {
+  padding: 6px 14px; border-radius: var(--radius-pill);
+  border: var(--border-w) solid var(--border-default);
+  background: transparent; color: var(--text-muted);
+  font-family: var(--font-body); font-size: var(--text-body-sm); cursor: pointer;
+  transition: color var(--dur-fast) var(--ease-standard),
+              border-color var(--dur-fast) var(--ease-standard),
+              background var(--dur-fast) var(--ease-standard);
+}
+.ap-periodo__btn:hover { color: var(--text-strong); border-color: var(--border-strong); }
+.ap-periodo__btn:focus-visible { outline: none; box-shadow: var(--ring-focus); }
+.ap-periodo__btn.is-on {
+  background: var(--ink-950); border-color: var(--ink-950); color: var(--surface-card);
+}
+
+/* Os quatro números do topo. Dois a dois no celular: receita ao lado do
+   lucro, gastos ao lado do caixa — cada par é uma pergunta. */
+.ap-gestaonums { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-5); }
+@media (min-width: 900px) { .ap-gestaonums { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.ap-gestaonums .ap-figure__val { font-size: clamp(19px, 3.4vw, 28px); }
+.ap-figure__nota {
+  font-size: var(--text-caption); color: var(--text-muted); margin-top: 2px;
+}
+
+/* O cartão do topo é escuro, e os tokens de texto continuam sendo os do
+   fundo claro: sem estas três linhas o número sairia preto sobre preto. */
+.dc-card--inverse .ap-figure__val { color: #fff; }
+.dc-card--inverse .dc-eyebrow { color: var(--ink-300); }
+.dc-card--inverse .ap-figure__nota { color: var(--ink-300); }
+
+/* Prejuízo tem cor. O sinal de menos sozinho passa despercebido justo no
+   número que a pessoa abriu a tela para conferir. No escuro o vermelho do
+   sistema fecha demais; o coral da paleta é o mesmo alarme, legível. */
+.ap-figure__val--perda { color: var(--status-danger); }
+.dc-card--inverse .ap-figure__val--perda { color: var(--fil-coral); }
+
+.ap-row__val--fraco { color: var(--text-muted); }
+.ap-row__val--perda { color: var(--status-danger); }
+
+/* O campo de data é do navegador; só o alinhamento é nosso. */
+.ap-cell--data { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }

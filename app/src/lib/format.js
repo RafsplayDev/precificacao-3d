@@ -35,3 +35,20 @@ export function numeroParaMoeda(valor) {
     minimumFractionDigits: 2, maximumFractionDigits: 2,
   });
 }
+
+/**
+ * Hoje em "AAAA-MM-DD", o formato da coluna `date`.
+ *
+ * Montado a partir da data local, não do `toISOString()`: no Brasil o UTC
+ * já virou o dia às 21h, e uma venda lançada à noite cairia amanhã.
+ */
+export function hojeISO(d = new Date()) {
+  const p = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+}
+
+/** "2026-08-28" → "28/08/2026", sem passar por Date (que aplicaria fuso). */
+export function dataBR(iso) {
+  const [a, m, d] = String(iso ?? "").slice(0, 10).split("-");
+  return a && m && d ? `${d}/${m}/${a}` : "—";
+}

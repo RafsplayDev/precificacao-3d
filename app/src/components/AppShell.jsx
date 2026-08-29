@@ -13,6 +13,7 @@ const NAV = [
   { href: "/", label: "Calculadora", icone: "calculator", tour: "nav-calculadora" },
   { href: "/produtos", label: "Produtos", icone: "box", tour: "nav-produtos" },
   { href: "/cadastros", label: "Cadastros", icone: "layers", tour: "nav-cadastros" },
+  { href: "/gestao", label: "Gestão", icone: "trending-up" },
   { href: "/concorrentes", label: "Concorrentes", icone: "store" },
 ];
 

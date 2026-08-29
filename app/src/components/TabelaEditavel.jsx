@@ -3,15 +3,16 @@ import React from "react";
 import { Button, IconButton, Icon, Dialog, Input, Select, Combobox } from "@/design-system";
 import { salvarLinha, inserirLinha, removerLinha, tratarMensagemErro } from "@/lib/useDados";
 import { useToast } from "@/components/AppShell";
-import { toNum, money, num, mascaraMoeda, moedaParaNumero, numeroParaMoeda } from "@/lib/format";
+import { toNum, money, num, mascaraMoeda, moedaParaNumero, numeroParaMoeda, hojeISO } from "@/lib/format";
 
 /**
  * Tabela editável ligada direto a uma tabela do Supabase.
  * Cada célula grava no blur; colunas `calc` são só leitura (vêm do banco).
  *
- * colunas: { key, label, tipo: "texto"|"numero"|"moeda"|"percent"|"minutos"|"select"|"calc", options?, formato? }
+ * colunas: { key, label, tipo: "texto"|"numero"|"moeda"|"percent"|"minutos"|"data"|"select"|"calc", options?, formato? }
  *   - moeda usa máscara de caixa de banco: os dígitos entram pelos centavos.
  *   - minutos digita em minutos e grava em horas (a coluna do banco continua em horas).
+ *   - data usa o seletor do navegador e grava "AAAA-MM-DD", como a coluna `date`.
  *   - select aceita `vazio` para oferecer a opção "nenhum" (grava null) e `options`
  *     pode ser função da linha, quando as opções dependem de outro campo.
  *   - `colunasFormulario` troca os campos do formulário de inclusão; com
@@ -43,10 +44,12 @@ export function TabelaEditavel({ tabela, colunas, linhas, novoRegistro, recarreg
       : coluna.tipo === "moeda" ? moedaParaNumero(valorBruto)
       : coluna.tipo === "percent" ? toNum(valorBruto) / 100
       : coluna.tipo === "minutos" ? toNum(valorBruto) / 60
+      : coluna.tipo === "data" ? (valorBruto || hojeISO())
       : valorBruto === "" ? null : valorBruto;
 
     const atual = linha[coluna.key];
-    const igual = coluna.tipo === "texto" ? String(atual ?? "") === String(valor ?? "") : toNum(atual) === valor;
+    const textual = coluna.tipo === "texto" || coluna.tipo === "data";
+    const igual = textual ? String(atual ?? "") === String(valor ?? "") : toNum(atual) === valor;
     if (igual) return;
 
     const extras = coluna.aoMudar ? coluna.aoMudar(valor, linha) : null;
@@ -82,6 +85,7 @@ export function TabelaEditavel({ tabela, colunas, linhas, novoRegistro, recarreg
     const col = camposDoForm.find((c) => c.key === k);
     const texto = String(novo?.campos?.[k] ?? "").trim();
     if (texto === "") return true;
+    if (col?.tipo === "data") return false;
     return col && col.tipo !== "texto" && !(Number(paraBanco(texto, col)) > 0);
   });
 
@@ -329,6 +333,20 @@ function Celula({ linha, coluna, onCommit }) {
     return <CelulaMoeda valor={bruto} onCommit={onCommit} />;
   }
 
+  if (coluna.tipo === "data") {
+    return (
+      <input
+        key={String(bruto ?? "")}
+        type="date"
+        aria-label={coluna.label}
+        className="ap-cell ap-cell--data"
+        defaultValue={String(bruto ?? "").slice(0, 10)}
+        onBlur={(e) => onCommit(e.target.value)}
+        onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()}
+      />
+    );
+  }
+
   const valorInicial = coluna.formatarEntrada
     ? coluna.formatarEntrada(bruto)
     : coluna.tipo === "percent" ? String(toNum(bruto) * 100)
@@ -407,6 +425,7 @@ function textoDaCelula(linha, col) {
 function medirColuna(col, linhas = []) {
   const maiorValor = linhas.reduce((max, l) => Math.max(max, textoDaCelula(l, col).length), 0);
   const rotulo = String(col.label || "").length * 1.25;
+  if (col.tipo === "data") return "15ch";
   const teto = col.tipo === "texto" || col.tipo === "select" ? 32 : 16;
   const ch = Math.min(Math.max(maiorValor + 4, rotulo + 2, 6), teto);
   return `${Math.ceil(ch)}ch`;
@@ -436,6 +455,7 @@ function paraBanco(texto, coluna) {
   if (coluna.tipo === "numero") return toNum(texto);
   if (coluna.tipo === "percent") return toNum(texto) / 100;
   if (coluna.tipo === "minutos") return toNum(texto) / 60;
+  if (coluna.tipo === "data") return texto || hojeISO();
   return texto === "" ? null : texto;
 }
 
@@ -452,6 +472,19 @@ function CampoFormulario({ coluna, linha, valor, onChange, onEnter, autoFocus, p
           ...(coluna.vazio ? [{ value: "", label: coluna.vazio }] : []),
           ...opcoesDe(coluna, linha).map((o) => ({ value: o.value ?? o, label: o.label ?? o })),
         ]}
+      />
+    );
+  }
+
+  if (coluna.tipo === "data") {
+    return (
+      <Input
+        label={rotulo}
+        type="date"
+        autoFocus={autoFocus}
+        value={String(valor ?? "").slice(0, 10)}
+        onChange={(e) => onChange(e.target.value)}
+        onKeyDown={(e) => { if (e.key === "Enter") onEnter(); }}
       />
     );
   }

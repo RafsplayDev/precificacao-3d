@@ -31,6 +31,7 @@ const CALCULADAS = [
   "nivel_desgaste", "uso_estimado_anual_hrs", "hr_ano", "valor_adicionar_hr",
   "custo_por_grama", "custo_unitario", "custo_minuto",
   "vida_util_anos", "depreciacao_mensal",
+  "receita", "custo_total", "lucro",
 ];
 
 /**
@@ -51,6 +52,10 @@ const ETAPAS = [
   { tabela: "produto_trabalhos", pai: { produto_id: "produtos", mao_obra_id: "maos_obra" } },
   { tabela: "faixas_atacado", pai: { produto_id: "produtos" } },
   { tabela: "concorrentes", pai: { produto_id: "produtos" } },
+  { tabela: "gastos" },
+  // A venda aponta para o produto, mas sobrevive sem ele: se o produto não
+  // subiu, o vínculo vira nulo e o histórico continua de pé.
+  { tabela: "vendas", pai: { produto_id: "produtos" } },
 ];
 
 export async function migrarTesteParaConta() {

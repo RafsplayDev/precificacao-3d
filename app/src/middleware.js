@@ -16,7 +16,7 @@ const SEM_LICENCA = ["/assinar", "/sair"];
  * antes de a calculadora mostrar um preço era cobrar confiança de quem
  * ainda não viu nada funcionar.
  */
-const APP = ["/", "/produtos", "/cadastros", "/gestao", "/concorrentes"];
+const APP = ["/", "/produtos", "/cadastros", "/concorrentes"];
 
 /**
  * A porta do tutorial: o endereço que o afiliado divulga. Fica aberta a

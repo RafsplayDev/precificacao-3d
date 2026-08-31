@@ -13,7 +13,10 @@ const NAV = [
   { href: "/", label: "Calculadora", icone: "calculator", tour: "nav-calculadora" },
   { href: "/produtos", label: "Produtos", icone: "box", tour: "nav-produtos" },
   { href: "/cadastros", label: "Cadastros", icone: "layers", tour: "nav-cadastros" },
-  { href: "/gestao", label: "Gestão", icone: "trending-up" },
+  // Gestão fica de fora do MVP: a tela continua inteira em
+  // app/gestao/pagina-oculta.jsx e volta renomeando o arquivo para page.jsx e
+  // devolvendo esta linha (e o "/gestao" na lista APP do middleware).
+  // { href: "/gestao", label: "Gestão", icone: "trending-up" },
   { href: "/concorrentes", label: "Concorrentes", icone: "store" },
 ];
 

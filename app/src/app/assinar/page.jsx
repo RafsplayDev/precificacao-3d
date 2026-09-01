@@ -24,18 +24,19 @@ function Conteudo() {
   const [conferindo, setConferindo] = React.useState(retorno === "sucesso");
   const [preco, setPreco] = React.useState(PRECO_PADRAO);
 
-  // O preço vem de vw_preco, a mesma vista que o checkout consulta na hora
-  // de cobrar — é o que garante que o valor no botão e o valor no Mercado
-  // Pago sejam o mesmo, promoção ligada ou não.
+  // O preço vem de /api/preco, que resolve no servidor a mesma conta que o
+  // checkout faz na hora de cobrar — é o que garante que o valor no botão e o
+  // valor no Mercado Pago sejam o mesmo, promoção ligada ou vaga de fundador.
+  // Consultar `vw_preco` daqui mostraria o preço de tabela a um fundador, que
+  // seria cobrado por outro.
   React.useEffect(() => {
     let vivo = true;
-    supabase
-      .from("vw_preco")
-      .select("*")
-      .maybeSingle()
-      .then(({ data }) => {
-        if (vivo) setPreco(normalizarPreco(data));
-      });
+    fetch("/api/preco")
+      .then((r) => r.json())
+      .then((d) => {
+        if (vivo) setPreco({ ...normalizarPreco(d), fundador: !!d?.fundador });
+      })
+      .catch(() => {});
     return () => {
       vivo = false;
     };
@@ -136,14 +137,17 @@ function Conteudo() {
     <div className="ap-paywall">
       <Card>
         <span className="ap-paywall__selo">
-          {preco.em_promocao
-            ? preco.promo_rotulo || "Oferta por tempo limitado"
-            : "Acesso vitalício"}
+          {preco.fundador
+            ? "Lote de fundador"
+            : preco.em_promocao
+              ? preco.promo_rotulo || "Oferta por tempo limitado"
+              : "Acesso vitalício"}
         </span>
         <h1>Libere sua calculadora</h1>
         <p className="ap-paywall__sub">
-          Sua conta já existe. Falta só liberar o acesso — pagamento único, sem
-          mensalidade e sem renovação.
+          {preco.fundador
+            ? "Sua vaga no beta fechado está reconhecida nesta conta: o preço abaixo é o do lote de fundador. Pagamento único, sem mensalidade e sem renovação."
+            : "Sua conta já existe. Falta só liberar o acesso — pagamento único, sem mensalidade e sem renovação."}
         </p>
 
         <div className="ap-paywall__preco">
@@ -155,7 +159,10 @@ function Conteudo() {
         </div>
 
         <ul className="ap-paywall__lista">
-          {INCLUI.map((item) => (
+          {(preco.fundador
+            ? [...INCLUI, "Sua parte do trato: um formulário de 5 minutos em duas semanas"]
+            : INCLUI
+          ).map((item) => (
             <li key={item}>{item}</li>
           ))}
         </ul>

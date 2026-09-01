@@ -233,6 +233,17 @@ export async function POST(req) {
       })
       .eq("user_id", pagamento.user_id);
 
+    // Vaga paga não expira mais: sem isto, a reserva de 24h venceria e a
+    // barra da página do beta devolveria ao lote uma vaga já vendida.
+    if (pagamento.email) {
+      await admin
+        .from("beta_candidatos")
+        .update({ pago_em: new Date().toISOString() })
+        .eq("email", String(pagamento.email).toLowerCase())
+        .eq("aprovado", true)
+        .is("pago_em", null);
+    }
+
     if (pagamento.afiliado_id) {
       const { data: af } = await admin
         .from("afiliados")

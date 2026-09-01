@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 
 /** Páginas que existem para quem ainda não pagou (ou nem tem conta). */
-const PUBLICAS = ["/vendas", "/entrar", "/auth"];
+const PUBLICAS = ["/vendas", "/beta", "/entrar", "/auth"];
 
 /** Páginas que exigem login, mas não licença ativa. */
 const SEM_LICENCA = ["/assinar", "/sair"];

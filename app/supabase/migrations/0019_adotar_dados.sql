@@ -12,7 +12,7 @@
 do $$
 declare
   dono uuid;
-  email_do_dono constant text := 'TROQUE@PELO.SEU.EMAIL';
+  email_do_dono constant text := 'rafsplayofc@gmail.com';
   t text;
   n bigint;
 begin

@@ -32,8 +32,10 @@ export async function POST(req) {
 
   const admin = supabaseAdmin();
 
-  // O preço sai do banco na hora da cobrança, nunca do que a tela mandou.
-  const precoCentavos = await precoParaCobrar();
+  // O preço sai do banco na hora da cobrança, nunca do que a tela mandou. O
+  // e-mail entra porque o valor não é mais único: quem tem vaga de fundador
+  // no beta paga o preço do lote, e a checagem é aqui, no momento de cobrar.
+  const precoCentavos = await precoParaCobrar(user.email);
 
   // Já pagou? Cobrar de novo por acesso vitalício seria cobrar duas vezes
   // pela mesma coisa.

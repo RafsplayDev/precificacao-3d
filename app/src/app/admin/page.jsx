@@ -3,6 +3,12 @@ import React from "react";
 import { Button, Card, Input, Switch } from "@/design-system";
 import { supabase } from "@/lib/supabaseClient";
 import { reais } from "@/lib/produto";
+import {
+  VAGAS,
+  PRECO_FUNDADOR_CENTAVOS,
+  resumoDasRespostas,
+  situacaoDaVaga,
+} from "@/lib/beta";
 
 async function chamar(url, metodo, corpo) {
   const r = await fetch(url, {
@@ -53,6 +59,8 @@ export default function AdminPage() {
   const [ehAdmin, setEhAdmin] = React.useState(null);
   const [afiliados, setAfiliados] = React.useState([]);
   const [vendas, setVendas] = React.useState([]);
+  const [betas, setBetas] = React.useState([]);
+  const [betaAberto, setBetaAberto] = React.useState(null);
   const [msg, setMsg] = React.useState(null);
   const [erro, setErro] = React.useState(null);
   const [emailAfiliado, setEmailAfiliado] = React.useState("");
@@ -63,16 +71,24 @@ export default function AdminPage() {
   const [precosCarregados, setPrecosCarregados] = React.useState(false);
 
   const recarregar = React.useCallback(async () => {
-    const [{ data: af }, { data: pg }] = await Promise.all([
+    const [{ data: af }, { data: pg }, { data: bt }] = await Promise.all([
       supabase.from("vw_afiliados_resumo").select("*").order("a_pagar_centavos", { ascending: false }),
       supabase
         .from("pagamentos")
         .select("id, email, valor_centavos, status, metodo, criado_em")
         .order("criado_em", { ascending: false })
         .limit(50),
+      // A tabela crua, e não a vista de contagem: aqui o admin precisa do
+      // contato de cada pessoa. O RLS da migração 0024 já só devolve estas
+      // linhas para quem é admin.
+      supabase
+        .from("beta_candidatos")
+        .select("*")
+        .order("criado_em", { ascending: false }),
     ]);
     setAfiliados(af || []);
     setVendas(pg || []);
+    setBetas(bt || []);
 
     const r = await fetch("/api/admin/precos");
     if (r.ok) {
@@ -144,6 +160,21 @@ export default function AdminPage() {
   // Pendentes recentes continuam à vista: uma compra de minutos atrás
   // ainda pode fechar, e é a que alguém pode estar esperando agora.
   // ------------------------------------------------------------------
+  // ------------------------------------------------------------------
+  // Beta fechado
+  //
+  // A contagem de vagas é a mesma regra da página pública: ocupa vaga quem
+  // foi aprovado e ou já pagou, ou ainda está dentro da reserva. Refazê-la
+  // aqui a partir das linhas cruas evita uma segunda consulta só para exibir
+  // um número que já está na mão.
+  // ------------------------------------------------------------------
+  const situacoes = betas.map((b) => ({ ...b, situacao: situacaoDaVaga(b) }));
+  const ocupadas = situacoes.filter(
+    (b) => b.situacao.chave === "pago" || b.situacao.chave === "reservada"
+  ).length;
+  const pagos = situacoes.filter((b) => b.situacao.chave === "pago").length;
+  const vencidas = situacoes.filter((b) => b.situacao.chave === "vencida").length;
+
   const UMA_HORA = 60 * 60 * 1000;
   const visiveis = mostrarTudo
     ? vendas
@@ -271,6 +302,96 @@ export default function AdminPage() {
             >
               Salvar precificação
             </Button>
+          </>
+        )}
+      </Card>
+
+      <Card>
+        <div className="ap-admin__cabeca-lista">
+          <h2>Beta fechado — lote de fundador</h2>
+          <span className="ap-admin__beta-resumo">
+            {ocupadas} de {VAGAS} vagas · {pagos} pago(s) · preço de fundador{" "}
+            {reais(PRECO_FUNDADOR_CENTAVOS)}
+          </span>
+        </div>
+
+        {betas.length === 0 ? (
+          <p>Nenhuma candidatura ainda.</p>
+        ) : (
+          <>
+            <p className="ap-afiliado__dica">
+              {situacoes.length} candidatura(s).{" "}
+              {vencidas > 0 && (
+                <>
+                  {vencidas} reserva(s) vencida(s) — essas pessoas passaram no filtro,
+                  não pagaram a tempo e devolveram a vaga ao lote.
+                </>
+              )}
+            </p>
+            <table className="ap-tabela">
+              <thead>
+                <tr>
+                  <th>Data</th>
+                  <th>Pessoa</th>
+                  <th>WhatsApp</th>
+                  <th>Situação</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {situacoes.map((b) => (
+                  <React.Fragment key={b.id}>
+                    <tr>
+                      <td>{new Date(b.criado_em).toLocaleDateString("pt-BR")}</td>
+                      <td>
+                        {b.nome}
+                        <br />
+                        <small>{b.email}</small>
+                      </td>
+                      <td>{b.whatsapp}</td>
+                      <td>
+                        <span className={`ap-admin__vaga ap-admin__vaga--${b.situacao.chave}`}>
+                          {b.situacao.rotulo}
+                        </span>
+                        {b.situacao.ate && b.situacao.chave === "reservada" && (
+                          <>
+                            <br />
+                            <small>até {b.situacao.ate.toLocaleString("pt-BR")}</small>
+                          </>
+                        )}
+                      </td>
+                      <td>
+                        <button
+                          type="button"
+                          onClick={() => setBetaAberto((v) => (v === b.id ? null : b.id))}
+                        >
+                          {betaAberto === b.id ? "Fechar" : "Ver respostas"}
+                        </button>
+                      </td>
+                    </tr>
+                    {betaAberto === b.id && (
+                      <tr className="ap-admin__beta-detalhe">
+                        <td colSpan={5}>
+                          <dl>
+                            {resumoDasRespostas(b.respostas).map((r) => (
+                              <div key={r.id}>
+                                <dt>{r.curto}</dt>
+                                {/* A resposta que barrou fica marcada: é o que
+                                    explica, de relance, por que a pessoa não
+                                    entrou no lote. */}
+                                <dd className={r.passa === false ? "barrou" : undefined}>
+                                  {r.rotulo}
+                                </dd>
+                              </div>
+                            ))}
+                          </dl>
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
+                ))}
+              </tbody>
+            </table>
           </>
         )}
       </Card>

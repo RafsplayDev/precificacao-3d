@@ -90,6 +90,20 @@ export function iniciarTutorial() {
   gravarEstado({ estado: "ativo", indice: 0 });
 }
 
+/**
+ * Se este navegador já passou pelo tutorial — rodando, terminado ou
+ * abandonado.
+ *
+ * Serve à tela de criar conta: os convites de "conhecer" e "testar sem
+ * cadastro" são para quem ainda não viu nada. Oferecê-los a quem acabou de
+ * sair do tutorial e clicou justamente para se cadastrar é mandar a pessoa
+ * de volta ao começo do caminho que ela já andou.
+ */
+export function tutorialVisto() {
+  if (typeof window === "undefined") return false;
+  return lerEstado() != null;
+}
+
 function gravarEstado(estado) {
   marcarTour(estado.estado === "ativo" ? "ativo" : "fim");
   try {

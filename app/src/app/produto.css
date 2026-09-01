@@ -274,6 +274,8 @@ body:has(.ap-beta) .ap-beta__vagas-topo strong { color: var(--dc-rosa); }
 .ap-beta__passos { display: flex; gap: 6px; }
 .ap-beta__passos i {
   width: 22px; height: 3px; border-radius: 999px; background: var(--border-hairline);
+  /* A cor é o único sinal de avanço, então ela vira em vez de saltar. */
+  transition: background var(--dur-fast, 180ms) ease;
 }
 .ap-beta__passos i.on { background: var(--action-accent); }
 
@@ -321,6 +323,25 @@ body:has(.ap-beta) .ap-beta__vagas-topo strong { color: var(--dc-rosa); }
 .ap-beta__recusar:hover { color: var(--text-muted); }
 
 .ap-beta__form { display: flex; flex-direction: column; gap: var(--space-4); }
+/* O veredito no topo do passo de contato. Verde quando entra, neutro quando
+   não — nunca vermelho: não passar no filtro do lote não é um erro de quem
+   respondeu. */
+.ap-beta__veredito {
+  display: flex; flex-direction: column; gap: var(--space-1);
+  padding: var(--space-3); border-radius: var(--radius-sm);
+  border-left: 3px solid var(--border-strong);
+  background: var(--surface-sunken);
+}
+.ap-beta__veredito strong {
+  font-size: var(--text-body); color: var(--text-strong);
+}
+.ap-beta__veredito p {
+  margin: 0; font-size: var(--text-body-sm); color: var(--text-muted);
+}
+.ap-beta__veredito--sim {
+  border-left-color: var(--status-success);
+  background: var(--status-success-soft);
+}
 /* O passo de contato virou cadastro, e o título é o que explica a senha
    aparecendo num formulário que até aqui só perguntava sobre vendas. */
 .ap-beta__form-cabeca { display: flex; flex-direction: column; gap: var(--space-1); }

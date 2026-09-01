@@ -6,6 +6,7 @@ import { Button, Card, Input } from "@/design-system";
 import { supabase } from "@/lib/supabaseClient";
 import { irPara, caminhoInterno } from "@/lib/navegar";
 import { urlDoSite } from "@/lib/site";
+import { tutorialVisto } from "@/components/Tutorial";
 
 function traduzirErro(e) {
   const m = String(e?.message || e || "").toLowerCase();
@@ -25,7 +26,11 @@ function Formulario() {
 
   const [modo, setModo] = React.useState(params.get("modo") === "criar" ? "criar" : "entrar");
   const [nome, setNome] = React.useState("");
-  const [email, setEmail] = React.useState("");
+  // O e-mail pode vir pronto na URL — é assim que a aplicação do beta manda
+  // a pessoa para cá. O preço de fundador está amarrado ao e-mail com que ela
+  // se candidatou; deixá-la redigitar de memória era o caminho mais curto
+  // para uma conta com outro e-mail e a cobrança do preço cheio.
+  const [email, setEmail] = React.useState(params.get("email") || "");
   const [senha, setSenha] = React.useState("");
   const [erro, setErro] = React.useState(
     params.get("confirmacao") === "falhou"
@@ -44,6 +49,18 @@ function Formulario() {
    * o que separa "criar conta" de "recomeçar do zero".
    */
   const vindoDoTeste = criando && proximo !== "/";
+
+  /**
+   * O rodapé é o convite de quem chegou aqui sem saber o que é o app. Só
+   * pode ser lido no navegador (localStorage), então começa desligado e
+   * aparece depois — o contrário faria o link piscar na tela de quem
+   * acabou de sair do tutorial.
+   */
+  const [jaViuTutorial, setJaViuTutorial] = React.useState(true);
+  React.useEffect(() => {
+    setJaViuTutorial(tutorialVisto());
+  }, []);
+  const mostrarConvites = !(criando && jaViuTutorial);
 
   async function enviar(ev) {
     ev.preventDefault();
@@ -166,6 +183,7 @@ function Formulario() {
           )}
         </div>
 
+        {mostrarConvites && (
         <p className="ap-auth__rodape">
           <Link href="/vendas">Conhecer a Precificação 3D</Link>
           {" · "}
@@ -173,6 +191,7 @@ function Formulario() {
               tutorial roda sem cadastro e mostra o preço de uma peça real. */}
           <Link href="/tutorial">Testar sem cadastro</Link>
         </p>
+        )}
       </Card>
     </div>
   );

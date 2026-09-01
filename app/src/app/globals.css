@@ -1132,11 +1132,18 @@ select.ap-cell {
   font-size: var(--text-body-sm);
   line-height: 1.45;
   text-transform: none; letter-spacing: normal; font-weight: var(--weight-regular);
-  animation: ap-expl-abre var(--dur-fast) var(--ease-out);
+  transform-origin: top left;
+  animation: ap-expl-abre var(--dur-mola, 340ms) var(--ease-mola, cubic-bezier(.22,1.4,.36,1));
 }
+/* A mesma mola do tooltip do design system (Animate UI, spring 300/35):
+   nasce menor e um pouco acima, passa um fio do tamanho final e assenta.
+   A origem é o canto de cima à esquerda porque é ali que fica o "i". */
 @keyframes ap-expl-abre {
-  from { opacity: 0; transform: translateY(-4px); }
-  to { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; transform: scale(.94) translateY(-6px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ap-expl__balao { animation: none; }
 }
 
 /* Perto da borda da tela o balão sairia dela; quem o traz de volta é o

@@ -49,9 +49,27 @@ export default function Calculadora() {
     );
 
   const produtos = d.produtos;
+
+  // A tela de um produto manda para cá com ?produto=<id> quando a pessoa pede
+  // "Ver na calculadora" — abrir no primeiro da lista faria ela procurar de
+  // novo o produto que já estava olhando.
+  const [pedido, setPedido] = React.useState(null);
   React.useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get("produto");
+    if (!id) return;
+    window.history.replaceState({}, "", "/");
+    setPedido(id);
+  }, []);
+
+  React.useEffect(() => {
+    if (produtos.length && pedido && produtos.some((p) => p.id === pedido)) {
+      setProdutoId(pedido);
+      setPedido(null);
+      return;
+    }
     if (!produtoId && produtos.length) setProdutoId(produtos[0].id);
-  }, [produtos, produtoId]);
+  }, [produtos, produtoId, pedido]);
 
   const produtoSalvo = produtos.find((p) => p.id === produtoId) || null;
   const produto = rascunho && rascunho.id === produtoId ? rascunho : produtoSalvo;

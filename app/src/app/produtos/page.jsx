@@ -356,7 +356,7 @@ export default function Produtos() {
           </h1>
           {produto.descricao && <p>{produto.descricao}</p>}
           <div className="ap-prodhead__acoes">
-            <Button href="/" variant="secondary" size="sm" icon={<Icon name="calculator" size={16} />}>
+            <Button href={`/?produto=${produto.id}`} variant="secondary" size="sm" icon={<Icon name="calculator" size={16} />}>
               Ver na calculadora
             </Button>
             <Button variant="ghost" size="sm" onClick={() => setAlvoExcluir(produto)} icon={<Icon name="trash-2" size={16} />}>

@@ -175,8 +175,16 @@ export default function BetaPage() {
   // Nada disso concede coisa alguma: quem decide o preço e a vaga é o
   // servidor, no checkout, a partir da linha em beta_candidatos. E os nomes
   // saem da própria URL — a tela não inventa fundador nenhum.
+  //
+  // Ainda assim, só funciona em desenvolvimento. Em produção a tela de
+  // aprovado é o que a pessoa espera ver depois de ser escolhida: deixá-la a
+  // um parâmetro de distância faria qualquer um se ver dentro do lote, com
+  // preço de fundador na tela, e chegar ao checkout achando que foi negado
+  // algo que na verdade nunca teve. O bloqueio é de vitrine, não de
+  // segurança — a vaga real continua sendo decidida no servidor.
   // ------------------------------------------------------------------
   React.useEffect(() => {
+    if (process.env.NODE_ENV === "production") return;
     const busca = new URLSearchParams(window.location.search);
 
     const ver = busca.get("ver");
@@ -223,6 +231,9 @@ export default function BetaPage() {
   // juramento seria encenação — essa pessoa responde no radio, como nas
   // outras perguntas.
   const compromisso = pergunta?.id === "feedback" && passandoAte(respostas, passo);
+  // Passou por todas as perguntas? É o mesmo critério que a rota aplica, e
+  // só vale no passo de contato, onde todas as respostas já existem.
+  const entra = passandoAte(respostas, PERGUNTAS.length);
 
   function voltar() {
     setDirecao(-1);
@@ -347,15 +358,11 @@ export default function BetaPage() {
           </span>
           <div className="ap-beta__passos" aria-hidden="true">
             {Array.from({ length: TOTAL_PASSOS }, (_, i) => (
-              <motion.i
-                key={i}
-                className={i <= passo ? "on" : ""}
-                // A barrinha do passo atual cresce ao ser alcançada: é o
-                // sinal de que a resposta foi registrada, dado no mesmo
-                // instante em que a pergunta troca.
-                animate={{ scaleX: i === passo && !reduzido ? 1.35 : 1 }}
-                transition={transicao}
-              />
+              // Todas as barrinhas têm a mesma largura: o que marca o
+              // avanço é a cor, não o tamanho. Esticar a do passo atual
+              // desalinhava a régua e fazia a linha parecer instável a cada
+              // resposta.
+              <i key={i} className={i <= passo ? "on" : ""} />
             ))}
           </div>
         </div>
@@ -376,9 +383,35 @@ export default function BetaPage() {
           // uma senha em jogo: sem ele o campo apareceria sem explicação no
           // meio de um formulário que até aqui só perguntava sobre vendas.
           <form onSubmit={enviar} className="ap-beta__form">
+            {/* O veredito vem antes dos campos. Pedir nome, e-mail, WhatsApp e
+                senha sem dizer o que aconteceu com as respostas faz todo mundo
+                preencher o mesmo formulário sem saber para quê — e quem não
+                passou descobre só depois de entregar os dados. O critério é o
+                mesmo do servidor ({@link passandoAte}); a palavra final
+                continua sendo a da rota, que também sabe se lotou. */}
+            <div
+              className={`ap-beta__veredito${
+                entra ? " ap-beta__veredito--sim" : " ap-beta__veredito--nao"
+              }`}
+            >
+              <strong>
+                {entra
+                  ? "Seu perfil é o do lote de fundador."
+                  : "Seu perfil não é o deste lote."}
+              </strong>
+              <p>
+                {entra
+                  ? "Enquanto houver vaga aberta, ela é sua. Falta criar a conta onde ela fica guardada."
+                  : "O lote de fundador é fechado, mas o lançamento aberto vem logo depois. Deixe seu contato e avisamos você."}
+              </p>
+            </div>
             <div className="ap-beta__form-cabeca">
-              <h2>Crie sua conta</h2>
-              <p>É com ela que sua vaga e o preço de fundador ficam guardados.</p>
+              <h2>{entra ? "Crie sua conta" : "Deixe seu contato"}</h2>
+              <p>
+                {entra
+                  ? "É com ela que sua vaga e o preço de fundador ficam guardados."
+                  : "Só para o aviso do lançamento — nenhuma conta é criada agora."}
+              </p>
             </div>
             <Input
               id="beta-whatsapp"
@@ -406,20 +439,30 @@ export default function BetaPage() {
               autoComplete="email"
               required
             />
-            <Input
-              id="beta-senha"
-              label="Senha"
-              type="password"
-              value={contato.senha}
-              onChange={(e) => setContato({ ...contato, senha: e.target.value })}
-              autoComplete="new-password"
-              hint="Mínimo de 6 caracteres."
-              minLength={6}
-              required
-            />
+            {/* Sem vaga não há conta a criar: pedir senha de quem não
+                entra seria cobrar um cadastro que nunca acontece. */}
+            {entra && (
+              <Input
+                id="beta-senha"
+                label="Senha"
+                type="password"
+                value={contato.senha}
+                onChange={(e) => setContato({ ...contato, senha: e.target.value })}
+                autoComplete="new-password"
+                hint="Mínimo de 6 caracteres."
+                minLength={6}
+                required
+              />
+            )}
             {erro && <p className="ap-beta__erro">{erro}</p>}
             <Button type="submit" block disabled={enviando}>
-              {enviando ? "Criando sua conta…" : "Criar conta e ver meu resultado"}
+              {enviando
+                ? entra
+                  ? "Criando sua conta…"
+                  : "Enviando…"
+                : entra
+                  ? "Criar conta e garantir minha vaga"
+                  : "Quero ser avisado do lançamento"}
             </Button>
             <button
               type="button"
@@ -525,7 +568,8 @@ function Abertura({ onComecar }) {
         </Button>
       </motion.div>
       <motion.p className="ap-beta__abertura-nota" {...entrada(3)}>
-        Nem todo mundo entra. O resultado aparece ao final.
+        Respondendo ao formulário você poderá ter acesso a oferta do lote
+        fundador do PRECIFICA!
       </motion.p>
     </Card>
   );

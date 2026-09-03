@@ -23,8 +23,9 @@ com o seu e-mail.
 
 > Se o Supabase estiver com confirmação de e-mail ligada (Authentication >
 > Providers > Email), você recebe um link antes de conseguir entrar. Para vender
-> de verdade, configure um SMTP próprio em Authentication > Emails — o servidor
-> de teste do Supabase tem limite baixo e cai em spam.
+> de verdade, configure um SMTP próprio — o servidor de teste do Supabase tem
+> limite baixo e cai em spam. O passo a passo, com os templates em português já
+> prontos, está em `supabase/emails/README.md`.
 
 ## 3. Adotar seus dados antigos
 

@@ -13,40 +13,90 @@ mexe em nenhuma linha de código do app: o link continua caindo em
 
 ---
 
-## 1. Escolher um provedor e verificar o domínio
+## 1. Verificar o domínio no Resend
 
-Qualquer serviço transacional serve: **Resend**, Postmark, Brevo, SendGrid,
-Amazon SES. O Resend tem o cadastro mais rápido e um plano gratuito que dá
-conta do começo.
+O envio sai de um **subdomínio dedicado**, `mail.dropcolor.com.br`, e não do
+domínio raiz. Assim a reputação de envio fica isolada: se um dia um transacional
+for marcado como spam em volume, o estrago não contamina `dropcolor.com.br` nem
+o site em `precifica.dropcolor.com.br`.
 
-No painel do provedor, adicione o seu domínio e publique no DNS os registros
-que ele pedir — normalmente **SPF**, **DKIM** e às vezes **DMARC**. Espere ficar
-"verificado" antes de seguir: sem isso o e-mail sai, mas cai em spam, que é
-justamente o problema que estamos resolvendo.
+No Resend, em **Domains → Add domain**:
 
-> Se você ainda não tem domínio, dá para testar com o domínio de sandbox do
-> provedor, mas só envia para o seu próprio e-mail. Para vender, precisa do
-> domínio verificado.
+| Campo | Valor |
+|---|---|
+| Name | `mail.dropcolor.com.br` |
+| Region (em *Advanced options*) | South America (sa-east-1) |
 
-Depois gere as credenciais SMTP (host, porta, usuário, senha). No Resend elas
-ficam em *Settings → SMTP*, e a senha é a própria API key.
+Ele devolve uma lista de **DNS Records** — um `MX` e dois `TXT` (SPF e DKIM).
+Copie os valores da tela dele, não daqui: a chave DKIM é única por domínio e o
+host do MX muda com a região.
+
+### Publicar no Registro.br
+
+O DNS de `dropcolor.com.br` está no Registro.br (é onde `precifica` aponta para
+a Vercel). Vá em **Painel → dropcolor.com.br → DNS → Editar Zona** e
+**acrescente** os registros. Não mexa no `precifica` que já está lá: envio e
+site são registros independentes na mesma zona, e o site não sai do ar por
+causa disso.
+
+A pegadinha: o Registro.br completa o domínio sozinho. Se o Resend mostra
+`send.mail.dropcolor.com.br`, você digita no campo de nome apenas:
+
+```
+send.mail
+```
+
+Colar o nome inteiro cria `send.mail.dropcolor.com.br.dropcolor.com.br`, e a
+verificação nunca fecha. Vale para os três registros.
+
+Salve a zona, volte no Resend e clique em **Verify**. A propagação do
+Registro.br costuma levar de minutos a algumas horas — enquanto não estiver
+**Verified**, não siga para o passo 2.
+
+### DMARC (opcional, mas barato)
+
+Um `TXT` a mais, este no domínio raiz — nome `_dmarc`, valor:
+
+```
+v=DMARC1; p=none; rua=mailto:seu@email.com
+```
+
+Com `p=none` ele não bloqueia nada; só pede relatórios de quem está mandando
+e-mail em nome do seu domínio. Serve para você enxergar problemas antes de eles
+virarem entrega falhada.
+
+### Credenciais SMTP
+
+Com o domínio verificado: **API keys → Create API Key** (permissão de envio).
+Guarde a chave, ela só aparece uma vez. As credenciais SMTP ficam em
+*Settings → SMTP*.
 
 ## 2. Ligar o SMTP no Supabase
 
 Painel do projeto → **Authentication → Emails → SMTP Settings** → ligue
 *Enable Custom SMTP* e preencha:
 
-| Campo | O que pôr |
+| Campo | Valor |
 |---|---|
-| Sender email | `nao-responda@seudominio.com.br` |
+| Sender email | `nao-responda@mail.dropcolor.com.br` |
 | Sender name | `DropColor` |
-| Host | o host do provedor (ex.: `smtp.resend.com`) |
+| Host | `smtp.resend.com` |
 | Port | `587` |
-| Username / Password | as credenciais SMTP do passo 1 |
+| Username | `resend` |
+| Password | a API key do passo 1 |
+
+O remetente **tem que estar no subdomínio verificado**. `nao-responda@dropcolor.com.br`
+(sem o `mail.`) é recusado, porque foi `mail.dropcolor.com.br` que você verificou.
+
+> Esse endereço só envia — não existe caixa de entrada nele. Quem responder
+> não chega a lugar nenhum, o que para transacional é o esperado. Se um dia
+> quiser um `contato@dropcolor.com.br` de verdade, é outro serviço (Zoho,
+> Google Workspace), com `MX` no domínio raiz, e não conflita com este aqui.
 
 Salve e mande um e-mail de teste (crie uma conta em `/entrar` com um endereço
-seu). Se não chegar, veja **Authentication → Logs**: erro de autenticação SMTP
-aparece ali com o motivo.
+seu). Se não chegar, olhe os dois lados: **Authentication → Logs** no Supabase
+mostra erro de autenticação SMTP, e **Logs** no Resend mostra o que ele aceitou
+e o que aconteceu com a entrega.
 
 Ainda em *Authentication → Emails*, confira **Rate Limits**: o limite baixo
 padrão continua valendo até você aumentá-lo, mesmo com SMTP próprio.
@@ -73,7 +123,8 @@ mudança para cá também, senão na próxima vez ninguém sabe qual versão é 
   mandou no `emailRedirectTo`. É o que os templates usam.
 - `{{ .SiteURL }}` — a *Site URL* configurada em **Authentication → URL
   Configuration**. O logo do e-mail sai de lá (`{{ .SiteURL }}/brand/...`), então
-  ela precisa apontar para o site em produção, não para o localhost.
+  ela precisa estar em `https://precifica.dropcolor.com.br`, e não no localhost
+  do desenvolvimento — o mesmo valor de `NEXT_PUBLIC_URL_SITE` na Vercel.
 - `{{ .TokenHash }}` — a alternativa descrita abaixo.
 
 ### Opcional: link que funciona em outro aparelho
@@ -95,8 +146,11 @@ painel do Supabase vem sem `RedirectTo` e o link sairia quebrado.
 
 ## 4. Conferir antes de considerar pronto
 
-- [ ] Domínio verificado no provedor (SPF/DKIM verdes).
+- [ ] `mail.dropcolor.com.br` **Verified** no Resend (MX, SPF e DKIM verdes).
+- [ ] `precifica.dropcolor.com.br` ainda no ar (a zona do Registro.br só ganhou
+      registros novos).
 - [ ] E-mail de teste chegou na **caixa de entrada**, não no spam.
 - [ ] Remetente aparece como o seu domínio.
 - [ ] O botão leva para o site em produção e a conta entra confirmada.
-- [ ] *Site URL* em produção, e a URL de callback listada em *Redirect URLs*.
+- [ ] *Site URL* = `https://precifica.dropcolor.com.br`, e
+      `https://precifica.dropcolor.com.br/auth/callback` listada em *Redirect URLs*.

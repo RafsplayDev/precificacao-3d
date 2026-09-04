@@ -31,16 +31,27 @@ Ele devolve uma lista de **DNS Records** — um `MX` e dois `TXT` (SPF e DKIM).
 Copie os valores da tela dele, não daqui: a chave DKIM é única por domínio e o
 host do MX muda com a região.
 
-### Publicar no Registro.br
+### Publicar o DNS na Vercel
 
-O DNS de `dropcolor.com.br` está no Registro.br (é onde `precifica` aponta para
-a Vercel). Vá em **Painel → dropcolor.com.br → DNS → Editar Zona** e
-**acrescente** os registros. Não mexa no `precifica` que já está lá: envio e
-site são registros independentes na mesma zona, e o site não sai do ar por
-causa disso.
+Atenção a quem manda no DNS: no Registro.br o domínio está **delegado à
+Vercel** (`ns1.vercel-dns.com` / `ns2.vercel-dns.com`). O Registro.br guarda o
+registro do domínio e essa delegação, mais nada — a tela "Editar Zona" dele
+está inativa e o que for adicionado ali não tem efeito nenhum.
 
-A pegadinha: o Registro.br completa o domínio sozinho. Se o Resend mostra
-`send.mail.dropcolor.com.br`, você digita no campo de nome apenas:
+Os registros vão na **Vercel → Domains → dropcolor.com.br → DNS Records**
+(também alcançável pelo projeto, em *Settings → Domains*). Para cada linha que
+o Resend mostrar, **Add Record**:
+
+| Campo da Vercel | O que pôr |
+|---|---|
+| Name | só a parte antes de `dropcolor.com.br` (ex.: `send.mail`) |
+| Type | `MX` ou `TXT`, conforme o Resend |
+| Value | o valor copiado do Resend |
+| Priority | só no `MX` (o Resend costuma pedir `10`) |
+| TTL | deixe o padrão |
+
+A pegadinha é o campo **Name**: a Vercel completa o domínio sozinha. Se o
+Resend mostra `send.mail.dropcolor.com.br`, você digita apenas:
 
 ```
 send.mail
@@ -49,13 +60,17 @@ send.mail
 Colar o nome inteiro cria `send.mail.dropcolor.com.br.dropcolor.com.br`, e a
 verificação nunca fecha. Vale para os três registros.
 
-Salve a zona, volte no Resend e clique em **Verify**. A propagação do
-Registro.br costuma levar de minutos a algumas horas — enquanto não estiver
-**Verified**, não siga para o passo 2.
+Os registros de envio convivem com o `precifica` que aponta o app para a
+Vercel — são nomes diferentes na mesma zona, e o site não sai do ar por causa
+disso. Só acrescente; não edite nem apague o que já está lá.
+
+Feito isso, volte no Resend e clique em **Verify**. Como o DNS é da própria
+Vercel, costuma propagar em minutos. Enquanto não estiver **Verified**, não
+siga para o passo 2.
 
 ### DMARC (opcional, mas barato)
 
-Um `TXT` a mais, este no domínio raiz — nome `_dmarc`, valor:
+Um `TXT` a mais, também na Vercel — nome `_dmarc`, valor:
 
 ```
 v=DMARC1; p=none; rua=mailto:seu@email.com
@@ -147,7 +162,7 @@ painel do Supabase vem sem `RedirectTo` e o link sairia quebrado.
 ## 4. Conferir antes de considerar pronto
 
 - [ ] `mail.dropcolor.com.br` **Verified** no Resend (MX, SPF e DKIM verdes).
-- [ ] `precifica.dropcolor.com.br` ainda no ar (a zona do Registro.br só ganhou
+- [ ] `precifica.dropcolor.com.br` ainda no ar (a zona da Vercel só ganhou
       registros novos).
 - [ ] E-mail de teste chegou na **caixa de entrada**, não no spam.
 - [ ] Remetente aparece como o seu domínio.

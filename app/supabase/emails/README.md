@@ -143,10 +143,11 @@ mudança para cá também, senão na próxima vez ninguém sabe qual versão é 
 
 - `{{ .ConfirmationURL }}` — o link pronto, já com o `proximo=` que o app
   mandou no `emailRedirectTo`. É o que os templates usam.
-- `{{ .SiteURL }}` — a *Site URL* configurada em **Authentication → URL
-  Configuration**. O logo do e-mail sai de lá (`{{ .SiteURL }}/brand/...`), então
-  ela precisa estar em `https://precifica.dropcolor.com.br`, e não no localhost
-  do desenvolvimento — o mesmo valor de `NEXT_PUBLIC_URL_SITE` na Vercel.
+- `{{ .SiteURL }}` — a *Site URL* do painel. Os templates **não** usam: o logo
+  aponta para `https://precifica.dropcolor.com.br/brand/...` escrito por
+  extenso. Fazer o logo depender de uma configuração do painel significa que
+  apontar a Site URL para um ambiente de teste manda logo quebrado para todo
+  cliente — foi o que aconteceu no primeiro envio, com a Site URL em localhost.
 - `{{ .TokenHash }}` — a alternativa descrita abaixo.
 
 ### Opcional: link que funciona em outro aparelho
@@ -174,5 +175,10 @@ painel do Supabase vem sem `RedirectTo` e o link sairia quebrado.
 - [ ] E-mail de teste chegou na **caixa de entrada**, não no spam.
 - [ ] Remetente aparece como o seu domínio.
 - [ ] O botão leva para o site em produção e a conta entra confirmada.
-- [ ] *Site URL* = `https://precifica.dropcolor.com.br`, e
-      `https://precifica.dropcolor.com.br/auth/callback` listada em *Redirect URLs*.
+- [ ] *Site URL* = `https://precifica.dropcolor.com.br`.
+- [ ] *Redirect URLs* com `https://precifica.dropcolor.com.br/**` e
+      `http://localhost:3000/**`. Sem isso o Supabase **descarta o
+      `emailRedirectTo` em silêncio** e usa a Site URL: o link do e-mail chega
+      sem o `/auth/callback?proximo=` e leva a pessoa para o lugar errado.
+- [ ] O link do e-mail recebido aponta para `precifica.dropcolor.com.br`, e não
+      para `localhost:3000`.

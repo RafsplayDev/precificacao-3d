@@ -15,16 +15,21 @@ mexe em nenhuma linha de código do app: o link continua caindo em
 
 ## 1. Verificar o domínio no Resend
 
-O envio sai de um **subdomínio dedicado**, `mail.dropcolor.com.br`, e não do
-domínio raiz. Assim a reputação de envio fica isolada: se um dia um transacional
-for marcado como spam em volume, o estrago não contamina `dropcolor.com.br` nem
-o site em `precifica.dropcolor.com.br`.
+O envio sai de um **subdomínio dedicado por projeto**, `mail.precifica.dropcolor.com.br`.
+Dois motivos:
+
+- **Isolamento entre projetos.** Cada produto da DropColor verifica o seu
+  (`mail.outroproduto.dropcolor.com.br` amanhã), com reputação, logs e API key
+  próprios. Reclamação em um não respinga nos outros, nem no domínio raiz.
+- **`precifica.dropcolor.com.br` não serve.** Esse nome já tem o `CNAME` que
+  aponta o app para a Vercel, e um `CNAME` não convive com outros registros no
+  mesmo nome — é regra do DNS. Daí o `mail.` na frente.
 
 No Resend, em **Domains → Add domain**:
 
 | Campo | Valor |
 |---|---|
-| Name | `mail.dropcolor.com.br` |
+| Name | `mail.precifica.dropcolor.com.br` |
 | Region (em *Advanced options*) | South America (sa-east-1) |
 
 Ele devolve uma lista de **DNS Records** — um `MX` e dois `TXT` (SPF e DKIM).
@@ -44,20 +49,20 @@ o Resend mostrar, **Add Record**:
 
 | Campo da Vercel | O que pôr |
 |---|---|
-| Name | só a parte antes de `dropcolor.com.br` (ex.: `send.mail`) |
+| Name | só a parte antes de `dropcolor.com.br` (ex.: `send.mail.precifica`) |
 | Type | `MX` ou `TXT`, conforme o Resend |
 | Value | o valor copiado do Resend |
 | Priority | só no `MX` (o Resend costuma pedir `10`) |
 | TTL | deixe o padrão |
 
 A pegadinha é o campo **Name**: a Vercel completa o domínio sozinha. Se o
-Resend mostra `send.mail.dropcolor.com.br`, você digita apenas:
+Resend mostra `send.mail.precifica.dropcolor.com.br`, você digita apenas:
 
 ```
-send.mail
+send.mail.precifica
 ```
 
-Colar o nome inteiro cria `send.mail.dropcolor.com.br.dropcolor.com.br`, e a
+Colar o nome inteiro cria `send.mail.precifica.dropcolor.com.br.dropcolor.com.br`, e a
 verificação nunca fecha. Vale para os três registros.
 
 Os registros de envio convivem com o `precifica` que aponta o app para a
@@ -70,7 +75,8 @@ siga para o passo 2.
 
 ### DMARC (opcional, mas barato)
 
-Um `TXT` a mais, também na Vercel — nome `_dmarc`, valor:
+Um `TXT` a mais, também na Vercel. Este fica no domínio raiz — nome `_dmarc`,
+valendo para todos os projetos — com o valor:
 
 ```
 v=DMARC1; p=none; rua=mailto:seu@email.com
@@ -93,7 +99,7 @@ Painel do projeto → **Authentication → Emails → SMTP Settings** → ligue
 
 | Campo | Valor |
 |---|---|
-| Sender email | `nao-responda@mail.dropcolor.com.br` |
+| Sender email | `nao-responda@mail.precifica.dropcolor.com.br` |
 | Sender name | `DropColor` |
 | Host | `smtp.resend.com` |
 | Port | `587` |
@@ -101,7 +107,8 @@ Painel do projeto → **Authentication → Emails → SMTP Settings** → ligue
 | Password | a API key do passo 1 |
 
 O remetente **tem que estar no subdomínio verificado**. `nao-responda@dropcolor.com.br`
-(sem o `mail.`) é recusado, porque foi `mail.dropcolor.com.br` que você verificou.
+ou `@precifica.dropcolor.com.br` são recusados: foi
+`mail.precifica.dropcolor.com.br` que você verificou.
 
 > Esse endereço só envia — não existe caixa de entrada nele. Quem responder
 > não chega a lugar nenhum, o que para transacional é o esperado. Se um dia
@@ -161,7 +168,7 @@ painel do Supabase vem sem `RedirectTo` e o link sairia quebrado.
 
 ## 4. Conferir antes de considerar pronto
 
-- [ ] `mail.dropcolor.com.br` **Verified** no Resend (MX, SPF e DKIM verdes).
+- [ ] `mail.precifica.dropcolor.com.br` **Verified** no Resend (MX, SPF e DKIM verdes).
 - [ ] `precifica.dropcolor.com.br` ainda no ar (a zona da Vercel só ganhou
       registros novos).
 - [ ] E-mail de teste chegou na **caixa de entrada**, não no spam.

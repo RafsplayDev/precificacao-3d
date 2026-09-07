@@ -8,8 +8,9 @@ import { ehTeste } from "@/lib/modo";
  *
  * A faixa do AppShell avisa o tempo todo, e por isso vira paisagem: ninguém
  * lê a tarja que está lá desde que entrou. Este aviso escolhe o outro
- * momento — o primeiro produto criado, quando existe trabalho a perder e a
- * frase "salvo só neste navegador" deixa de ser abstrata.
+ * momento — o primeiro cadastro feito, seja produto, impressora ou
+ * filamento, quando existe trabalho a perder e a frase "salvo só neste
+ * navegador" deixa de ser abstrata.
  *
  * Aparece uma vez por navegador, nunca mais. Repetir a cada produto seria
  * transformar o argumento em incômodo, e quem já decidiu continuar no teste
@@ -48,7 +49,7 @@ export function AvisoTeste({ open, onClose }) {
     <Dialog
       open
       title="Salvo — mas só neste navegador"
-      description="Seu produto está guardado aqui no computador, não na sua conta."
+      description="O que você acabou de cadastrar está guardado neste computador, não na sua conta."
       onClose={onClose}
       width={460}
       footer={

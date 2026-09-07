@@ -7,6 +7,7 @@ import { TabelaEditavel } from "@/components/TabelaEditavel";
 import { Explicacao } from "@/components/Explicacao";
 import { useToast } from "@/components/AppShell";
 import { useTutorial } from "@/components/Tutorial";
+import { AvisoTeste, deveAvisarTeste } from "@/components/AvisoTeste";
 import { custosProduto, valorAdicional, valorTrabalho } from "@/lib/calc";
 import { money } from "@/lib/format";
 
@@ -24,6 +25,7 @@ const ABAS = [
 export default function Produtos() {
   const d = useDados();
   const toast = useToast();
+  const [avisoTeste, setAvisoTeste] = React.useState(false);
   const [sel, setSel] = React.useState("");
   const [aba, setAba] = React.useState("pecas");
   const { passo, ativo } = useTutorial();
@@ -159,6 +161,15 @@ export default function Produtos() {
         setSel(p.id);
         setAba("pecas");
         toast({ title: "Produto criado", message: nome });
+        // O produto acabou de nascer no localStorage e a pessoa não faz
+        // ideia. É aqui que "salvo só neste navegador" tem peso: existe
+        // trabalho a perder.
+        //
+        // Menos no meio do tutorial: ali o produto é do roteiro, não dela,
+        // e o guia estaria no meio de um passo. Quem faz o tutorial nem
+        // conta tem — falar de assinatura antes do cadastro é a cobrança na
+        // porta de entrada que o modo teste existe para evitar.
+        if (!ativo && deveAvisarTeste()) setAvisoTeste(true);
       } else {
         const salvo = await salvarLinha("produtos", produto.id, { nome, descricao: descRascunho.trim() || null });
         d.aplicar("produtos", salvo);
@@ -313,6 +324,8 @@ export default function Produtos() {
             onConfirmar={confirmarNome}
           />
         )}
+
+        <AvisoTeste open={avisoTeste} onClose={() => setAvisoTeste(false)} />
       </div>
     );
   }
@@ -534,6 +547,8 @@ export default function Produtos() {
           onConfirmar={confirmarExcluirProduto}
         />
       )}
+
+      <AvisoTeste open={avisoTeste} onClose={() => setAvisoTeste(false)} />
     </div>
   );
 }

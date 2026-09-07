@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { motion, useReducedMotion } from "motion/react";
 import { Toast, Icon } from "@/design-system";
 import { supabase } from "@/lib/supabaseClient";
+import { ehTeste } from "@/lib/modo";
 import { irPara } from "@/lib/navegar";
 import { TutorialProvider, useTutorial } from "@/components/Tutorial";
 
@@ -186,6 +187,11 @@ function Casca({ children }) {
           </div>
         </header>
 
+        {/* A faixa fica fora do header, em fluxo normal: dentro dele ela
+            entraria no blur e no sticky, e uma tarja grudada no topo o dia
+            inteiro cansa mais do que avisa. */}
+        {!publica && conta && <FaixaTeste pathname={pathname} />}
+
         {/* A barra do rodapé vive fora do header de propósito: dentro dele o
             blur criaria bloco de contenção e ela deixaria de ser fixa. */}
         {!publica && (
@@ -207,6 +213,48 @@ function Casca({ children }) {
         </div>
       </div>
     </ToastCtx.Provider>
+  );
+}
+
+/**
+ * O aviso de que os dados ainda são só deste navegador.
+ *
+ * Sem licença ativa o middleware carimba `dc_modo=teste` e deixa a pessoa
+ * usar o app inteiro — o paywall saiu da porta de entrada de propósito
+ * (ver o comentário do middleware). Só que nada dizia isso na tela: dava
+ * para cadastrar impressora, filamentos e produtos achando que aquilo
+ * estava guardado na conta, quando o `useDados` estava gravando tudo no
+ * localStorage. Limpar o cache ou trocar de computador apagava o trabalho
+ * sem aviso nenhum — e não havia como pagar mesmo querendo, porque nenhuma
+ * tela levava a /assinar.
+ *
+ * Aparece só para quem tem conta: quem está no tutorial ainda não criou uma,
+ * e cobrar de quem nem se cadastrou é justamente o que o modo teste evita.
+ * Some enquanto o tutorial roda, para não disputar a atenção com o guia.
+ */
+function FaixaTeste({ pathname }) {
+  const { ativo } = useTutorial();
+  // O cookie só existe no navegador, e o middleware o reescreve a cada
+  // request: reler a cada troca de tela é o que faz a faixa sumir sozinha
+  // assim que a licença é liberada.
+  const [teste, setTeste] = React.useState(false);
+  React.useEffect(() => {
+    setTeste(ehTeste());
+  }, [pathname]);
+
+  if (!teste || ativo) return null;
+
+  return (
+    <div className="ap-modoteste" role="status">
+      <span className="ap-modoteste__txt">
+        <strong>Modo teste.</strong> O que você cadastra fica salvo só neste
+        navegador. Limpar os dados do site, trocar de aparelho ou entrar em
+        outro computador e o trabalho não vem junto.
+      </span>
+      <Link href="/assinar" className="ap-modoteste__cta">
+        Guardar na minha conta
+      </Link>
+    </div>
   );
 }
 

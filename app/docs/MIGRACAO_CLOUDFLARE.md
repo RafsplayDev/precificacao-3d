@@ -16,8 +16,12 @@ npx wrangler whoami         # confira o e-mail e anote o Account ID
 
 ## 2. Banco D1 (já feito)
 
-O banco `precifica-3d` já existe na conta, com o schema aplicado, e o id dele já está no
-`wrangler.jsonc`. Só rode `npm run db:migrar` quando houver migração nova em `migrations/`.
+O banco `precifica-3d` já existe na conta da Dropcolor e o id dele já está no
+`wrangler.jsonc`. Para criar as tabelas (e depois a cada migração nova em `migrations/`):
+
+```bash
+npm run db:migrar
+```
 
 ## 3. Criar o login com Google
 

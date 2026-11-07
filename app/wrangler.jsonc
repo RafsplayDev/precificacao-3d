@@ -14,8 +14,8 @@
     {
       "binding": "DB",
       "database_name": "precifica-3d",
-      // Banco já criado e com o schema 0001 aplicado (conta dropcolor).
-      "database_id": "a8ae2778-8ca3-432a-824d-cd03fcac0a24",
+      // Banco precifica-3d da conta Dropcolor (wrangler d1 create).
+      "database_id": "3a511cd9-838f-4136-a0ae-d3542cc7b573",
       "migrations_dir": "migrations"
     }
   ],

@@ -23,7 +23,7 @@
     // Domínio final, sem barra no fim. Vazio = usa a origem da requisição.
     "NEXT_PUBLIC_URL_SITE": "",
     // E-mails que viram admin (painel /admin de anúncios), separados por vírgula.
-    "ADMIN_EMAILS": "dropcolorec@gmail.com"
+    "ADMIN_EMAILS": "dropcolorec@gmail.com,rafsplayofc@gmail.com"
   }
   // Segredos (NÃO ficam aqui): defina com `npx wrangler secret put NOME`
   //   GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, ANUNCIOS_TOKEN

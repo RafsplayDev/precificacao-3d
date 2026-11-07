@@ -22,6 +22,12 @@ function Formulario() {
       ? "Não foi possível entrar com o Google. Tente de novo; se continuar, use outra conta Google."
       : null;
   const href = `/api/auth/google?proximo=${encodeURIComponent(proximo)}`;
+  // O botão de login de teste só aparece se o servidor tiver DEV_LOGIN=1
+  // (servidor local). No site publicado a rota responde 404.
+  const [dev, setDev] = React.useState(false);
+  React.useEffect(() => {
+    fetch("/api/auth/dev?checar=1").then((r) => setDev(r.ok)).catch(() => {});
+  }, []);
 
   return (
     <div className="ap-auth">
@@ -45,6 +51,11 @@ function Formulario() {
             </svg>
             Entrar com Google
           </a>
+          {dev ? (
+            <a className="ap-auth__dev" href={`/api/auth/dev?proximo=${encodeURIComponent(proximo)}`}>
+              Entrar como teste local (só no servidor local)
+            </a>
+          ) : null}
           <p className="ap-auth__rodape">
             Ao entrar, você concorda com os <Link href="/termos">Termos de Uso</Link> e a{" "}
             <Link href="/privacidade">Política de Privacidade</Link>.

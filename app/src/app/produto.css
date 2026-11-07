@@ -411,3 +411,9 @@
 .ap-previa__rotulo span { color: var(--text-muted); font-size: var(--text-body-sm); }
 .ap-previa .ap-vitrine { margin-top: 0; padding: 0; max-width: none; }
 .ap-previa .ap-catalogo { padding: 0; max-width: none; }
+
+.ap-auth__dev {
+  text-align: center; font-size: var(--text-body-sm); color: var(--text-muted);
+  padding: var(--space-2); border: 1px dashed var(--border-default); border-radius: var(--radius-sm);
+  text-decoration: none;
+}

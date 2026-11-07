@@ -46,23 +46,18 @@ export async function GET(req) {
   const banco = await db();
   const admin = (await ehAdmin(quem.email)) ? 1 : 0;
 
-  // 1) já entrou com esse Google antes; 2) conta importada do Supabase com o
-  // mesmo e-mail, que é "adotada" agora; 3) conta nova.
+  // A conta é a do Google: o `sub` é o identificador estável dela (o
+  // e-mail pode mudar).
   let user = await banco.prepare("SELECT id FROM usuarios WHERE google_sub = ?").bind(quem.sub).first();
-  if (!user) {
-    user = await banco
-      .prepare("SELECT id FROM usuarios WHERE email = ? AND google_sub IS NULL")
-      .bind(quem.email)
-      .first();
-  }
+  const novo = !user;
   const agora = new Date().toISOString();
   if (user) {
     await banco
       .prepare(
-        `UPDATE usuarios SET google_sub = ?, email = ?, nome = COALESCE(?, nome), foto_url = ?,
+        `UPDATE usuarios SET email = ?, nome = COALESCE(?, nome), foto_url = ?,
                 admin = MAX(admin, ?), ultimo_login = ? WHERE id = ?`
       )
-      .bind(quem.sub, quem.email, quem.nome, quem.foto, admin, agora, user.id)
+      .bind(quem.email, quem.nome, quem.foto, admin, agora, user.id)
       .run();
   } else {
     user = { id: crypto.randomUUID() };
@@ -81,7 +76,10 @@ export async function GET(req) {
   await semearConta(user.id);
 
   const { token, maxAge } = await criarSessao(user.id);
-  const res = NextResponse.redirect(new URL(guardado.proximo || "/", origem));
+  // Conta recém-criada começa pelo tutorial: a calculadora vazia não diz
+  // nada a quem ainda não cadastrou impressora, filamento nem produto.
+  const destino = novo ? "/tutorial" : guardado.proximo || "/";
+  const res = NextResponse.redirect(new URL(destino, origem));
   res.cookies.set(COOKIE_SESSAO, token, opcoesCookie(maxAge));
   res.cookies.set(COOKIE_OAUTH, "", { path: "/api/auth", maxAge: 0 });
   return res;

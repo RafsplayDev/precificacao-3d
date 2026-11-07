@@ -6,10 +6,14 @@ import { useDados, inserirLinha, salvarLinha, removerLinha, tratarMensagemErro }
 import { TabelaEditavel } from "@/components/TabelaEditavel";
 import { Explicacao } from "@/components/Explicacao";
 import { useToast } from "@/components/AppShell";
+import { useTutorial } from "@/components/Tutorial";
 import { custosProduto, valorAdicional, valorTrabalho } from "@/lib/calc";
 import { money } from "@/lib/format";
 
 const CATEGORIAS = { Producao: "Produção", Acabamento: "Acabamento", Modelagem: "Modelagem" };
+
+/** O que o tutorial pergunta sobre a peça — e só. */
+const CAMPOS_PECA_CURTOS = ["nome", "tempo_impressao_horas", "peso_gr"];
 
 const ABAS = [
   { id: "pecas", label: "Peças" },
@@ -22,6 +26,31 @@ export default function Produtos() {
   const toast = useToast();
   const [sel, setSel] = React.useState("");
   const [aba, setAba] = React.useState("pecas");
+  const { passo, ativo } = useTutorial();
+
+  // Mesmo acordo dos cadastros: o passo diz qual seção do produto ele está
+  // explicando, e a tela abre essa seção.
+  React.useEffect(() => {
+    if (passo?.abaProduto) setAba(passo.abaProduto);
+  }, [passo?.abaProduto]);
+
+  // O passo fala de dentro do produto, mas quem está na lista não está
+  // dentro de nenhum: basta recarregar a página para `sel` voltar a vazio,
+  // e aí o tutorial pede uma peça apontando para uma seção que não existe
+  // na tela. Abrir o produto mais recente — o que a pessoa acabou de criar
+  // no passo anterior — é o que ela faria a seguir de qualquer jeito.
+  // Uma vez por passo, e não sempre: quem fecha o produto de propósito para
+  // olhar a lista não pode ser puxado de volta para dentro a cada quadro.
+  const jaAbriu = React.useRef(null);
+  React.useEffect(() => {
+    if (!passo?.abaProduto || sel) return;
+    if (jaAbriu.current === passo.id) return;
+    const recente = [...d.produtos].sort((a, b) =>
+      String(b.created_at).localeCompare(String(a.created_at)))[0];
+    if (!recente) return;
+    jaAbriu.current = passo.id;
+    setSel(recente.id);
+  }, [passo?.abaProduto, passo?.id, sel, d.produtos]);
   const [nomeando, setNomeando] = React.useState(null); // "novo" | "renomear"
   const [nomeRascunho, setNomeRascunho] = React.useState("");
   const [sugestaoNome, setSugestaoNome] = React.useState("");
@@ -79,8 +108,9 @@ export default function Produtos() {
    * Metros de filamento por grama, tirados do carretel cadastrado.
    *
    * O comprimento não entra em nenhum custo — quem paga a conta é o peso —,
-   * mas é um campo que ninguém sabe responder de cabeça. Ele é preenchido
-   * por esta média, coerente com o carretel que a pessoa cadastrou.
+   * mas é um campo que ninguém sabe responder de cabeça. No tutorial ele
+   * some do formulário e é preenchido por esta média, coerente com o
+   * carretel que a própria pessoa acabou de cadastrar.
    */
   const metrosPorGrama = React.useMemo(() => {
     const f = d.filamentos[0];
@@ -183,7 +213,7 @@ export default function Produtos() {
             <h1 style={{ marginTop: 6 }}>Seus produtos</h1>
             <p>Cada produto tem as próprias peças e insumos. Abra um para cadastrar o que ele leva.</p>
           </div>
-          <Button variant="accent" icon={<Icon name="plus" size={16} />} onClick={abrirNovoProduto}>
+          <Button variant="accent" icon={<Icon name="plus" size={16} />} onClick={abrirNovoProduto} data-tutorial="produtos-novo">
             Novo produto
           </Button>
         </div>
@@ -214,6 +244,10 @@ export default function Produtos() {
                   interactive
                   padding="var(--space-5)"
                   className="ap-prodcard"
+                  /* O tutorial acende este card quando a pessoa volta ao
+                     passo do produto já criado — mostrar o que nasceu ali
+                     diz mais que reacender o botão que ela já apertou. */
+                  data-tutorial={i === 0 ? "produto-criado" : undefined}
                   role="button"
                   tabIndex={0}
                   aria-label={`Abrir ${p.nome}`}
@@ -268,6 +302,7 @@ export default function Produtos() {
         {nomeando && (
           <DialogNome
             modo={nomeando}
+            curto={ativo}
             valor={nomeRascunho}
             placeholder={sugestaoNome}
             onChange={setNomeRascunho}
@@ -294,11 +329,17 @@ export default function Produtos() {
     { key: "comprimento_m", label: "Compr. (m)", tipo: "numero" },
     { key: "tempo_impressao_horas", label: "Tempo (min)", tipo: "minutos" },
     { key: "peso_gr", label: "Peso (g)", tipo: "numero",
-      // O comprimento vem do peso, pela média do carretel cadastrado.
+      // No formulário curto do tutorial o comprimento não aparece; ele vem
+      // do peso, pela média do carretel cadastrado.
       aoMudar: (valor) => ({ comprimento_m: Math.round(Number(valor) * metrosPorGrama * 10) / 10 }) },
     { key: "unidades_por_impressao", label: "Un. por impressão", tipo: "numero" },
     { key: "percent_acabamento", label: "Acabamento (%)", tipo: "percent" },
   ];
+
+  // O formulário curto do tutorial: nome, tempo e peso. Impressora e
+  // filamento já vêm escolhidos (os primeiros cadastrados, que no tutorial
+  // são os que a pessoa acabou de criar), e o resto fica nos padrões.
+  const colunasPecaCurtas = colunasPecas.filter((c) => CAMPOS_PECA_CURTOS.includes(c.key));
 
   return (
     <div className="ap-wrap">
@@ -352,7 +393,7 @@ export default function Produtos() {
       </div>
 
       {aba === "pecas" && (
-        <Card padding="var(--space-6)">
+        <Card padding="var(--space-6)" data-tutorial="produto-pecas">
           {/* O parágrafo virou "i", como nos cadastros: ele é útil na
               primeira visita e empurra a tabela para baixo em todas as
               outras — no celular, para fora da tela. */}
@@ -372,6 +413,8 @@ export default function Produtos() {
             tabela="pecas"
             rotulo="peça"
             colunas={colunasPecas}
+            colunasFormulario={ativo ? colunasPecaCurtas : undefined}
+            obrigatorios={ativo ? CAMPOS_PECA_CURTOS : undefined}
             linhas={pecas}
             recarregar={d.recarregar}
             aplicar={d.aplicar}
@@ -394,7 +437,7 @@ export default function Produtos() {
       )}
 
       {aba === "insumos" && (
-        <Card padding="var(--space-6)">
+        <Card padding="var(--space-6)" data-tutorial="produto-insumos">
           <div className="ap-sectionhead">
             <h2>
               Insumos e custos adicionais
@@ -431,7 +474,7 @@ export default function Produtos() {
       )}
 
       {aba === "trabalho" && (
-        <Card padding="var(--space-6)">
+        <Card padding="var(--space-6)" data-tutorial="produto-trabalho">
           <div className="ap-sectionhead">
             <h2>
               Mão de obra
@@ -516,9 +559,17 @@ function Mini({ rotulo, valor }) {
 }
 
 /** Diálogo único de nome — usado tanto para criar quanto para renomear. */
-function DialogNome({ modo, valor, onChange, descricao, onChangeDescricao, salvando, onClose, onConfirmar, placeholder }) {
+/**
+ * `curto` é o modo tutorial: só o nome, e o nome digitado de verdade.
+ *
+ * A descrição não entra em conta nenhuma e o roteiro está pedindo uma
+ * coisa só. Aceitar o placeholder ("Produto 3") como resposta criaria um
+ * produto sem nome — a pessoa chegaria à calculadora sem reconhecer o que
+ * está precificando.
+ */
+function DialogNome({ modo, valor, onChange, descricao, onChangeDescricao, salvando, onClose, onConfirmar, placeholder, curto = false }) {
   const criar = modo === "novo";
-  const podeSalvar = Boolean(valor.trim() || placeholder);
+  const podeSalvar = Boolean(valor.trim() || (placeholder && !curto));
   return (
     <Dialog
       open={true}
@@ -532,6 +583,7 @@ function DialogNome({ modo, valor, onChange, descricao, onChangeDescricao, salva
             variant="accent"
             size="sm"
             disabled={salvando || !podeSalvar}
+            className={curto && podeSalvar && !salvando ? "is-pulsando" : ""}
             onClick={onConfirmar}
           >
             {salvando ? "Salvando..." : criar ? "Criar produto" : "Salvar"}
@@ -548,12 +600,14 @@ function DialogNome({ modo, valor, onChange, descricao, onChangeDescricao, salva
           onChange={(e) => onChange(e.target.value)}
           onKeyDown={(e) => { if (e.key === "Enter" && podeSalvar && !salvando) onConfirmar(); }}
         />
-        <Input
-          label="Descrição"
-          value={descricao}
-          onChange={(e) => onChangeDescricao(e.target.value)}
-          onKeyDown={(e) => { if (e.key === "Enter" && podeSalvar && !salvando) onConfirmar(); }}
-        />
+        {!curto && (
+          <Input
+            label="Descrição"
+            value={descricao}
+            onChange={(e) => onChangeDescricao(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter" && podeSalvar && !salvando) onConfirmar(); }}
+          />
+        )}
       </div>
     </Dialog>
   );

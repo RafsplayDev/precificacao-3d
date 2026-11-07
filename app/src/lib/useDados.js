@@ -35,6 +35,20 @@ async function api(caminho, metodo = "GET", corpo) {
   return dados;
 }
 
+/**
+ * Quantas linhas a conta tem em cada tabela, do jeito que a tela está vendo.
+ *
+ * O tutorial avança sozinho quando a pessoa cadastra o que o passo pede
+ * (a primeira impressora, o primeiro produto…), e para isso ele precisa
+ * saber a contagem sem ler o banco de novo a cada instante. Toda tela usa
+ * o useDados, então é aqui que a contagem nasce.
+ */
+const contagens = {};
+/** null enquanto os dados ainda não chegaram — "não sei" é diferente de zero. */
+export function contarLinhas(tabela) {
+  return contagens[tabela] ?? null;
+}
+
 /** Carrega o banco inteiro de uma vez. O volume aqui é pequeno (dezenas de linhas). */
 export function useDados() {
   const [dados, setDados] = React.useState(VAZIO);
@@ -55,6 +69,11 @@ export function useDados() {
   }, []);
 
   React.useEffect(() => { carregar(); }, [carregar]);
+
+  React.useEffect(() => {
+    if (carregando) return;
+    for (const t of TABELAS) contagens[t] = (dados[t] || []).length;
+  }, [dados, carregando]);
 
   /** Insere ou substitui uma linha só, sem reler o banco inteiro. */
   const aplicar = React.useCallback((tabela, registro) => {

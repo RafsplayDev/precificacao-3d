@@ -76,8 +76,10 @@ export function TabelaEditavel({ tabela, colunas, linhas, novoRegistro, recarreg
   /**
    * Campos sem os quais o botão não libera.
    *
-   * Deixar "Adicionar" clicável antes deles criaria, por exemplo, uma
-   * impressora de R$ 0,00 — e a calculadora mostraria um custo errado.
+   * Usado pelo tutorial: lá o formulário fica com dois ou três campos e
+   * todos importam para o preço. Deixar "Adicionar" clicável antes deles
+   * criaria uma impressora de R$ 0,00 — e a calculadora, no fim do
+   * roteiro, mostraria um custo que não é o da pessoa.
    */
   const faltando = (obrigatorios || []).some((k) => {
     const col = camposDoForm.find((c) => c.key === k);
@@ -198,9 +200,12 @@ export function TabelaEditavel({ tabela, colunas, linhas, novoRegistro, recarreg
 
       {novoRegistro && !semBotao && (
         <div style={{ marginTop: "var(--space-4)" }}>
+          {/* O tutorial acha este botão pelo atributo para passar o feixe de
+              luz nele — pelo mesmo motivo dos alvos de passo: seletor de
+              classe quebra em silêncio quando o CSS muda. */}
           <Button
             variant="secondary" size="sm" icon={<Icon name="plus" size={16} />}
-            onClick={abrirFormulario}
+            onClick={abrirFormulario} data-tutorial-acao="adicionar"
           >
             Adicionar {rotulo}
           </Button>
@@ -247,7 +252,9 @@ export function TabelaEditavel({ tabela, colunas, linhas, novoRegistro, recarreg
                     const extras = col.aoMudar ? col.aoMudar(paraBanco(v, col), campos) : null;
                     for (const [k, val] of Object.entries(extras || {})) {
                       const alvo = camposDoForm.find((c) => c.key === k);
-                      // Fora do formulário o valor vai direto para a linha.
+                      // Fora do formulário o valor vai direto para a linha:
+                      // é assim que o formulário curto do tutorial preenche
+                      // sozinho um campo que ele nem mostra.
                       if (alvo) campos[k] = paraTexto(val, alvo);
                       else base = { ...base, [k]: val };
                     }

@@ -9,8 +9,7 @@
     "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
     "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
     "db:migrar": "wrangler d1 migrations apply precifica-3d --remote",
-    "db:migrar-local": "wrangler d1 migrations apply precifica-3d --local",
-    "exportar-supabase": "node scripts/exportar-supabase.mjs"
+    "db:migrar-local": "wrangler d1 migrations apply precifica-3d --local"
   },
   "dependencies": {
     "@opennextjs/cloudflare": "^1.20.16",

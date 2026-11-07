@@ -7,11 +7,12 @@ import { motion, useReducedMotion } from "motion/react";
 import { Toast, Icon } from "@/design-system";
 import { irPara } from "@/lib/navegar";
 import { Vitrine } from "@/components/Vitrine";
+import { TutorialProvider, useTutorial } from "@/components/Tutorial";
 
 const NAV = [
-  { href: "/", label: "Calculadora", icone: "calculator" },
-  { href: "/produtos", label: "Produtos", icone: "box" },
-  { href: "/cadastros", label: "Cadastros", icone: "layers" },
+  { href: "/", label: "Calculadora", icone: "calculator", tour: "nav-calculadora" },
+  { href: "/produtos", label: "Produtos", icone: "box", tour: "nav-produtos" },
+  { href: "/cadastros", label: "Cadastros", icone: "layers", tour: "nav-cadastros" },
   // Gestão fica de fora do MVP: a tela continua inteira em
   // app/gestao/pagina-oculta.jsx e volta renomeando o arquivo para page.jsx e
   // devolvendo esta linha (e o "/gestao" na lista APP do middleware).
@@ -20,15 +21,23 @@ const NAV = [
 ];
 
 /** Páginas que se bastam: sem menu do app e sem a vitrine no rodapé. */
-const SEM_MENU = ["/entrar"];
+const SEM_MENU = ["/entrar", "/tutorial"];
 
 /** Onde a vitrine de afiliados não aparece no rodapé. */
-const SEM_VITRINE = ["/entrar", "/admin"];
+const SEM_VITRINE = ["/entrar", "/admin", "/tutorial"];
 
 const ToastCtx = React.createContext(() => {});
 export const useToast = () => React.useContext(ToastCtx);
 
 export function AppShell({ children }) {
+  return (
+    <TutorialProvider>
+      <Casca>{children}</Casca>
+    </TutorialProvider>
+  );
+}
+
+function Casca({ children }) {
   const pathname = usePathname();
   const reduzido = useReducedMotion();
   const [toasts, setToasts] = React.useState([]);
@@ -44,7 +53,10 @@ export function AppShell({ children }) {
 
   const publica = SEM_MENU.some((p) => pathname === p || pathname.startsWith(p + "/"));
 
-  const comVitrine = !SEM_VITRINE.some((p) => pathname === p || pathname.startsWith(p + "/"));
+  const { ativo: emTutorial } = useTutorial();
+  // Durante o tutorial a vitrine sai de cena: o guia já disputa a atenção
+  // da pessoa com a tela inteira, e um anúncio ali seria só mais ruído.
+  const comVitrine = !emTutorial && !SEM_VITRINE.some((p) => pathname === p || pathname.startsWith(p + "/"));
 
   React.useEffect(() => {
     if (publica || conta) return;
@@ -78,6 +90,7 @@ export function AppShell({ children }) {
           key={n.href}
           href={n.href}
           aria-current={atual ? "page" : undefined}
+          data-tutorial={n.tour}
         >
           {atual && (
             <motion.span
@@ -139,6 +152,7 @@ export function AppShell({ children }) {
                         <img className="ap-conta__foto" src={conta.foto_url} alt="" referrerPolicy="no-referrer" />
                       )}
                       <span className="ap-conta__email">{conta.email}</span>
+                      <RepetirTutorial />
                       <button type="button" onClick={sair}>Sair</button>
                     </div>
                   </div>
@@ -172,5 +186,15 @@ export function AppShell({ children }) {
         </div>
       </div>
     </ToastCtx.Provider>
+  );
+}
+
+/** Ver o tutorial de novo — de dentro da gaveta da conta, onde ninguém tropeça nele. */
+function RepetirTutorial() {
+  const { iniciar } = useTutorial();
+  return (
+    <button type="button" onClick={iniciar}>
+      Ver o tutorial
+    </button>
   );
 }

@@ -20,7 +20,7 @@ PRAGMA foreign_keys = ON;
 -- ---------------------------------------------------------------- contas
 CREATE TABLE IF NOT EXISTS usuarios (
   id          TEXT PRIMARY KEY,
-  google_sub  TEXT UNIQUE,           -- nulo para contas importadas do Supabase até o 1º login
+  google_sub  TEXT NOT NULL UNIQUE,  -- o "sub" do Google: id estável da conta
   email       TEXT NOT NULL UNIQUE COLLATE NOCASE,
   nome        TEXT,
   foto_url    TEXT,

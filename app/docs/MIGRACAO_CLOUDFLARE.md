@@ -1,7 +1,9 @@
-# Migração: Supabase + Vercel → Cloudflare (Workers + D1)
+# Colocar no ar na Cloudflare (Workers + D1)
 
 Tudo roda na conta Cloudflare **dropcolorec@gmail.com**: o app (telas + API) é um
-Worker gerado pelo OpenNext, e o banco é um D1. A ordem importa.
+Worker gerado pelo OpenNext, e o banco é um D1. O banco começa vazio — os dados do
+Supabase não são trazidos; cada pessoa entra com o Google e cadastra do zero (o
+tutorial guia esse primeiro cadastro). A ordem importa.
 
 ## 1. Entrar na conta certa
 
@@ -62,40 +64,14 @@ Custom domain**. O domínio precisa estar na mesma conta Cloudflare (se ele esti
 hoje na Vercel ou em outro registrador, adicione o site na Cloudflare e troque os
 nameservers primeiro).
 
-## 6. Trazer os dados do Supabase
-
-No Supabase: **Project Settings → API**, copie a URL e a `service_role`. Então:
-
-```bash
-SUPABASE_URL=https://xxxx.supabase.co \
-SUPABASE_SERVICE_ROLE_KEY=eyJ... \
-npm run --silent exportar-supabase > migracao-dados.sql
-
-npx wrangler d1 execute precifica-3d --remote --file migracao-dados.sql
-```
-
-- Cada conta do Supabase vira um usuário com o **mesmo e-mail**. No primeiro
-  "Entrar com Google" com esse e-mail, a conta é adotada e a pessoa encontra tudo o
-  que já tinha. Quem usava outro e-mail no Supabase precisa entrar com um Google
-  desse mesmo e-mail.
-- Tabelas de cobrança, lista beta e afiliados **não** são migradas.
-- O arquivo é idempotente: rodar de novo não duplica nada.
-- `migracao-dados.sql` tem dados pessoais e está no `.gitignore`. Apague depois.
-
-Conferência:
-
-```bash
-npx wrangler d1 execute precifica-3d --remote --command "select count(*) from usuarios; select count(*) from produtos;"
-```
-
-## 7. Desligar o que ficou para trás
+## 6. Desligar o que ficou para trás
 
 Depois de testar em produção:
 
 1. **Vercel**: remova o projeto (ou o domínio dele) para não haver dois sites no ar.
 2. **Mercado Pago**: desative o webhook `/api/mp/webhook` (a rota não existe mais) e
    revogue o Access Token da aplicação.
-3. **Supabase**: guarde um backup (Database → Backups, ou `pg_dump`) e pause/remova o projeto.
+3. **Supabase**: se quiser guardar o histórico, faça um backup (Database → Backups); depois pause ou remova o projeto.
 
 ## Custos
 

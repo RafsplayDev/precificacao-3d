@@ -1,0 +1,641 @@
+"use client";
+import React from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { Button, Icon } from "@/design-system";
+import { PASSOS, ETAPAS } from "@/lib/tutorial";
+import { contarLinhas } from "@/lib/useDados";
+
+/**
+ * O tutorial guiado.
+ *
+ * Um recorte de luz sobre o elemento do passo e um cartão ao lado dele. O
+ * recorte não é um scrim clicável: `pointer-events: none` no escuro inteiro
+ * é o que permite a pessoa **usar** o app enquanto é guiada — clicar em
+ * "Adicionar impressora", digitar, salvar. Um tutorial que só deixa apertar
+ * "Próximo" mostra o app; este faz a pessoa operá-lo, e é operando que ela
+ * aprende a usar.
+ *
+ * O estado mora no localStorage porque ele precisa sobreviver à navegação
+ * entre /cadastros, /produtos e / — que aqui é troca de página de verdade,
+ * não de aba.
+ *
+ * Quem liga o tutorial é a página /tutorial — para onde o primeiro login
+ * com o Google manda quem acabou de criar a conta — ou o botão "Ver o
+ * tutorial" na gaveta da conta. Ele nunca começa sozinho numa visita
+ * comum: quem já usa o app não pode topar com o roteiro toda vez.
+ *
+ * O roteiro termina na calculadora, com o preço da peça da pessoa na tela.
+ *
+ * Quando um diálogo do app abre (o formulário de cadastro), o cartão se
+ * recolhe: o scrim do diálogo passa por cima dele de qualquer jeito, e
+ * deixá-lo lá só empilharia sombra sobre sombra.
+ */
+
+const CHAVE = "dc_tutorial_v1";
+
+/**
+ * As telas em que o tutorial pode acontecer. Fora delas (login, admin)
+ * ele fica guardado e reaparece quando a pessoa volta ao app.
+ */
+const ROTAS_DO_APP = ["/", "/produtos", "/cadastros", "/concorrentes"];
+const MARGEM = 16; // folga do recorte em volta do alvo. O contorno rosa é puxado para dentro (outline-offset negativo, no CSS), então esta folga é o aceso que sobra por fora do rosa.
+
+const Ctx = React.createContext({ passo: null, ativo: false, iniciar: () => {} });
+export const useTutorial = () => React.useContext(Ctx);
+
+function lerEstado() {
+  try {
+    return JSON.parse(window.localStorage.getItem(CHAVE) || "null");
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Ligar o tutorial de fora do React.
+ *
+ * A página /tutorial precisa deixar o roteiro armado *antes* de trocar de
+ * endereço, e nesse momento o provider da tela seguinte ainda nem montou.
+ * Gravar o estado aqui é o que faz o primeiro passo já chegar de pé.
+ */
+export function iniciarTutorial() {
+  gravarEstado({ estado: "ativo", indice: 0 });
+}
+
+function gravarEstado(estado) {
+  try {
+    window.localStorage.setItem(CHAVE, JSON.stringify(estado));
+  } catch {}
+}
+
+export function TutorialProvider({ children }) {
+  const pathname = usePathname();
+  const router = useRouter();
+  const [indice, setIndice] = React.useState(null); // null = tutorial fora do ar
+  const [pronto, setPronto] = React.useState(false);
+
+  // A primeira leitura só pode acontecer no navegador: no servidor não há
+  // localStorage, e chutar aqui faria o tutorial piscar.
+  React.useEffect(() => {
+    const salvo = lerEstado();
+    if (salvo?.estado === "ativo" && Number.isInteger(salvo.indice)) {
+      setIndice(salvo.indice);
+    }
+    setPronto(true);
+  }, []);
+
+  const noApp = ROTAS_DO_APP.includes(pathname);
+  const passo = indice == null || !noApp ? null : PASSOS[indice] || null;
+
+  const ir = React.useCallback((novo) => {
+    if (novo == null || novo >= PASSOS.length) {
+      setIndice(null);
+      gravarEstado({ estado: "fim" });
+      return;
+    }
+    const alvo = Math.max(0, novo);
+    setIndice(alvo);
+    gravarEstado({ estado: "ativo", indice: alvo });
+  }, []);
+
+  const encerrar = React.useCallback(() => {
+    setIndice(null);
+    gravarEstado({ estado: "saiu" });
+  }, []);
+
+  const iniciar = React.useCallback(() => {
+    setIndice(0);
+    gravarEstado({ estado: "ativo", indice: 0 });
+  }, []);
+
+  // Cada passo sabe em que tela mora. Trocar de tela é do tutorial, não da
+  // pessoa: quem está sendo guiado não deveria precisar achar o menu.
+  React.useEffect(() => {
+    if (!passo || passo.rota === pathname) return;
+    router.push(passo.rota);
+  }, [passo, pathname, router]);
+
+  const valor = React.useMemo(
+    () => ({
+      passo: passo && passo.rota === pathname ? passo : null,
+      indice,
+      total: PASSOS.length,
+      ativo: indice != null,
+      iniciar,
+      encerrar,
+      proximo: () => ir((indice ?? 0) + 1),
+      anterior: () => ir((indice ?? 0) - 1),
+    }),
+    [passo, pathname, indice, ir, iniciar, encerrar]
+  );
+
+  return (
+    <Ctx.Provider value={valor}>
+      {children}
+      {pronto && valor.passo && (
+        <Guia
+          passo={valor.passo}
+          indice={indice}
+          total={PASSOS.length}
+          onProximo={valor.proximo}
+          onAnterior={valor.anterior}
+          onSair={encerrar}
+        />
+      )}
+    </Ctx.Provider>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+
+function Guia({ passo, indice, total, onProximo, onAnterior, onSair }) {
+  const dialogoAberto = useDialogoAberto();
+  // null = os dados ainda não chegaram; ver o comentário do ponto de partida.
+  const usoLido = useUso(passo.exigeLinha);
+  const uso = usoLido ?? 0;
+  // Passo já cumprido tem outro alvo, quando o roteiro oferece um: quem
+  // volta para reler não precisa do botão "Novo produto" aceso — o que
+  // interessa a ela é o produto que nasceu dali. O destaque vira legenda
+  // em vez de instrução.
+  const cumprido = Boolean(passo.exigeLinha) && uso > 0;
+  const area = useAreaDoAlvo(cumprido && passo.alvoFeito ? passo.alvoFeito : passo.alvo);
+  const cartao = React.useRef(null);
+  const posicao = usePosicao(area, cartao, passo.id);
+
+  // ----------------------------------------------------------------
+  // Quem avança é o cadastro, não um botão
+  //
+  // Nos passos que pedem uma linha, o "Próximo" era uma saída falsa: dava
+  // para seguir sem cadastrar nada e chegar na calculadora com a tela
+  // vazia — exatamente o que o roteiro existe para evitar. Sem ele, o
+  // passo vira o que promete ser: clique no botão aceso, preencha, e o
+  // tutorial segue sozinho quando a linha existir.
+  //
+  // O ponto de partida é lido na entrada do passo: quem volta para um
+  // passo já cumprido não pode ser empurrado de novo para a frente.
+  // ----------------------------------------------------------------
+  // Passos em que o tutorial não oferece botão: quem anda é a ação da
+  // pessoa — cadastrar a linha, ou tocar no que está aceso.
+  const espera = Boolean(passo.exigeLinha) || passo.aoClicar;
+  const partida = React.useRef(null);
+  // Lido do próprio armazenamento, e não do estado da tela: logo depois de
+  // um "Voltar" o contador ainda traz o número da tabela do passo anterior,
+  // e usá-lo como ponto de partida empurrava a pessoa para a frente de
+  // novo — o botão Voltar não voltava.
+  //
+  // Com os dados ainda a caminho (página recém-carregada), a contagem é
+  // desconhecida: o ponto de partida só é marcado quando ela chega. Marcar
+  // zero e depois receber as linhas que a conta já tinha daria o passo por
+  // cumprido sem a pessoa ter feito nada.
+  React.useLayoutEffect(() => {
+    partida.current = espera ? contarLinhas(passo.exigeLinha) : null;
+  }, [espera, passo.id, passo.exigeLinha]);
+  React.useEffect(() => {
+    if (!passo.exigeLinha || !espera) return;
+    if (usoLido == null) return;
+    if (partida.current == null) {
+      partida.current = usoLido;
+      return;
+    }
+    if (usoLido > partida.current) onProximo();
+  }, [passo.exigeLinha, espera, usoLido, onProximo]);
+
+  // O passo que espera um toque escuta o clique no documento inteiro e
+  // pergunta se ele caiu dentro do alvo. Escutar no elemento não serviria:
+  // ele é remedido a cada instante e pode ser trocado por outro igual (o
+  // mesmo item existe no menu do topo e na barra do rodapé).
+  React.useEffect(() => {
+    if (!passo.aoClicar || !passo.alvo) return;
+    const ouvir = (ev) => {
+      if (ev.target.closest?.(`[data-tutorial="${passo.alvo}"]`)) onProximo();
+    };
+    document.addEventListener("click", ouvir, true);
+    return () => document.removeEventListener("click", ouvir, true);
+  }, [passo.aoClicar, passo.alvo, onProximo]);
+
+  // Passo de vitrine no celular: a régua de abas é mais larga que a tela e
+  // precisa rolar, mas o vidro que mata o clique mata o arrasto junto. Aqui
+  // o vidro sai (por CSS, nas telas estreitas) e quem segura o toque é este
+  // guarda: ele engole o clique dentro do alvo e deixa o gesto passar —
+  // rolar não gera clique, tocar gera. O resultado é o que o passo quer
+  // dizer: dá para ver o que existe, não dá para sair do caminho por aqui.
+  React.useEffect(() => {
+    if (!passo.semToque || !passo.alvo) return;
+    const engolir = (ev) => {
+      if (!ev.target.closest?.(`[data-tutorial="${passo.alvo}"]`)) return;
+      ev.preventDefault();
+      ev.stopPropagation();
+    };
+    document.addEventListener("click", engolir, true);
+    return () => document.removeEventListener("click", engolir, true);
+  }, [passo.semToque, passo.alvo]);
+
+  // O feixe de luz no botão "Adicionar". Ele mora fora do recorte — o
+  // alvo do passo é a tabela inteira, e o brilho precisa cair só no
+  // botão —, então a classe é posta no elemento de verdade e tirada na
+  // saída do passo. React não desfaz isso sozinho: ele só reescreve
+  // `className` quando a prop muda, e aqui ela não muda.
+  // O feixe some quando a linha já existe: brilho apontando um clique que
+  // não falta mais é só barulho, e o que a pessoa procura ali é o "Próximo".
+  const chamaOClique = passo.feixe && !(passo.exigeLinha && uso > 0);
+  React.useEffect(() => {
+    if (!chamaOClique) return;
+    let postos = [];
+    // A procura se repete porque o botão costuma chegar depois: o passo
+    // manda trocar de aba, e a tabela nova monta um quadro à frente. Uma
+    // busca única acertaria a aba antiga — ou o vazio.
+    const procurar = () => {
+      if (postos.length) return;
+      postos = Array.from(document.querySelectorAll('[data-tutorial-acao="adicionar"]'))
+        .filter((el) => el.offsetParent !== null); // só a aba que está à vista
+      postos.forEach((el) => el.classList.add("ap-feixe"));
+    };
+    procurar();
+    const id = setInterval(procurar, 200);
+    const fim = setTimeout(() => clearInterval(id), 3000);
+    return () => {
+      clearInterval(id);
+      clearTimeout(fim);
+      postos.forEach((el) => el.classList.remove("ap-feixe"));
+    };
+  }, [chamaOClique, passo.id, passo.aba, passo.abaProduto]);
+
+  if (dialogoAberto) return null;
+
+  const feito = passo.exigeLinha ? uso > 0 : true;
+  // O passo aponta para algo que não está na tela. Acontece quando a
+  // pessoa chega ao passo por um caminho que ele não previu — voltando
+  // para a lista de produtos, por exemplo, com o detalhe fechado. Sem
+  // alvo não há o que clicar, e sem botão não há como sair: o cartão
+  // vira uma parede. Então o botão aparece.
+  const semAlvo = !area;
+  // O passo que pede cadastro esconde o "Próximo" de propósito: quem ainda
+  // não cadastrou tem que cadastrar, não apertar o botão. Mas quem já
+  // cadastrou e voltou para reler o passo cairia num beco — a linha já
+  // existe, então nada mais vai acontecer para empurrar o tutorial adiante.
+  // Nesse caso o botão volta: ele não pula nada, só refaz o caminho.
+  const jaCumprido = cumprido;
+
+  return (
+    <>
+      {area
+        ? <span
+            className={"ap-tour__luz" + (espera && !jaCumprido ? " ap-tour__luz--pulsa" : "")}
+            style={{ ...caixa(area), position: "fixed" }}
+            aria-hidden="true"
+          />
+        : <span className="ap-tour__escuro" aria-hidden="true" />}
+      {area && <Bloqueio area={caixa(area)} />}
+      {/* Passo de vitrine: o alvo fica aceso, mas a tampa transparente por
+          cima faz o clique morrer nele também. Sem isso, "só olhe" viraria
+          um convite a abrir uma aba e perder o fio do roteiro. */}
+      {area && passo.semToque && (
+        <span className="ap-tour__trava ap-tour__trava--vidro" style={caixa(area)} aria-hidden="true" />
+      )}
+      <div
+        ref={cartao}
+        className={"ap-tour__cartao" + (area ? "" : " ap-tour__cartao--centro")}
+        style={area ? posicao : undefined}
+        role="dialog"
+        aria-live="polite"
+        aria-label={`Tutorial, passo ${indice + 1} de ${total}`}
+      >
+        <div className="ap-tour__topo">
+          {passo.semAvanco ? <span /> : <Avanco indice={indice} />}
+          <button type="button" className="ap-tour__fechar" onClick={onSair} aria-label="Sair do tutorial">
+            <Icon name="x" size={16} />
+          </button>
+        </div>
+
+        {/* Só o corpo rola. Quando o cartão inteiro rolava, um texto longo
+            empurrava "Próximo" para fora da área visível e o tutorial ficava
+            sem saída aparente — que foi o que aconteceu no celular. */}
+        <div className="ap-tour__corpo">
+          <h2 className="ap-tour__titulo">{passo.titulo}</h2>
+          <p className="ap-tour__texto">{comDestaque(passo.texto, passo.destaque)}</p>
+        </div>
+
+        <div className="ap-tour__acoes">
+          {indice > 0 && (
+            <button type="button" className="ap-tour__voltar" onClick={onAnterior}>
+              Voltar
+            </button>
+          )}
+          <span className="ap-tour__espaco" />
+          {passo.opcional && (
+            <button type="button" className="ap-tour__pular" onClick={onProximo}>
+              Pular esta parte
+            </button>
+          )}
+          {(!espera || jaCumprido || semAlvo) && (
+            <Button
+              size="sm"
+              variant={feito ? "accent" : "secondary"}
+              className={passo.pulsaAcao ? "is-pulsando" : ""}
+              onClick={onProximo}
+            >
+              {passo.acao || (passo.opcional ? "Cadastrei" : "Próximo")}
+            </Button>
+          )}
+        </div>
+      </div>
+    </>
+  );
+}
+
+/**
+ * O que fica fora do destaque não recebe clique.
+ *
+ * Antes o escuro inteiro era `pointer-events: none` e a pessoa podia mexer
+ * em qualquer canto da tela no meio do roteiro — abrir outro cadastro,
+ * trocar de aba, sair do caminho e não achar mais o caminho de volta. Agora
+ * o clique só passa em dois lugares: o recorte iluminado e o menu (que os
+ * passos usam para trocar de tela). O menu sobe por CSS, acima do escuro;
+ * aqui ficam as quatro faixas que cercam o recorte.
+ *
+ * Quatro faixas, e não um retângulo com furo: um elemento só teria de ter
+ * um buraco de verdade para deixar o clique passar, e nenhuma propriedade
+ * de CSS faz isso sem `clip-path` — que recorta a pintura, não a área de
+ * toque.
+ */
+function Bloqueio({ area }) {
+  const faixas = [
+    { top: 0, left: 0, right: 0, height: Math.max(0, area.top) },
+    { top: area.top + area.height, left: 0, right: 0, bottom: 0 },
+    { top: area.top, left: 0, width: Math.max(0, area.left), height: area.height },
+    { top: area.top, left: area.left + area.width, right: 0, height: area.height },
+  ];
+
+  return faixas.map((f, i) => (
+    <span key={i} className="ap-tour__trava" style={f} aria-hidden="true" />
+  ));
+}
+
+/* --------------------------- o avanço ---------------------------- */
+
+/**
+ * Quanto falta, sem contar passos.
+ *
+ * Uma barra por etapa: as que ficaram para trás estão cheias, a atual
+ * enche conforme os passos dela caem, as próximas esperam. "Passo 7 de 18"
+ * dizia a verdade e assustava; três barras curtas dizem a mesma coisa e
+ * parecem o que são — um caminho de três partes, quase todo já andado.
+ */
+function Avanco({ indice }) {
+  const atual = PASSOS[indice]?.etapa;
+  const numero = ETAPAS.findIndex((e) => e.id === atual);
+
+  return (
+    <div className="ap-tour__avanco">
+      <span className="ap-tour__etapa">
+        {numero + 1} - {ETAPAS[numero]?.nome}
+      </span>
+      <span className="ap-tour__barras" aria-hidden="true">
+        {ETAPAS.map((e) => (
+          <span key={e.id} className="ap-tour__barra">
+            <i style={{ transform: `scaleX(${fracao(e.id, indice)})` }} />
+          </span>
+        ))}
+      </span>
+    </div>
+  );
+}
+
+/** Quanto da barra de uma etapa já foi vencido: 0, 1, ou algo no meio. */
+function fracao(etapa, indice) {
+  const passos = PASSOS.filter((p) => p.etapa === etapa);
+  const feitos = passos.filter((p) => PASSOS.indexOf(p) < indice).length;
+  // O passo atual conta como meio: a barra sai do zero assim que a etapa
+  // começa (senão a primeira tela parece não ter avançado nada) e só enche
+  // de vez quando a etapa acaba.
+  const noAtual = passos.some((p) => PASSOS.indexOf(p) === indice) ? 0.5 : 0;
+  return Math.min(1, (feitos + noAtual) / passos.length);
+}
+
+/* --------------------------- as medidas --------------------------- */
+
+/**
+ * Onde o alvo está agora.
+ *
+ * Medido de tempos em tempos, e não uma vez só: entre um passo e outro a
+ * pessoa abre formulários, salva linhas e a tabela cresce. Um retângulo
+ * congelado acabaria destacando o lugar onde o botão estava.
+ *
+ * O relógio é um `setInterval` curto e não um `requestAnimationFrame`
+ * porque o rAF para em aba oculta ou sem composição — e o destaque voltaria
+ * pela metade quando a pessoa retomasse. O custo de medir a cada 120 ms é
+ * um `getBoundingClientRect`, e o estado só muda quando o retângulo muda.
+ */
+function useAreaDoAlvo(alvo) {
+  const [area, setArea] = React.useState(null);
+
+  React.useEffect(() => {
+    if (!alvo) {
+      setArea(null);
+      return;
+    }
+
+    let jaRolou = false;
+    let anterior = "";
+    // O alvo mudou: o que está medido é do passo anterior. Sem limpar, o
+    // recorte fica aceso no lugar velho até a primeira medição do novo —
+    // e se o novo alvo não estiver na tela, fica lá para sempre, apontando
+    // um botão que o texto do cartão não menciona.
+    setArea(null);
+
+    const medir = () => {
+      const el = visivel(document.querySelectorAll(`[data-tutorial="${alvo}"]`));
+      if (!el) {
+        if (anterior !== "") {
+          anterior = "";
+          setArea(null);
+        }
+        return;
+      }
+
+      const r = el.getBoundingClientRect();
+      const assinatura = `${Math.round(r.top)}:${Math.round(r.left)}:${Math.round(r.width)}:${Math.round(r.height)}`;
+      if (assinatura !== anterior) {
+        anterior = assinatura;
+        setArea({ top: r.top, left: r.left, width: r.width, height: r.height });
+      }
+
+      // Só na primeira medição: rolar a cada passagem brigaria com a pessoa
+      // que está rolando a página para ler a tabela.
+      if (!jaRolou) {
+        jaRolou = true;
+        if (r.top < 80 || r.bottom > window.innerHeight - 80) {
+          // Alvo alto (a tabela inteira) ou tela estreita: centralizar
+          // jogava metade dele para debaixo do cartão, que no celular é
+          // um rodapé fixo. Encostar no topo mantém à vista o começo do
+          // alvo — que é onde está o botão que o passo manda apertar.
+          const alto = r.height > window.innerHeight * 0.45;
+          el.scrollIntoView({ block: alto ? "start" : "center", behavior: "smooth" });
+        }
+      }
+    };
+
+    medir();
+    const relogio = setInterval(medir, 120);
+    window.addEventListener("scroll", medir, true);
+    window.addEventListener("resize", medir);
+    // O navegador estrangula timers em aba oculta — o recorte pode ficar
+    // parado enquanto ninguem olha. Ao voltar para a aba, remedimos antes
+    // de a pessoa ver o destaque no lugar antigo.
+    document.addEventListener("visibilitychange", medir);
+    return () => {
+      clearInterval(relogio);
+      window.removeEventListener("scroll", medir, true);
+      window.removeEventListener("resize", medir);
+      document.removeEventListener("visibilitychange", medir);
+    };
+  }, [alvo]);
+
+  return area;
+}
+
+/** O mesmo `data-tutorial` existe no menu do topo e na barra do rodapé; vale o que está na tela. */
+function visivel(lista) {
+  for (const el of lista) {
+    const r = el.getBoundingClientRect();
+    if (r.width > 0 && r.height > 0) return el;
+  }
+  return null;
+}
+
+/** Enquanto o formulário de cadastro está aberto, o cartão sai da frente. */
+function useDialogoAberto() {
+  const [aberto, setAberto] = React.useState(false);
+  React.useEffect(() => {
+    const olhar = () => setAberto(Boolean(document.querySelector(".dc-dialog__scrim")));
+    olhar();
+    const obs = new MutationObserver(olhar);
+    obs.observe(document.body, { childList: true, subtree: true });
+    return () => obs.disconnect();
+  }, []);
+  return aberto;
+}
+
+/**
+ * Quantas linhas a pessoa já cadastrou na tabela que este passo pede.
+ *
+ * O número vem carimbado com a tabela a que pertence. Sem esse carimbo, o
+ * primeiro instante de um passo novo ainda devolvia a contagem do passo
+ * anterior — e como é essa contagem que faz o tutorial andar sozinho, o
+ * passo seguinte se dava por cumprido antes de a pessoa digitar qualquer
+ * coisa.
+ */
+function useUso(tabela) {
+  const [estado, setEstado] = React.useState({ tabela: null, n: 0 });
+
+  React.useEffect(() => {
+    if (!tabela) return;
+    const olhar = () => setEstado({ tabela, n: contarLinhas(tabela) });
+    olhar();
+    const id = setInterval(olhar, 400);
+    return () => clearInterval(id);
+  }, [tabela]);
+
+  if (!tabela) return 1;
+  return estado.tabela === tabela ? estado.n : null;
+}
+
+/**
+ * Pinta de rosa, dentro do texto do cartão, o trecho que nomeia o botão a
+ * ser clicado. É o mesmo rosa do feixe e do contorno: quem lê "Adicionar
+ * impressora" em destaque procura por essa cor na tela e a encontra no
+ * lugar certo. Sem `destaque`, o texto sai inteiro como veio.
+ */
+function comDestaque(texto, destaque) {
+  if (!destaque) return texto;
+  const corte = texto.indexOf(destaque);
+  if (corte < 0) return texto;
+  return (
+    <>
+      {texto.slice(0, corte)}
+      <strong className="ap-tour__realce">{destaque}</strong>
+      {texto.slice(corte + destaque.length)}
+    </>
+  );
+}
+
+const caixa = (a) => ({
+  top: a.top - MARGEM,
+  left: a.left - MARGEM,
+  width: a.width + MARGEM * 2,
+  height: a.height + MARGEM * 2,
+});
+
+/**
+ * Onde o cartão cabe sem tapar o alvo.
+ *
+ * A conta antiga só olhava para cima e para baixo, com uma altura chutada:
+ * quando o alvo era alto — a tabela inteira de impressoras — nenhum dos
+ * dois lados cabia, o cartão ia para o rodapé da tela e acabava deitado
+ * por cima justamente do lugar onde a pessoa precisava digitar.
+ *
+ * Agora o cartão é medido de verdade e as quatro faixas livres em volta do
+ * alvo entram na disputa. Vence a primeira em que ele cabe inteiro; se
+ * nenhuma couber, vence a maior e o cartão é limitado a ela (o corpo já
+ * rola). O alvo nunca fica coberto — é a única regra que não se negocia
+ * aqui, porque o destaque é o único lugar em que o clique passa.
+ */
+function usePosicao(area, cartao, id) {
+  const [tamanho, setTamanho] = React.useState({ largura: 380, altura: 260 });
+
+  // Medido a cada passo e a cada mudança do alvo: o texto muda de tamanho
+  // de um passo para outro, e um cartão medido uma vez só erra na próxima.
+  React.useEffect(() => {
+    const el = cartao.current;
+    if (!el) return;
+    const medir = () => {
+      const r = el.getBoundingClientRect();
+      setTamanho((v) =>
+        Math.abs(v.largura - r.width) < 1 && Math.abs(v.altura - r.height) < 1
+          ? v
+          : { largura: r.width, altura: r.height }
+      );
+    };
+    medir();
+    const obs = new ResizeObserver(medir);
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [cartao, id, area]);
+
+  if (!area || typeof window === "undefined") return undefined;
+  return posicaoDoCartao(caixa(area), tamanho);
+}
+
+function posicaoDoCartao(a, { largura, altura }) {
+  const folga = 16;
+  const tela = { w: window.innerWidth, h: window.innerHeight };
+  const LARGURA = Math.min(380, tela.w - folga * 2);
+
+  // As quatro faixas livres em volta do alvo, na ordem de preferência.
+  const faixas = [
+    { nome: "abaixo", w: tela.w, h: tela.h - (a.top + a.height) },
+    { nome: "acima", w: tela.w, h: a.top },
+    { nome: "direita", w: tela.w - (a.left + a.width), h: tela.h },
+    { nome: "esquerda", w: a.left, h: tela.h },
+  ].map((f) => ({ ...f, w: f.w - folga * 2, h: f.h - folga * 2 }));
+
+  const cabe = faixas.find((f) => f.w >= Math.min(largura, LARGURA) && f.h >= altura);
+  const f = cabe || faixas.reduce((m, x) => (x.w * x.h > m.w * m.h ? x : m));
+
+  const larg = Math.min(LARGURA, Math.max(f.w, 220));
+  const base = { width: larg, maxHeight: Math.max(f.h, 160) };
+
+  if (f.nome === "abaixo" || f.nome === "acima") {
+    const left = presa(a.left + a.width / 2 - larg / 2, folga, tela.w - larg - folga);
+    return f.nome === "abaixo"
+      ? { ...base, left, top: a.top + a.height + folga }
+      : { ...base, left, bottom: tela.h - a.top + folga };
+  }
+
+  const top = presa(a.top + a.height / 2 - altura / 2, folga, tela.h - altura - folga);
+  return f.nome === "direita"
+    ? { ...base, top, left: a.left + a.width + folga }
+    : { ...base, top, right: tela.w - a.left + folga };
+}
+
+const presa = (valor, min, max) => Math.min(Math.max(valor, min), Math.max(min, max));

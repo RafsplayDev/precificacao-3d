@@ -2,6 +2,7 @@
 import React from "react";
 import { Card, Tabs, Badge } from "@/design-system";
 import { useDados } from "@/lib/useDados";
+import { useTutorial } from "@/components/Tutorial";
 import { Explicacao } from "@/components/Explicacao";
 import { TabelaEditavel } from "@/components/TabelaEditavel";
 import { money } from "@/lib/format";
@@ -198,9 +199,38 @@ const TEXTOS = {
   bens: "Depreciação fiscal de todos os bens do negócio. A soma mensal entra no custo de depreciação de cada peça.",
 };
 
+/**
+ * O formulário curto do tutorial.
+ *
+ * No roteiro, o cadastro completo era um paredão: onze campos para uma
+ * pessoa que ainda não sabe se o app serve para ela. Aqui ficam só os
+ * campos que ela precisa responder com um número dela — o resto continua
+ * existindo, com os padrões que o cadastro já usava, e pode ser ajustado
+ * depois na tabela.
+ */
+const FORM_TUTORIAL = {
+  impressoras: ["nome", "valor_maquina"],
+  filamentos: ["nome", "peso_carretel_kg", "custo_brl"],
+};
+
 export default function Cadastros() {
   const d = useDados();
   const [aba, setAba] = React.useState("impressoras");
+  const { passo, ativo } = useTutorial();
+
+  const curto = ativo && FORM_TUTORIAL[aba];
+  const colunasCurtas = React.useMemo(
+    () => (curto ? COLUNAS[aba].filter((c) => curto.includes(c.key)) : undefined),
+    [curto, aba]
+  );
+
+  // O tutorial troca de aba por conta própria. Sem isso o texto falaria de
+  // filamento enquanto a tela ainda mostra impressoras, e o destaque cairia
+  // sobre a tabela errada.
+  React.useEffect(() => {
+    if (passo?.aba) setAba(passo.aba);
+  }, [passo?.aba]);
+
   const linhas = aba === "bens" ? d.bens_depreciacao : aba === "geral" ? d.configuracoes : d[aba];
   const total = depreciacaoTotal(d.bens_depreciacao);
 
@@ -214,7 +244,7 @@ export default function Cadastros() {
         </div>
       </div>
 
-      <div style={{ marginBottom: "var(--space-6)" }}>
+      <div style={{ marginBottom: "var(--space-6)" }} data-tutorial="cadastros-abas">
         <Tabs
           variant="underline"
           items={ABAS.map((a) => ({
@@ -237,7 +267,7 @@ export default function Cadastros() {
       ) : aba === "geral" ? (
         <div className="ap-grid ap-grid--2">
           {SECOES_GERAL.map((sec) => (
-            <Card key={sec.id} padding="var(--space-6)">
+            <Card key={sec.id} padding="var(--space-6)" data-tutorial={`geral-${sec.id}`}>
               <div className="ap-sectionhead ap-sectionhead--tight">
                 <h2>
                   {sec.titulo}
@@ -257,7 +287,7 @@ export default function Cadastros() {
           ))}
         </div>
       ) : (
-        <Card padding="var(--space-6)">
+        <Card padding="var(--space-6)" data-tutorial="cadastros-tabela">
           <div className="ap-sectionhead">
             <h2>
               {ABAS.find((a) => a.id === aba).label}
@@ -270,6 +300,8 @@ export default function Cadastros() {
           <TabelaEditavel
             tabela={TABELA_DB[aba]}
             colunas={COLUNAS[aba]}
+            colunasFormulario={colunasCurtas}
+            obrigatorios={curto || undefined}
             linhas={linhas}
             novoRegistro={NOVOS[aba]}
             rotulo={ROTULOS[aba]}

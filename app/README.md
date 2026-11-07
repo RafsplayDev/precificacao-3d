@@ -5,10 +5,11 @@ Next.js 15 (App Router) rodando no **Cloudflare Workers** (via OpenNext), banco 
 login com **Google** e o **Drop Color Design System** aplicado sem alteração.
 
 O app é **gratuito**. A renda vem da vitrine de produtos do ramo 3D com links de afiliado
-(veja [`docs/ANUNCIOS.md`](docs/ANUNCIOS.md)). Não há plano pago, lista de espera, tutorial
-de onboarding nem cobrança.
+(veja [`docs/ANUNCIOS.md`](docs/ANUNCIOS.md)). Não há plano pago, lista de espera nem
+cobrança. Toda conta nova começa pelo tutorial guiado (`/tutorial`), que também pode ser
+reaberto pela gaveta da conta.
 
-- Colocar no ar / migrar do Supabase: [`docs/MIGRACAO_CLOUDFLARE.md`](docs/MIGRACAO_CLOUDFLARE.md)
+- Colocar no ar: [`docs/MIGRACAO_CLOUDFLARE.md`](docs/MIGRACAO_CLOUDFLARE.md)
 - Abastecer a vitrine automaticamente: [`docs/ANUNCIOS.md`](docs/ANUNCIOS.md)
 
 ## Rodar localmente
@@ -26,12 +27,11 @@ npm run dev                         # http://localhost:3000
 
 ```
 migrations/             ← schema do D1 (wrangler d1 migrations apply)
-scripts/
-  exportar-supabase.mjs exporta os dados do Supabase para um .sql do D1
 src/
   design-system/        ← bundle Drop Color, isolado e sem edição
   lib/
     calc.js             as fórmulas da planilha em JS (validadas dígito a dígito)
+    tutorial.js         o roteiro do tutorial guiado
     useDados.js         leitura/escrita via /api/dados
     format.js           R$, %, número no padrão pt-BR
     servidor/           código que só roda no Worker
@@ -43,6 +43,7 @@ src/
   components/
     AppShell.jsx        header, navegação, toasts e vitrine no rodapé
     Vitrine.jsx         os anúncios de afiliado
+    Tutorial.jsx        o tutorial guiado (recorte de luz + cartão)
     TabelaEditavel.jsx  tabela que grava célula a célula
   app/
     page.jsx            calculadora
@@ -50,6 +51,7 @@ src/
     cadastros/          impressoras, filamentos, marketplaces, depreciação
     concorrentes/       seu preço contra o mercado
     entrar/             login com Google
+    tutorial/           liga o tutorial e leva ao primeiro passo
     admin/              desempenho dos anúncios (só ADMIN_EMAILS)
     api/dados/          CRUD do usuário logado
     api/auth/           google, callback, sair, eu

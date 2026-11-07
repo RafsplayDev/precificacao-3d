@@ -1471,14 +1471,13 @@ function ErroBanco({ mensagem }) {
   return (
     <div className="ap-wrap">
       <Card padding="var(--space-8)" style={{ maxWidth: 640 }}>
-        <span className="dc-eyebrow">SUPABASE</span>
+        <span className="dc-eyebrow">BANCO DE DADOS</span>
         <h2 style={{ fontSize: "var(--text-h2)", fontWeight: "var(--weight-medium)", margin: "8px 0 12px" }}>
-          O banco respondeu, mas as tabelas não estão lá
+          Não foi possível carregar seus dados
         </h2>
         <p style={{ color: "var(--text-muted)" }}>
-          Abra o SQL Editor do seu projeto no Supabase e rode, nesta ordem,
-          <code> supabase/migrations/0001_schema.sql</code> e
-          <code> supabase/migrations/0002_seed.sql</code>. Depois recarregue esta página.
+          Recarregue a página em alguns instantes. Se o erro continuar, confira se as
+          migrações do D1 foram aplicadas (<code>npm run db:migrar</code>).
         </p>
         <p style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-body-sm)", color: "var(--status-danger)", marginTop: 16 }}>
           {mensagem}

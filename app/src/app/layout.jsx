@@ -1,5 +1,6 @@
 import "./globals.css";
 import "./produto.css";
+import "./vitrine.css";
 import { AppShell } from "@/components/AppShell";
 
 export const metadata = {

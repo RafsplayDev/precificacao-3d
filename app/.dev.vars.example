@@ -1,0 +1,25 @@
+# Copie para .dev.vars (usado por `npm run dev` e `npm run preview`).
+# Em produção os mesmos nomes são segredos do Worker:
+#   npx wrangler secret put GOOGLE_CLIENT_ID   (etc.)
+
+# Google Cloud Console > APIs e serviços > Credenciais > ID do cliente OAuth 2.0
+# (tipo "Aplicativo da Web"). URI de redirecionamento autorizado:
+#   http://localhost:3000/api/auth/google/callback   (dev)
+#   https://SEU-DOMINIO/api/auth/google/callback    (produção)
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+
+# Token da tarefa automática que publica anúncios em POST /api/anuncios.
+# Gere um aleatório com: openssl rand -hex 32
+ANUNCIOS_TOKEN=
+
+# No dev o cookie de sessão é "secure"; o localhost é aceito pelos navegadores.
+ADMIN_EMAILS=dropcolorec@gmail.com
+
+# Open API do Shopee Afiliados (affiliate.shopee.com.br). Opcional.
+SHOPEE_APP_ID=
+SHOPEE_APP_SECRET=
+
+# Só no servidor local: libera "Entrar como teste local" (/api/auth/dev).
+# Nunca coloque no wrangler.jsonc.
+DEV_LOGIN=1

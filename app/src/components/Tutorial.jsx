@@ -3,8 +3,7 @@ import React from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Button, Icon } from "@/design-system";
 import { PASSOS, ETAPAS } from "@/lib/tutorial";
-import { ehTeste } from "@/lib/modo";
-import { usoDoTeste } from "@/lib/dadosLocais";
+import { contarLinhas } from "@/lib/useDados";
 
 /**
  * O tutorial guiado.
@@ -14,22 +13,18 @@ import { usoDoTeste } from "@/lib/dadosLocais";
  * é o que permite a pessoa **usar** o app enquanto é guiada — clicar em
  * "Adicionar impressora", digitar, salvar. Um tutorial que só deixa apertar
  * "Próximo" mostra o app; este faz a pessoa operá-lo, e é operando que ela
- * descobre se vale os R$ 34,90.
+ * aprende a usar.
  *
  * O estado mora no localStorage porque ele precisa sobreviver à navegação
  * entre /cadastros, /produtos e / — que aqui é troca de página de verdade,
- * não de aba. Uma cópia vai no cookie `dc_tour`, que é o que o middleware
- * lê para manter essas telas abertas a quem ainda não criou conta.
+ * não de aba.
  *
- * O tutorial nunca começa sozinho: quem o liga é a página /tutorial (o
- * link que o afiliado divulga) ou o botão na gaveta da conta. Enquanto ele
- * partia de qualquer visita ao app, quem já tinha conta topava com o
- * roteiro toda vez que abria o site em outro navegador.
+ * Quem liga o tutorial é a página /tutorial — para onde o primeiro login
+ * com o Google manda quem acabou de criar a conta — ou o botão "Ver o
+ * tutorial" na gaveta da conta. Ele nunca começa sozinho numa visita
+ * comum: quem já usa o app não pode topar com o roteiro toda vez.
  *
- * O roteiro termina na calculadora e acaba ali: nada de cartão vendendo
- * acesso no último passo. Quem gostou do preço que viu encontra o convite
- * na faixa do teste e segue pelo caminho normal — criar conta, depois
- * pagar.
+ * O roteiro termina na calculadora, com o preço da peça da pessoa na tela.
  *
  * Quando um diálogo do app abre (o formulário de cadastro), o cartão se
  * recolhe: o scrim do diálogo passa por cima dele de qualquer jeito, e
@@ -39,31 +34,8 @@ import { usoDoTeste } from "@/lib/dadosLocais";
 const CHAVE = "dc_tutorial_v1";
 
 /**
- * O mesmo estado, em cookie, para o middleware enxergar.
- *
- * Quem chega sem conta faz o tutorial antes de se cadastrar, e o middleware
- * precisa saber se ele ainda está rolando para deixar /cadastros e
- * /produtos abertos. localStorage não viaja no request; cookie viaja. O
- * cookie não autoriza nada além dessas telas de teste, cujo banco é o
- * próprio navegador — forjá-lo não dá acesso a dado de ninguém.
- */
-const COOKIE_TOUR = "dc_tour";
-const DIA = 60 * 60 * 24;
-
-function marcarTour(valor) {
-  try {
-    document.cookie = `${COOKIE_TOUR}=${valor}; path=/; max-age=${DIA}; samesite=lax`;
-  } catch {}
-}
-
-/**
- * As telas em que o tutorial pode acontecer.
- *
- * A lista existe por causa de um laço: o cookie `dc_modo` dura 24 horas e
- * sobrevive ao logout. Sem esta checagem, quem saísse da conta caía em
- * /entrar com o modo teste ainda no cookie, o tutorial tentava levar a
- * pessoa para /cadastros, o middleware devolvia para /entrar — e assim sem
- * parar. O tutorial só existe dentro do app.
+ * As telas em que o tutorial pode acontecer. Fora delas (login, admin)
+ * ele fica guardado e reaparece quando a pessoa volta ao app.
  */
 const ROTAS_DO_APP = ["/", "/produtos", "/cadastros", "/concorrentes"];
 const MARGEM = 16; // folga do recorte em volta do alvo. O contorno rosa é puxado para dentro (outline-offset negativo, no CSS), então esta folga é o aceso que sobra por fora do rosa.
@@ -84,28 +56,13 @@ function lerEstado() {
  *
  * A página /tutorial precisa deixar o roteiro armado *antes* de trocar de
  * endereço, e nesse momento o provider da tela seguinte ainda nem montou.
- * Gravar estado e cookie aqui é o que faz o primeiro passo já chegar de pé.
+ * Gravar o estado aqui é o que faz o primeiro passo já chegar de pé.
  */
 export function iniciarTutorial() {
   gravarEstado({ estado: "ativo", indice: 0 });
 }
 
-/**
- * Se este navegador já passou pelo tutorial — rodando, terminado ou
- * abandonado.
- *
- * Serve à tela de criar conta: os convites de "conhecer" e "testar sem
- * cadastro" são para quem ainda não viu nada. Oferecê-los a quem acabou de
- * sair do tutorial e clicou justamente para se cadastrar é mandar a pessoa
- * de volta ao começo do caminho que ela já andou.
- */
-export function tutorialVisto() {
-  if (typeof window === "undefined") return false;
-  return lerEstado() != null;
-}
-
 function gravarEstado(estado) {
-  marcarTour(estado.estado === "ativo" ? "ativo" : "fim");
   try {
     window.localStorage.setItem(CHAVE, JSON.stringify(estado));
   } catch {}
@@ -118,16 +75,11 @@ export function TutorialProvider({ children }) {
   const [pronto, setPronto] = React.useState(false);
 
   // A primeira leitura só pode acontecer no navegador: no servidor não há
-  // localStorage nem cookie de modo, e chutar aqui faria o tutorial piscar.
+  // localStorage, e chutar aqui faria o tutorial piscar.
   React.useEffect(() => {
     const salvo = lerEstado();
     if (salvo?.estado === "ativo" && Number.isInteger(salvo.indice)) {
       setIndice(salvo.indice);
-      marcarTour("ativo");
-    } else if (salvo) {
-      // O cookie vence em um dia e o localStorage não: sem este reforço,
-      // quem terminou o tutorial ontem voltaria a ter as telas abertas hoje.
-      marcarTour("fim");
     }
     setPronto(true);
   }, []);
@@ -198,7 +150,9 @@ export function TutorialProvider({ children }) {
 
 function Guia({ passo, indice, total, onProximo, onAnterior, onSair }) {
   const dialogoAberto = useDialogoAberto();
-  const uso = useUso(passo.exigeLinha);
+  // null = os dados ainda não chegaram; ver o comentário do ponto de partida.
+  const usoLido = useUso(passo.exigeLinha);
+  const uso = usoLido ?? 0;
   // Passo já cumprido tem outro alvo, quando o roteiro oferece um: quem
   // volta para reler não precisa do botão "Novo produto" aceso — o que
   // interessa a ela é o produto que nasceu dali. O destaque vira legenda
@@ -222,19 +176,29 @@ function Guia({ passo, indice, total, onProximo, onAnterior, onSair }) {
   // ----------------------------------------------------------------
   // Passos em que o tutorial não oferece botão: quem anda é a ação da
   // pessoa — cadastrar a linha, ou tocar no que está aceso.
-  const espera = (passo.exigeLinha && ehTeste()) || passo.aoClicar;
+  const espera = Boolean(passo.exigeLinha) || passo.aoClicar;
   const partida = React.useRef(null);
   // Lido do próprio armazenamento, e não do estado da tela: logo depois de
   // um "Voltar" o contador ainda traz o número da tabela do passo anterior,
   // e usá-lo como ponto de partida empurrava a pessoa para a frente de
   // novo — o botão Voltar não voltava.
+  //
+  // Com os dados ainda a caminho (página recém-carregada), a contagem é
+  // desconhecida: o ponto de partida só é marcado quando ela chega. Marcar
+  // zero e depois receber as linhas que a conta já tinha daria o passo por
+  // cumprido sem a pessoa ter feito nada.
   React.useLayoutEffect(() => {
-    partida.current = espera ? usoDoTeste()[passo.exigeLinha]?.usado || 0 : null;
+    partida.current = espera ? contarLinhas(passo.exigeLinha) : null;
   }, [espera, passo.id, passo.exigeLinha]);
   React.useEffect(() => {
-    if (!passo.exigeLinha || !espera || partida.current == null) return;
-    if (uso > partida.current) onProximo();
-  }, [passo.exigeLinha, espera, uso, onProximo]);
+    if (!passo.exigeLinha || !espera) return;
+    if (usoLido == null) return;
+    if (partida.current == null) {
+      partida.current = usoLido;
+      return;
+    }
+    if (usoLido > partida.current) onProximo();
+  }, [passo.exigeLinha, espera, usoLido, onProximo]);
 
   // O passo que espera um toque escuta o clique no documento inteiro e
   // pergunta se ele caiu dentro do alvo. Escutar no elemento não serviria:
@@ -565,15 +529,15 @@ function useUso(tabela) {
   const [estado, setEstado] = React.useState({ tabela: null, n: 0 });
 
   React.useEffect(() => {
-    if (!tabela || !ehTeste()) return;
-    const olhar = () => setEstado({ tabela, n: usoDoTeste()[tabela]?.usado || 0 });
+    if (!tabela) return;
+    const olhar = () => setEstado({ tabela, n: contarLinhas(tabela) });
     olhar();
     const id = setInterval(olhar, 400);
     return () => clearInterval(id);
   }, [tabela]);
 
-  if (!tabela || !ehTeste()) return 1;
-  return estado.tabela === tabela ? estado.n : 0;
+  if (!tabela) return 1;
+  return estado.tabela === tabela ? estado.n : null;
 }
 
 /**

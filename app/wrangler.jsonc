@@ -1,0 +1,38 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  // Worker que serve o app inteiro (telas + API), gerado pelo OpenNext.
+  "name": "precifica-3d",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-10-01",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "observability": { "enabled": true },
+  // Domínio próprio: o deploy liga o Worker a ele e a Cloudflare emite o
+  // certificado HTTPS. Exige a zona dropcolor.com.br ativa nesta conta.
+  "routes": [{ "pattern": "precifica.dropcolor.com.br", "custom_domain": true }],
+  // O endereço *.workers.dev continua respondendo (login dele redireciona
+  // para o domínio próprio, por causa de NEXT_PUBLIC_URL_SITE).
+  "workers_dev": true,
+  "preview_urls": false,
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "precifica-3d",
+      // Banco precifica-3d da conta Dropcolor (wrangler d1 create).
+      "database_id": "3a511cd9-838f-4136-a0ae-d3542cc7b573",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "vars": {
+    // Domínio final, sem barra no fim. Vazio = usa a origem da requisição.
+    "NEXT_PUBLIC_URL_SITE": "https://precifica.dropcolor.com.br",
+    // E-mails que viram admin (painel /admin de anúncios), separados por vírgula.
+    "ADMIN_EMAILS": "dropcolorec@gmail.com,rafsplayofc@gmail.com"
+  }
+  // Segredos (NÃO ficam aqui): defina com `npx wrangler secret put NOME`
+  //   GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, ANUNCIOS_TOKEN,
+  //   SHOPEE_APP_ID, SHOPEE_APP_SECRET (Open API do Shopee Afiliados)
+}

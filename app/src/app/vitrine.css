@@ -1,0 +1,443 @@
+/* =====================================================================
+   Vitrine de afiliados e loja de achados.
+
+   Segue o canvas "Vitrine de Achados" do Claude Design: cards separados
+   (loja, calculadora, linha, destaque), a medalha lisa com foguinho, o
+   cupom em ticket e a loja /achados montada com faixas coloridas.
+   As cores das lojas são as delas — é o que a pessoa reconhece num
+   relance; o resto vem dos tokens do design system.
+   ===================================================================== */
+
+/* ---- Vitrine (rodapé das telas e login) ---- */
+.ap-vitrine {
+  max-width: var(--max-content); margin: calc(-1 * var(--space-12)) auto 0;
+  padding: 0 var(--gutter-page) var(--space-12);
+}
+@media (min-width: 1280px) {
+  .ap-vitrine { max-width: 1360px; padding-left: var(--gutter-page-lg); padding-right: var(--gutter-page-lg); }
+}
+.ap-auth .ap-vitrine { padding: 0; margin-top: var(--space-8); max-width: none; }
+.ap-vitrine__topo {
+  display: flex; align-items: baseline; flex-wrap: wrap; gap: var(--space-2) var(--space-3);
+  margin-bottom: var(--space-4); padding-top: var(--space-2); border-top: 1px solid #E8EAEE;
+}
+.ap-vitrine__topo h2 { margin: 0; font-family: var(--font-display); font-size: 20px; color: #08090B; }
+.ap-vitrine__selo { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: #5C616B; }
+.ap-vitrine__todos { margin-left: auto; font-size: 14px; font-weight: 700; color: #C9134D; text-decoration: none; }
+.ap-vitrine__todos:hover { color: #A50F3F; }
+
+.ap-vitrine__lista {
+  list-style: none; margin: 0; padding: 0;
+  display: grid; gap: var(--space-4);
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+}
+.ap-vitrine__lista > li { display: flex; min-width: 0; }
+.ap-auth .ap-vitrine__lista { grid-template-columns: 1fr; }
+
+/* ---- Imagem: foto numa placa branca sobre fundo colorido ---- */
+.ap-vimg {
+  display: flex; align-items: center; justify-content: center;
+  width: 100%; aspect-ratio: 1; box-sizing: border-box; padding: 14%;
+}
+.ap-vimg__placa {
+  display: flex; align-items: center; justify-content: center; overflow: hidden;
+  width: 100%; height: 100%; border-radius: 18px; background: #fff;
+  box-shadow: 0 8px 24px rgba(14, 15, 18, .12);
+}
+.ap-vimg__placa img { width: 92%; height: 92%; object-fit: contain; }
+.ap-vimg__vazio { color: #8A9099; font-family: var(--font-display); font-weight: 600; }
+
+/* ---- Peças comuns ---- */
+.ap-vdesconto {
+  position: absolute; top: 12px; right: 12px; padding: 4px 10px; border-radius: 999px;
+  background: #FF2D6F; color: #fff; font-size: 13px; font-weight: 700;
+}
+.ap-vselo {
+  position: absolute; top: 10px; left: 10px; display: flex; align-items: center; gap: 6px;
+  padding: 4px 10px 4px 6px; border-radius: 999px; background: #fff;
+  box-shadow: 0 2px 6px rgba(14, 15, 18, .12); font-size: 12px; font-weight: 700; color: #08090B;
+}
+.ap-vmedalha { flex: none; display: block; }
+.ap-vloja {
+  align-self: flex-start; padding: 2px 8px; border-radius: 999px;
+  font-size: 11px; font-weight: 700; line-height: 1.5; white-space: nowrap;
+}
+.ap-vloja--shopee { background: #FDECE8; color: #D73211; }
+.ap-vloja--mercado-livre { background: #FFF159; color: #2D3277; }
+.ap-vnota { display: flex; align-items: center; gap: 4px; font-size: 12px; color: #5C616B; }
+.ap-vnota > span:first-child { color: #F5A623; }
+.ap-vcard__titulo {
+  font-size: 13px; line-height: 1.35; color: #08090B;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.ap-vpreco { display: flex; flex-direction: column; margin-top: 2px; }
+.ap-vpreco s { font-size: 12px; color: #8A9099; }
+.ap-vpreco__linha { display: flex; align-items: baseline; flex-wrap: wrap; gap: 6px; }
+.ap-vpreco strong {
+  font-family: var(--font-display); font-size: 24px; font-weight: 600; letter-spacing: -.01em; color: #08090B;
+}
+.ap-vpreco__cond { font-style: normal; font-size: 12px; font-weight: 700; color: #0B7F57; }
+.ap-vpreco__cupom {
+  display: inline-flex; align-items: center; gap: 4px; margin-top: 2px;
+  font-size: 13px; font-weight: 700; color: #C9134D;
+}
+.ap-vpreco__cupom svg { flex: none; }
+.ap-vpreco--compacto { flex-direction: row; align-items: baseline; flex-wrap: wrap; gap: 0 6px; }
+.ap-vpreco--compacto .ap-vpreco__cupom { flex-basis: 100%; font-size: 12px; }
+.ap-vpreco--empilhado .ap-vpreco__cupom { font-size: 12px; white-space: nowrap; }
+.ap-vrotulo {
+  display: flex; align-items: center; gap: 6px; font-size: 11px; line-height: 1.3;
+  font-weight: 700; text-transform: uppercase; letter-spacing: .02em;
+}
+.ap-vrotulo--ouro { color: #8A6A06; }
+.ap-vrotulo--prata { color: #5F6772; }
+.ap-vrotulo--bronze { color: #8A4F24; }
+.ap-vpreco--compacto strong { font-family: var(--font-body); font-size: 18px; }
+.ap-vpreco--empilhado { align-items: flex-end; text-align: right; }
+.ap-vpreco--empilhado strong { font-size: 20px; white-space: nowrap; }
+.ap-vpreco--empilhado .ap-vpreco__linha { flex-direction: column; align-items: flex-end; gap: 0; }
+.ap-vmotivo { font-size: 12px; font-weight: 500; }
+.ap-vmotivo--ouro { color: #8A6A06; }
+.ap-vmotivo--prata { color: #5F6772; }
+.ap-vmotivo--bronze { color: #8A4F24; }
+.ap-vestoque { font-size: 12px; font-weight: 700; color: #D63B1F; }
+.ap-vobs { display: flex; align-items: flex-start; gap: 4px; font-size: 12px; color: #1C1E23; }
+.ap-vobs svg, .ap-vobs .dc-icon { flex: none; margin-top: 1px; }
+.ap-vbotao {
+  display: flex; align-items: center; justify-content: center; min-height: 40px;
+  border-radius: 999px; background: #08090B; color: #fff; font-size: 14px; font-weight: 500;
+  text-decoration: none;
+}
+a.ap-vbotao:hover { color: #fff; background: #2A2D34; }
+
+/* ---- Card da loja ---- */
+.ap-vcard {
+  position: relative; display: flex; flex-direction: column; width: 100%;
+  background: #fff; border: 1px solid #E8EAEE; border-radius: 18px; overflow: hidden;
+  transition: transform var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
+}
+.ap-vcard:hover { transform: translateY(-2px); box-shadow: 0 12px 28px -14px rgba(8, 9, 11, .3); }
+.ap-vcard__link { display: flex; flex-direction: column; flex: 1; color: inherit; text-decoration: none; }
+.ap-vcard__link:focus-visible { outline: 2px solid #FF2D6F; outline-offset: -2px; border-radius: 18px; }
+.ap-vcard__midia { position: relative; display: block; }
+.ap-vcard__corpo { flex: 1; display: flex; flex-direction: column; gap: 6px; padding: 14px 16px 12px; }
+.ap-vcard__pe { display: flex; flex-direction: column; gap: 10px; padding: 0 16px 16px; }
+.ap-vcard__pe .ap-vcupom { margin: 0 -4px; width: calc(100% + 8px); }
+.ap-vcompartilhar {
+  position: absolute; bottom: 10px; left: 10px; z-index: 2;
+  display: grid; place-items: center; width: 34px; height: 34px; padding: 0;
+  border: 0; border-radius: 50%; cursor: pointer;
+  background: rgba(255, 255, 255, .95); color: #1FA855; box-shadow: 0 1px 4px rgba(8, 9, 11, .18);
+  opacity: 0; transition: opacity var(--dur-fast) var(--ease-out);
+}
+/* O botão fica no pé da imagem, que tem altura de quadrado: posiciona pela largura do card. */
+.ap-vcard .ap-vcompartilhar { top: calc(100cqw - 44px); bottom: auto; }
+.ap-vcard { container-type: inline-size; }
+.ap-vcard:hover .ap-vcompartilhar, .ap-vcompartilhar:focus-visible { opacity: 1; }
+@media (hover: none) { .ap-vcompartilhar { opacity: 1; } }
+
+/* ---- Esgotado ---- */
+.ap-vcard--esgotado { opacity: .72; }
+.ap-vcard--esgotado:hover { transform: none; box-shadow: none; }
+.ap-vcard--esgotado .ap-vimg { filter: grayscale(1); }
+.ap-vcard--esgotado .ap-vpreco strong { color: #5C616B; text-decoration: line-through; }
+.ap-vcard--esgotado .ap-vbotao { background: #F2F3F6; color: #5C616B; cursor: default; }
+.ap-vesgotado {
+  align-self: flex-start; padding: 2px 8px; border-radius: 999px; background: #08090B; color: #fff;
+  font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
+}
+
+/* ---- Card da calculadora ---- */
+.ap-vcalc {
+  display: flex; flex-direction: column; width: 100%;
+  background: #fff; border: 1px solid #E8EAEE; border-radius: 18px; overflow: hidden;
+}
+.ap-vcalc__link { flex: 1; display: flex; flex-direction: column; color: inherit; text-decoration: none; }
+.ap-vcalc__link:focus-visible { outline: 2px solid #FF2D6F; outline-offset: -2px; }
+.ap-vcalc .ap-vdesconto { top: 10px; right: 10px; padding: 3px 8px; font-size: 12px; }
+.ap-vcalc__corpo { flex: 1; display: flex; flex-direction: column; gap: 6px; padding: 12px 14px 14px; }
+.ap-vcalc__pe { margin-top: auto; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.ap-vcalc__ver { font-size: 12px; font-weight: 700; color: #C9134D; white-space: nowrap; }
+.ap-vcupom-faixa {
+  display: flex; align-items: center; gap: 8px; width: 100%; padding: 8px 14px; margin: 0;
+  border: 0; border-top: 1.5px dashed #D9DCE1; background: #FFE7EE;
+  font: inherit; font-size: 12px; color: #5C616B; text-align: left; cursor: pointer;
+}
+.ap-vcupom-faixa__rot { font-weight: 700; color: #C9134D; }
+.ap-vcupom-faixa code { font-family: var(--font-body); font-weight: 700; letter-spacing: .04em; color: #08090B; }
+.ap-vcupom-faixa__acao { margin-left: auto; font-weight: 700; color: #C9134D; }
+
+/* ---- Card em linha ---- */
+.ap-vlinhas {
+  list-style: none; margin: 0; padding: 0; display: grid; gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 460px), 1fr));
+}
+.ap-vlinha { background: #fff; border: 1px solid #E8EAEE; border-radius: 12px; overflow: hidden; }
+.ap-vlinha__link {
+  display: grid; grid-template-columns: 96px minmax(0, 1fr) auto; gap: 14px; align-items: center;
+  padding: 12px; color: inherit; text-decoration: none;
+}
+.ap-vlinha__img { display: block; width: 96px; border-radius: 10px; overflow: hidden; }
+.ap-vlinha__img .ap-vimg__placa { border-radius: 10px; }
+.ap-vlinha__info { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.ap-vlinha__info .ap-vcard__titulo { font-size: 14px; }
+.ap-vlinha__meta { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; }
+.ap-vlinha__lado { display: flex; flex-direction: column; align-items: flex-end; }
+.ap-vlinha__cupom { padding: 0 12px 12px; }
+
+/* ---- Cupom: o ticket ---- */
+.ap-vcupom {
+  width: 100%; box-sizing: border-box; display: flex; align-items: stretch; margin: 0; padding: 0;
+  border: 0; border-radius: 12px; background: #FFE7EE; font: inherit; text-align: left;
+  cursor: pointer; overflow: hidden; color: #08090B;
+}
+.ap-vcupom:hover { background: #FFD6E2; }
+.ap-vcupom:focus-visible { outline: 2px solid #C9134D; outline-offset: 2px; }
+.ap-vcupom__toco {
+  flex: none; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 2px;
+  padding: 8px 10px; background: #FF2D6F; color: #fff;
+}
+.ap-vcupom__toco > span { font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+.ap-vcupom__info {
+  flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 2px;
+  padding: 8px 10px; border-left: 2px dashed #FF2D6F;
+}
+.ap-vcupom__info code {
+  font-family: var(--font-display); font-weight: 600; font-size: 16px; letter-spacing: .04em;
+  color: #08090B; overflow-wrap: anywhere;
+}
+.ap-vcupom__info > span { font-size: 12px; line-height: 1.3; color: #5C616B; }
+.ap-vcupom__acao {
+  flex: none; display: flex; align-items: center; padding: 0 12px 0 4px;
+  font-size: 12px; font-weight: 700; color: #C9134D;
+}
+
+/* ---- Banner de destaque ---- */
+.ap-vdest {
+  position: relative; overflow: hidden; border-radius: 26px; background: #C9134D; color: #fff;
+}
+.ap-vdest__aneis {
+  position: absolute; right: -60px; top: -60px; width: 320px; height: 320px; opacity: .14;
+  fill: none; stroke: #fff; stroke-width: 10; pointer-events: none;
+}
+.ap-vdest__conteudo {
+  position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: 24px; padding: 28px;
+}
+.ap-vdest__texto { flex: 1 1 280px; min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+.ap-vdest__selo {
+  align-self: flex-start; display: flex; align-items: center; gap: 6px; padding: 5px 12px 5px 8px;
+  border-radius: 999px; background: #fff; color: #08090B; font-size: 12px; font-weight: 700;
+}
+.ap-vdest__titulo {
+  font-family: var(--font-display); font-weight: 700; font-size: clamp(22px, 2.6vw, 30px); line-height: 1.12;
+  letter-spacing: -.015em; color: #fff; text-decoration: none;
+}
+.ap-vdest__comcupom {
+  align-self: flex-start; padding: 4px 12px; border-radius: 999px; background: rgba(8, 9, 11, .28);
+  font-size: 14px; font-weight: 700;
+}
+.ap-vdest__titulo:hover { color: #fff; }
+.ap-vdest__preco { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.ap-vdest__preco s { font-size: 15px; }
+.ap-vdest__preco strong {
+  font-family: var(--font-display); font-size: clamp(32px, 4vw, 40px); font-weight: 700; letter-spacing: -.02em;
+}
+.ap-vdest__preco span { font-size: 14px; font-weight: 700; }
+.ap-vdest__acoes { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 4px; }
+.ap-vdest__botao {
+  display: inline-flex; align-items: center; min-height: 44px; padding: 0 22px; border-radius: 999px;
+  background: #fff; color: #08090B; font-size: 15px; font-weight: 700; text-decoration: none;
+}
+.ap-vdest__botao:hover { color: #08090B; background: #FFE7EE; }
+.ap-vdest__cupom {
+  display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; border-radius: 999px;
+  border: 2px dashed #fff; background: transparent; color: #fff; font: inherit; font-size: 14px; font-weight: 700;
+  cursor: pointer;
+}
+.ap-vdest__cupom:hover { background: rgba(255, 255, 255, .12); }
+.ap-vdest__midia {
+  position: relative; flex: 0 1 240px; min-width: 180px; display: block; border-radius: 22px; overflow: hidden;
+}
+.ap-vdest__desconto {
+  position: absolute; top: 12px; right: 12px; padding: 6px 12px; border-radius: 999px;
+  background: #08090B; color: #fff; font-size: 16px; font-weight: 700;
+}
+
+/* Estilo "destaque" da vitrine: banner + trilho com os outros. */
+.ap-vdestaque { display: flex; flex-direction: column; gap: var(--space-4); }
+.ap-vtrilho {
+  list-style: none; margin: 0; padding: 0 0 4px; display: grid; grid-auto-flow: column;
+  grid-auto-columns: minmax(200px, 240px); gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory;
+}
+.ap-vtrilho > li { display: flex; scroll-snap-align: start; }
+
+/* ---- Oferta no cadastro de filamento ---- */
+.ap-oferta-fil { margin-top: var(--space-4); padding: var(--space-3); border-radius: 14px; background: #DEF9F0; }
+.ap-oferta-fil__topo {
+  display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-2); margin-bottom: var(--space-2);
+}
+.ap-oferta-fil__topo strong { font-size: 14px; color: #08090B; }
+
+/* =====================================================================
+   Loja /achados
+   ===================================================================== */
+.ap-loja {
+  max-width: 1320px; margin: 0 auto; padding: var(--space-6) var(--gutter-page) var(--space-16);
+  display: flex; flex-direction: column; gap: 40px;
+}
+.ap-loja__hero { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 16px; }
+.ap-loja__hero--so { grid-template-columns: 1fr; }
+.ap-loja__atalhos { display: grid; gap: 16px; }
+.ap-loja__atalho {
+  display: flex; flex-direction: column; justify-content: space-between; gap: 12px; padding: 22px;
+  border-radius: 26px; color: #08090B; text-decoration: none; font-size: 15px;
+}
+.ap-loja__atalho:hover { color: #08090B; filter: brightness(.97); }
+.ap-loja__atalho--amarelo { background: #FFCA1A; }
+.ap-loja__atalho--ciano { background: #16C0F0; }
+.ap-loja__atalho-tit {
+  display: flex; align-items: center; gap: 8px; font-family: var(--font-display);
+  font-weight: 700; font-size: 22px; text-transform: uppercase;
+}
+.ap-loja__atalho-acao {
+  align-self: flex-start; padding: 6px 12px; border-radius: 999px; background: #fff; font-weight: 700;
+}
+
+.ap-loja__cats {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 12px;
+}
+.ap-loja__cat {
+  display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 14px 8px;
+  border-radius: 18px; background: #fff; border: 1px solid #E8EAEE; cursor: pointer;
+  font: inherit; font-size: 13px; font-weight: 500; color: #08090B; text-align: center;
+}
+.ap-loja__cat:hover { border-color: #C9CDD4; }
+.ap-loja__cat-img { display: block; width: 72px; border-radius: 999px; overflow: hidden; }
+.ap-loja__cat-img .ap-vimg { padding: 16%; }
+.ap-loja__cat-img .ap-vimg__placa { border-radius: 999px; box-shadow: none; }
+
+.ap-loja__secao, .ap-loja__faixa { display: flex; flex-direction: column; gap: 16px; }
+.ap-loja__faixa { padding: 28px; border-radius: 26px; }
+.ap-loja__faixa--ouro { background: #FFF6DB; }
+.ap-loja__faixa--rosa { background: #FFE7EE; }
+.ap-loja__faixa--lilas { background: #EEE9FF; }
+.ap-loja__cabeca { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.ap-loja__cabeca h2 {
+  margin: 0; font-family: var(--font-display); font-weight: 600; font-size: 28px;
+  letter-spacing: -.015em; color: #08090B;
+}
+.ap-loja__cabeca p { margin: 2px 0 0; font-size: 14px; color: #5C616B; }
+.ap-loja__ver {
+  margin-left: auto; border: 0; background: none; padding: 8px 0; cursor: pointer;
+  font: inherit; font-size: 14px; font-weight: 700; color: #5B3FD6;
+}
+.ap-loja__grade, .ap-loja__trilho { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+
+.ap-loja__cupons {
+  list-style: none; margin: 0; padding: 0; display: grid; gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
+}
+.ap-loja__cupons > li {
+  display: flex; flex-direction: column; gap: 6px; padding: 12px; border-radius: 16px; background: #fff;
+}
+.ap-loja__cupom-de {
+  font-size: 12px; font-weight: 700; color: #5C616B; text-decoration: none;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.ap-loja__cupom-de:hover { color: #08090B; }
+
+.ap-loja__todos { padding-top: 8px; border-top: 1px solid #E8EAEE; }
+.ap-loja__nota { margin: 0; font-size: 13px; color: #5C616B; max-width: 760px; }
+
+/* ---- Filtros da lista completa ---- */
+.ap-catalogo__filtros { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); }
+.ap-segmento {
+  display: inline-flex; padding: 3px; border-radius: var(--radius-pill);
+  background: var(--surface-sunken); border: var(--border-w) solid var(--border-hairline);
+}
+.ap-segmento button {
+  border: 0; background: none; cursor: pointer; font: inherit; font-size: var(--text-body-sm);
+  padding: 6px 14px; border-radius: var(--radius-pill); color: var(--text-muted);
+}
+.ap-segmento button.is-on { background: var(--surface-card); color: var(--text-strong); box-shadow: 0 1px 3px rgba(8,9,11,.12); }
+.ap-chip {
+  position: relative; display: inline-flex; align-items: center; gap: 6px; cursor: pointer;
+  padding: 6px 14px; border-radius: var(--radius-pill);
+  border: var(--border-w) solid var(--border-default); background: var(--surface-card);
+  font: inherit; font-size: var(--text-body-sm); color: var(--text-body); white-space: nowrap;
+}
+.ap-chip:hover { border-color: var(--border-strong); }
+.ap-chip.is-on { background: var(--action-primary); border-color: var(--action-primary); color: #fff; }
+.ap-chip input { position: absolute; opacity: 0; width: 0; height: 0; }
+.ap-chip--cupom.is-on { background: #C9134D; border-color: #C9134D; }
+.ap-chip--medalha.is-on { background: #8A6A06; border-color: #8A6A06; }
+.ap-catalogo__ordem {
+  margin-left: auto; display: inline-flex; align-items: center; gap: var(--space-2);
+  font-size: var(--text-body-sm); color: var(--text-muted);
+}
+.ap-catalogo__ordem select {
+  font: inherit; font-size: var(--text-body-sm); color: var(--text-strong);
+  padding: 6px 10px; border-radius: var(--radius-sm);
+  border: var(--border-w) solid var(--border-default); background: var(--surface-card);
+}
+.ap-catalogo__chips { display: flex; gap: var(--space-2); overflow-x: auto; padding-bottom: var(--space-2); scrollbar-width: none; }
+.ap-catalogo__total { font-size: var(--text-body-sm); color: var(--text-muted); margin: 0; }
+.ap-catalogo__vazio {
+  margin: 0; padding: var(--space-12) var(--space-4); text-align: center; color: var(--text-muted);
+  border: 1.5px dashed var(--border-default); border-radius: var(--radius-lg);
+}
+.ap-catalogo__esgotados { display: flex; flex-direction: column; gap: var(--space-2); margin-top: var(--space-6); }
+.ap-catalogo__esgotados h2 { font-size: var(--text-h4); color: var(--text-strong); margin: 0; }
+.ap-catalogo__esgotados p { color: var(--text-muted); font-size: var(--text-body-sm); margin: 0 0 var(--space-2); }
+
+/* ---- Tablet ---- */
+@media (max-width: 960px) {
+  .ap-loja__hero { grid-template-columns: 1fr; }
+  .ap-loja__atalhos { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* ---- Celular ---- */
+@media (max-width: 640px) {
+  .ap-vitrine { padding: 0 var(--space-4) var(--space-8); margin-top: calc(-1 * var(--space-6)); }
+  .ap-vitrine__lista { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .ap-vcard__corpo { padding: 12px; }
+  .ap-vcard__pe { padding: 0 12px 12px; }
+  .ap-vcard .ap-vbotao { min-height: 36px; font-size: 13px; }
+  .ap-vpreco strong { font-size: 20px; }
+  .ap-vcalc__pe { flex-wrap: wrap; }
+  .ap-vlinha__link { grid-template-columns: 72px minmax(0, 1fr) auto; gap: 10px; }
+  .ap-vlinha__img { width: 72px; }
+  .ap-vdest__conteudo { padding: 20px; gap: 16px; }
+  .ap-vdest__midia { flex: 0 0 auto; width: min(100%, 200px); min-width: 0; margin: 0 auto; }
+  /* Card estreito: a etiqueta da medalha fica só com o desenho, para não encostar no desconto. */
+  .ap-vitrine__lista .ap-vselo { padding: 4px; }
+  .ap-vitrine__lista .ap-vselo__txt { display: none; }
+  .ap-loja__trilho .ap-vselo { padding: 4px 10px 4px 6px; }
+  .ap-loja__trilho .ap-vselo__txt { display: inline; }
+
+  .ap-loja { padding: var(--space-4) 0 var(--space-12); gap: 28px; }
+  .ap-loja > * { margin-left: 16px; margin-right: 16px; }
+  .ap-loja__atalhos {
+    grid-auto-flow: column; grid-template-columns: none; grid-auto-columns: 200px;
+    overflow-x: auto; scrollbar-width: none;
+  }
+  .ap-loja__atalho { padding: 16px; border-radius: 20px; font-size: 13px; }
+  .ap-loja__atalho-tit { font-size: 17px; }
+  .ap-loja__cats {
+    display: flex; overflow-x: auto; scrollbar-width: none; gap: 8px;
+  }
+  .ap-loja__cat { flex: 0 0 auto; width: 84px; padding: 6px 4px; border: 0; background: none; font-size: 12px; }
+  .ap-loja__cat-img { width: 64px; }
+  .ap-loja__cabeca h2 { font-size: 22px; }
+  /* As faixas coloridas vão de ponta a ponta no celular. */
+  .ap-loja > .ap-loja__faixa { margin-left: 0; margin-right: 0; border-radius: 0; padding: 20px 16px; }
+  .ap-loja__trilho {
+    display: grid; grid-auto-flow: column; grid-template-columns: none; grid-auto-columns: 236px;
+    overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none;
+    margin: 0 -16px; padding: 0 16px 4px;
+  }
+  .ap-loja__trilho > li { scroll-snap-align: start; }
+  .ap-catalogo__ordem { margin-left: 0; }
+  .ap-segmento { width: 100%; }
+  .ap-segmento button { flex: 1; padding: 6px 8px; }
+}

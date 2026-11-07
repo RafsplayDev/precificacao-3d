@@ -21,7 +21,7 @@
  *
  * `opcional` marca os passos que oferecem "Pular esta parte": insumo e mão
  * de obra são reais, mas nem todo mundo usa, e travar o tutorial neles
- * custaria a compra de quem só quer ver o preço sair.
+ * afastaria quem só quer ver o preço sair.
  */
 /**
  * As três etapas do roteiro, na ordem em que acontecem.

@@ -7,7 +7,6 @@ import { TabelaEditavel } from "@/components/TabelaEditavel";
 import { Explicacao } from "@/components/Explicacao";
 import { useToast } from "@/components/AppShell";
 import { useTutorial } from "@/components/Tutorial";
-import { AvisoTeste, deveAvisarTeste } from "@/components/AvisoTeste";
 import { custosProduto, valorAdicional, valorTrabalho } from "@/lib/calc";
 import { money } from "@/lib/format";
 
@@ -25,7 +24,6 @@ const ABAS = [
 export default function Produtos() {
   const d = useDados();
   const toast = useToast();
-  const [avisoTeste, setAvisoTeste] = React.useState(false);
   const [sel, setSel] = React.useState("");
   const [aba, setAba] = React.useState("pecas");
   const { passo, ativo } = useTutorial();
@@ -39,19 +37,19 @@ export default function Produtos() {
   // O passo fala de dentro do produto, mas quem está na lista não está
   // dentro de nenhum: basta recarregar a página para `sel` voltar a vazio,
   // e aí o tutorial pede uma peça apontando para uma seção que não existe
-  // na tela. Como o teste grátis tem um produto só, abrir o que existe é
-  // sempre a escolha certa — e é o que a pessoa faria a seguir de qualquer
-  // jeito.
+  // na tela. Abrir o produto mais recente — o que a pessoa acabou de criar
+  // no passo anterior — é o que ela faria a seguir de qualquer jeito.
   // Uma vez por passo, e não sempre: quem fecha o produto de propósito para
   // olhar a lista não pode ser puxado de volta para dentro a cada quadro.
   const jaAbriu = React.useRef(null);
   React.useEffect(() => {
     if (!passo?.abaProduto || sel) return;
     if (jaAbriu.current === passo.id) return;
-    const unico = d.produtos[0];
-    if (!unico) return;
+    const recente = [...d.produtos].sort((a, b) =>
+      String(b.created_at).localeCompare(String(a.created_at)))[0];
+    if (!recente) return;
     jaAbriu.current = passo.id;
-    setSel(unico.id);
+    setSel(recente.id);
   }, [passo?.abaProduto, passo?.id, sel, d.produtos]);
   const [nomeando, setNomeando] = React.useState(null); // "novo" | "renomear"
   const [nomeRascunho, setNomeRascunho] = React.useState("");
@@ -161,15 +159,6 @@ export default function Produtos() {
         setSel(p.id);
         setAba("pecas");
         toast({ title: "Produto criado", message: nome });
-        // O produto acabou de nascer no localStorage e a pessoa não faz
-        // ideia. É aqui que "salvo só neste navegador" tem peso: existe
-        // trabalho a perder.
-        //
-        // Menos no meio do tutorial: ali o produto é do roteiro, não dela,
-        // e o guia estaria no meio de um passo. Quem faz o tutorial nem
-        // conta tem — falar de assinatura antes do cadastro é a cobrança na
-        // porta de entrada que o modo teste existe para evitar.
-        if (!ativo && deveAvisarTeste()) setAvisoTeste(true);
       } else {
         const salvo = await salvarLinha("produtos", produto.id, { nome, descricao: descRascunho.trim() || null });
         d.aplicar("produtos", salvo);
@@ -325,7 +314,6 @@ export default function Produtos() {
           />
         )}
 
-        <AvisoTeste open={avisoTeste} onClose={() => setAvisoTeste(false)} />
       </div>
     );
   }
@@ -349,8 +337,8 @@ export default function Produtos() {
   ];
 
   // O formulário curto do tutorial: nome, tempo e peso. Impressora e
-  // filamento já vêm escolhidos (no teste existe um de cada), e o resto
-  // fica nos padrões que a linha nova sempre trouxe.
+  // filamento já vêm escolhidos (os primeiros cadastrados, que no tutorial
+  // são os que a pessoa acabou de criar), e o resto fica nos padrões.
   const colunasPecaCurtas = colunasPecas.filter((c) => CAMPOS_PECA_CURTOS.includes(c.key));
 
   return (
@@ -548,7 +536,6 @@ export default function Produtos() {
         />
       )}
 
-      <AvisoTeste open={avisoTeste} onClose={() => setAvisoTeste(false)} />
     </div>
   );
 }

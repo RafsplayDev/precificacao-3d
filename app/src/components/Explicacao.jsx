@@ -99,7 +99,7 @@ export function Explicacao({ children, rotulo = "O que é isto?" }) {
       {/* Só existe no DOM quando está aberto. Escondido por `visibility`
           ele continuava ocupando layout: uma caixa de 320px ancorada num
           ícone no meio da tela esticava a página para além da largura do
-          telefone, e aí o que é fixo (o cartão do tutorial, a barra de
+          telefone, e aí o que é fixo (a barra de
           abas) passava a medir essa largura maior enquanto o conteúdo
           continuava no tamanho da tela — as duas larguras diferentes que
           apareciam ao fundo. */}

@@ -6,19 +6,13 @@ import { iniciarTutorial } from "@/components/Tutorial";
 /**
  * A porta do tutorial.
  *
- * O tutorial precisava de um endereço só dele. Enquanto ele morava na raiz,
- * qualquer pessoa que abrisse o site caía no roteiro — inclusive quem já
- * tem conta e só queria entrar. E é este o link que o afiliado divulga: o
- * que ele promete é "veja o preço da sua peça saindo", não uma tela de
- * login.
+ * O primeiro login de uma conta nova cai aqui, e o endereço também serve
+ * para divulgar ("veja o preço da sua peça saindo"): sem sessão, o
+ * middleware manda para o login com `proximo=/tutorial` e a pessoa volta
+ * para cá logo depois de entrar com o Google.
  *
- * A página não desenha nada: ela liga o tutorial (localStorage + o cookie
- * que o middleware lê) e sai da frente, indo para a tela do primeiro passo.
- *
- * A ida é uma navegação de página inteira de propósito — o cookie recém
- * gravado precisa viajar no request para o middleware liberar /cadastros a
- * quem ainda não tem conta. Com `router.push` a rota viria do cache do
- * cliente e o middleware devolveria a pessoa para o login.
+ * A página não desenha nada: liga o tutorial (localStorage) e sai da
+ * frente, indo para a tela do primeiro passo.
  */
 export default function TutorialPage() {
   React.useEffect(() => {

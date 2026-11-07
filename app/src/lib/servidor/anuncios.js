@@ -112,7 +112,7 @@ function data(v) {
 /** Campos opcionais: numa atualização, só mudam os que vieram no envio. */
 const OPCIONAIS = ["titulo_original", "atributos", "chamada", "condicao_preco", "observacao", "descricao", "categoria", "imagem_url", "url_produto", "link_afiliado", "preco",
   "preco_original", "avaliacao", "num_avaliacoes", "vendas", "comissao_pct", "selo",
-  "cupom_codigo", "cupom_descricao", "cupom_validade", "pontuacao", "ativo", "expira_em"];
+  "cupom_codigo", "cupom_descricao", "cupom_validade", "preco_cupom", "pontuacao", "ativo", "expira_em"];
 
 /**
  * Valida um produto vindo da tarefa. Devolve { ok, enviados } ou { erro }.
@@ -185,6 +185,7 @@ export function normalizarProduto(p) {
       cupom_codigo: cupom ? cupom.toUpperCase().replace(/\s+/g, "") : null,
       cupom_descricao: texto(p.cupom_descricao, 120),
       cupom_validade: data(p.cupom_validade),
+      preco_cupom: numero(p.preco_cupom),
       pontuacao: numero(p.pontuacao) ?? 0,
       ativo: p.ativo === false || p.ativo === 0 ? 0 : 1,
       expira_em: data(p.expira_em),
@@ -232,6 +233,8 @@ export function paraVitrine(a, medalha) {
     num_avaliacoes: a.num_avaliacoes,
     selo: a.selo,
     cupom: cupomValendo ? { codigo: a.cupom_codigo, descricao: a.cupom_descricao } : null,
+    // Só mostra o preço com cupom se o cupom vale e o preço é mesmo menor.
+    preco_cupom: cupomValendo && a.preco_cupom > 0 && a.preco != null && a.preco_cupom < a.preco ? a.preco_cupom : null,
     medalha: medalha?.nivel ? { nivel: medalha.nivel, motivo: medalha.motivo } : null,
     estoque_baixo: a.estoque != null && a.estoque > 0 && a.estoque <= ESTOQUE_BAIXO ? a.estoque : null,
     href: `/api/anuncios/${a.id}/ir`,

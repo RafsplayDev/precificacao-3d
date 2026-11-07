@@ -20,6 +20,7 @@ const txt = (v, max) => (v == null ? null : String(v).replace(/\s+/g, " ").trim(
  *     "cupom_valido": false,        // false = o cupom salvo deixou de valer
  *     "cupom_codigo": "NOVO10",     // cupom novo encontrado (opcional)
  *     "cupom_descricao": "...", "cupom_validade": "2026-12-01",
+ *     "preco_cupom": 76.41,          // preço final com o cupom aplicado (opcional)
  *     "observacao": "Estoque caiu de 30 para 8; cupom FILA10 expirou."
  * } ] }
  *
@@ -49,6 +50,7 @@ export async function POST(req) {
     const obs = txt(v.observacao, 300);
     const cupomOk = v.cupom_valido === false ? 0 : v.cupom_valido === true ? 1 : null;
     const novoCupom = txt(v.cupom_codigo, 40);
+    const precoCupom = num(v.preco_cupom);
 
     const sets = ["verificado_em = ?", "atualizado_em = ?"];
     const vals = [agora, agora];
@@ -56,6 +58,7 @@ export async function POST(req) {
     if (estoque !== null) { sets.push("estoque = ?"); vals.push(Math.round(estoque)); }
     if (preco !== null) { sets.push("preco = ?"); vals.push(preco); }
     if (original !== null) { sets.push("preco_original = ?"); vals.push(original); }
+    if (precoCupom !== null && cupomOk !== 0) { sets.push("preco_cupom = ?"); vals.push(precoCupom); }
     // Esgotado (disponível falso ou estoque zero): sai da vitrine na hora.
     if (!disponivel || estoque === 0) { sets.push("ativo = 0", "esgotado_em = ?"); vals.push(agora); desativados++; }
     else sets.push("esgotado_em = NULL");
@@ -63,8 +66,10 @@ export async function POST(req) {
       sets.push("cupom_codigo = ?", "cupom_descricao = ?", "cupom_validade = ?");
       const val = v.cupom_validade ? new Date(v.cupom_validade) : null;
       vals.push(novoCupom.toUpperCase().replace(/\s+/g, ""), txt(v.cupom_descricao, 120), val && !isNaN(val) ? val.toISOString() : null);
+      // Cupom novo sem o preço calculado: o preço com o cupom antigo não vale mais.
+      if (precoCupom === null) sets.push("preco_cupom = NULL");
     } else if (cupomOk === 0) {
-      sets.push("cupom_codigo = NULL", "cupom_descricao = NULL", "cupom_validade = NULL");
+      sets.push("cupom_codigo = NULL", "cupom_descricao = NULL", "cupom_validade = NULL", "preco_cupom = NULL");
     }
 
     stmts.push(banco.prepare(`UPDATE anuncios SET ${sets.join(", ")} WHERE origem_id = ?`).bind(...vals, origem));

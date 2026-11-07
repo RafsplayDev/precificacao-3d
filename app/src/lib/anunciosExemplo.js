@@ -38,7 +38,7 @@ export const ANUNCIOS_EXEMPLO = [
     titulo: "Filamento PLA Silk 1kg 1,75mm Arco-íris Dupla Cor",
     imagem_url: ilustracao("carretel", "#FF2D6F"),
     preco: 89.9, preco_original: 119.9, avaliacao: 4.9, num_avaliacoes: 3210, selo: "Mais vendido",
-    cupom: { codigo: "FILAMENTO10", descricao: "10% off acima de R$ 80" },
+    cupom: { codigo: "FILAMENTO10", descricao: "10% off acima de R$ 80" }, preco_cupom: 80.91,
   }),
   base(2, {
     chamada: "O PETG que aguenta o tranco", observacao: "De 2 unidades em diante sai R$ 89,90 cada",
@@ -65,7 +65,7 @@ export const ANUNCIOS_EXEMPLO = [
     titulo: "Mesa PEI Texturizada Magnética 235x235mm Dupla Face",
     imagem_url: ilustracao("mesa", "#C9A227"),
     preco: 79.9, preco_original: 109.9, avaliacao: 4.8, num_avaliacoes: 1395, selo: null,
-    cupom: { codigo: "MESA15", descricao: "R$ 15 off acima de R$ 70" },
+    cupom: { codigo: "MESA15", descricao: "R$ 15 off acima de R$ 70" }, preco_cupom: 64.9,
   }),
   base(5, {
     chamada: "Filamento úmido nunca mais", condicao_preco: "no Pix", estoque_baixo: 4,

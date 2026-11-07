@@ -71,6 +71,7 @@ Content-Type: application/json
       "cupom_codigo": "FILAMENTO10",
       "cupom_descricao": "10% off em compras acima de R$ 80",
       "cupom_validade": "2026-11-30T23:59:59-03:00",
+      "preco_cupom": 80.91,
       "pontuacao": 8.5
     },
     {
@@ -97,13 +98,14 @@ Content-Type: application/json
 | `imagem_url` | não | `https://`. |
 | `preco`, `preco_original` | não | Reais. Com `preco_original` maior, o antigo aparece riscado. |
 | `avaliacao`, `num_avaliacoes`, `vendas`, `comissao_pct` | não | Usados no painel e para a tarefa decidir; só nota e avaliações aparecem na vitrine. |
-| `chamada` | não | Frase curta (até 70 caracteres), direta e com bom humor, como nos grupos de promoção: "Bico entupiu? Troca e segue o baile". **Sem emoji** (o site remove). Aparece em caixa alta acima do produto. |
+| `chamada` | não | Frase curta (até 70 caracteres), direta e com bom humor, como nos grupos de promoção: "Bico entupiu? Troca e segue o baile". **Sem emoji** (o site remove). Não aparece nos cards do site: vai só no texto de compartilhar no WhatsApp. |
 | `condicao_preco` | não | Condição do preço, até 20 caracteres: "no Pix", "cada", "o kit". |
 | `observacao` | não | Uma vantagem extra que não é cupom, até 70 caracteres: "De 1 a 3 unidades com 20% OFF". Sem emoji. |
 | `selo` | não | Etiqueta curta, ex.: `-25%`, `Frete grátis`. |
 | `cupom_codigo` | não | Código do cupom (até 40 caracteres, vira maiúsculo). |
 | `cupom_descricao` | não | O que o cupom dá, ex.: `R$ 20 off acima de R$ 150`. |
 | `cupom_validade` | não | Data ISO. Vencido, o cupom some sozinho (o produto continua). |
+| `preco_cupom` | não | O preço final **com o cupom aplicado**, em reais. É o terceiro preço do card (riscado, atual e com cupom). Calcule pela regra do cupom: porcentagem, valor fixo e valor mínimo da compra. Se o produto sozinho não atinge o mínimo, não mande. Só aparece se for menor que `preco` e o cupom estiver valendo. |
 | `pontuacao` | não | 0 a 10. Pesa no sorteio da vitrine. |
 | `ativo` | não | `false` tira da vitrine sem apagar. |
 | `expira_em` | não | Data ISO. Depois dela o anúncio inteiro some (bom para ofertas relâmpago). |
@@ -209,9 +211,11 @@ afiliado. O selo "Patrocinado" e o `rel="sponsored"` identificam a publicidade.
 >    marca, cor, peso, diâmetro… ver a tabela de títulos padronizados). Só informe um
 >    atributo se ele estiver no anúncio; na dúvida, deixe de fora. Se a resposta trouxer
 >    `avisos`, revise o produto: algum atributo não bate com o anúncio.
-> 8. **Chamada:** para cada produto, escreva uma `chamada` curta (até 70 caracteres),
->    direta e com bom humor, no estilo de grupo de promoções ("Peça soltando da mesa?
->    Acabou o drama"). **Nunca use emoji.** Preencha `condicao_preco` ("no Pix", "cada")
+> 8. **Chamada e preço com cupom:** para cada produto, escreva uma `chamada` curta (até 70
+>    caracteres), direta e com bom humor, no estilo de grupo de promoções ("Peça soltando da
+>    mesa? Acabou o drama"); ela vai só no texto de compartilhar no WhatsApp. **Nunca use
+>    emoji.** Com cupom, calcule `preco_cupom`, o preço final com o cupom aplicado (respeite
+>    o valor mínimo da compra; se o produto sozinho não atinge, não mande). Preencha `condicao_preco` ("no Pix", "cada")
 >    e `observacao` para vantagens que não são cupom ("De 1 a 3 unidades com 20% OFF").
 >    Não invente medalha nem desconto: as medalhas o site calcula sozinho.
 > 9. **Reenvie o preço atual de todos os produtos ativos**, mesmo os que não mudaram: é
@@ -244,15 +248,18 @@ GET  /api/anuncios/verificacoes?origem_id=… ← o histórico de verificações
 ```json
 { "verificacoes": [
   { "origem_id": "shopee:123", "disponivel": true, "estoque": 8, "preco": 84.9,
-    "preco_original": 119.9, "cupom_valido": false,
+    "preco_original": 119.9, "cupom_valido": false, "preco_cupom": null,
     "observacao": "Estoque caiu de 30 para 8; cupom FILA10 expirou; preço igual." }
 ] }
 ```
 
 - `disponivel: false` ou `estoque: 0` → sai da vitrine na hora e aparece em "Esgotaram nas
   últimas 24 horas".
-- `cupom_valido: false` → o cupom some. Mandando `cupom_codigo` (+ descrição e validade), o
-  cupom novo entra no lugar.
+- `cupom_valido: false` → o cupom some (e o preço com cupom junto). Mandando `cupom_codigo`
+  (+ descrição e validade), o cupom novo entra no lugar; mande também `preco_cupom`
+  recalculado.
+- `preco_cupom` → o preço final com o cupom aplicado. Recalcule a cada verificação: muda
+  quando o preço ou o cupom mudam.
 - `preco` → atualiza e entra no histórico das medalhas.
 - `observacao` → aparece no `/admin` e fica no histórico.
 
@@ -266,7 +273,8 @@ GET  /api/anuncios/verificacoes?origem_id=… ← o histórico de verificações
 >    - se ainda está à venda e a quantidade disponível (se a loja mostrar);
 >    - o preço de agora e o preço "de" riscado;
 >    - se o cupom salvo (`cupom_codigo`) ainda vale para esse produto; se achar um cupom
->      melhor, mande o novo (código, regra e validade confirmados — nunca invente).
+>      melhor, mande o novo (código, regra e validade confirmados — nunca invente);
+>    - o preço final com o cupom aplicado (`preco_cupom`), recalculado pela regra do cupom.
 > 3. Escreva uma `observacao` curta e objetiva do que mudou desde a última verificação
 >    (`ultima_observacao`). Ex.: "Estoque caiu de 30 para 8; preço subiu R$ 5; cupom ok."
 >    Se nada mudou: "Sem mudanças."

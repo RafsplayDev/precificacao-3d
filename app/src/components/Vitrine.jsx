@@ -107,7 +107,7 @@ function DestaqueAnuncios({ itens }) {
 /* Cards                                                               */
 /* ------------------------------------------------------------------ */
 
-/** O card da loja: imagem sobre fundo colorido, chamada, preço, motivo e cupom. */
+/** O card da loja: imagem sobre fundo colorido, preço (riscado, atual e com cupom), motivo e cupom. */
 export function CartaoAnuncio({ a }) {
   if (a.esgotado_em) return <CartaoEsgotado a={a} />;
   const nivel = a.medalha?.nivel;
@@ -125,7 +125,6 @@ export function CartaoAnuncio({ a }) {
           )}
         </span>
         <span className="ap-vcard__corpo">
-          {a.chamada && <span className="ap-vchamada">{a.chamada}</span>}
           <Loja a={a} />
           <span className="ap-vcard__titulo">{a.titulo}</span>
           <Nota a={a} />
@@ -133,11 +132,17 @@ export function CartaoAnuncio({ a }) {
           <Motivo a={a} />
           <Estoque a={a} />
           {a.observacao && <Observacao texto={a.observacao} />}
-          <span className="ap-vbotao">{verNaLoja(a)}</span>
         </span>
       </a>
       <Compartilhar a={a} />
-      {a.cupom && <div className="ap-vcard__cupom"><Cupom cupom={a.cupom} /></div>}
+      {/* O pé do card: cupom (quando há) e o botão, sempre no fundo, para os
+          botões ficarem na mesma altura em toda a fileira. */}
+      <div className="ap-vcard__pe">
+        {a.cupom && <Cupom cupom={a.cupom} />}
+        <a className="ap-vbotao" href={a.href} target="_blank" rel="sponsored nofollow noopener" tabIndex={-1}>
+          {verNaLoja(a)}
+        </a>
+      </div>
     </article>
   );
 }
@@ -146,7 +151,6 @@ export function CartaoAnuncio({ a }) {
 export function CartaoCalculadora({ a }) {
   if (a.esgotado_em) return null;
   const nivel = a.medalha?.nivel;
-  const chamada = a.chamada || (nivel ? MEDALHAS[nivel].rotulo : null);
   return (
     <article className="ap-vcalc">
       <a className="ap-vcalc__link" href={a.href} target="_blank" rel="sponsored nofollow noopener">
@@ -155,12 +159,7 @@ export function CartaoCalculadora({ a }) {
           <Desconto a={a} />
         </span>
         <span className="ap-vcalc__corpo">
-          {chamada && (
-            <span className="ap-vchamada ap-vchamada--mini">
-              {nivel && <Medalha nivel={nivel} tamanho={14} />}
-              <span>{chamada}</span>
-            </span>
-          )}
+          <RotuloMedalha a={a} />
           <span className="ap-vcard__titulo">{a.titulo}</span>
           <Preco a={a} compacto />
           <span className="ap-vcalc__pe">
@@ -176,18 +175,12 @@ export function CartaoCalculadora({ a }) {
 
 /** Um produto em linha compacta — a seção de filamentos e a oferta do cadastro. */
 export function CartaoLinha({ a }) {
-  const nivel = a.medalha?.nivel;
   return (
     <article className="ap-vlinha">
       <a className="ap-vlinha__link" href={a.href} target="_blank" rel="sponsored nofollow noopener">
         <span className="ap-vlinha__img"><Imagem a={a} fundo={fundoDe(a)} /></span>
         <span className="ap-vlinha__info">
-          {a.chamada && (
-            <span className="ap-vchamada ap-vchamada--mini">
-              {nivel && <Medalha nivel={nivel} tamanho={14} />}
-              <span>{a.chamada}</span>
-            </span>
-          )}
+          <RotuloMedalha a={a} />
           <span className="ap-vcard__titulo">{a.titulo}</span>
           <span className="ap-vlinha__meta"><Loja a={a} /><Nota a={a} /></span>
         </span>
@@ -213,13 +206,15 @@ export function CartaoDestaque({ a }) {
             {nivel && <Medalha nivel={nivel} tamanho={16} />}
             {a.medalha?.motivo || "Oferta em destaque"}
           </span>
-          {a.chamada && <span className="ap-vdest__chamada">{a.chamada}</span>}
           <a className="ap-vdest__titulo" href={a.href} target="_blank" rel="sponsored nofollow noopener">{a.titulo}</a>
           <span className="ap-vdest__preco">
             {a.preco_original > a.preco && <s>{money(a.preco_original)}</s>}
             <strong>{money(a.preco)}</strong>
             {a.condicao_preco && <span>{a.condicao_preco}</span>}
           </span>
+          {a.preco_cupom != null && a.cupom && (
+            <span className="ap-vdest__comcupom">{money(a.preco_cupom)} com o cupom {a.cupom.codigo}</span>
+          )}
           <span className="ap-vdest__acoes">
             <a className="ap-vdest__botao" href={a.href} target="_blank" rel="sponsored nofollow noopener">{verNaLoja(a)}</a>
             {a.cupom && <CupomPilula cupom={a.cupom} />}
@@ -245,10 +240,10 @@ function CartaoEsgotado({ a }) {
           <span className="ap-vesgotado">Esgotou há {horas} h</span>
           <Loja a={a} />
           <span className="ap-vcard__titulo">{a.titulo}</span>
-          <Preco a={{ ...a, preco_original: null, condicao_preco: null }} />
-          <span className="ap-vbotao" aria-disabled="true">Esgotado</span>
+          <Preco a={{ ...a, preco_original: null, condicao_preco: null, preco_cupom: null }} />
         </span>
       </div>
+      <div className="ap-vcard__pe"><span className="ap-vbotao" aria-disabled="true">Esgotado</span></div>
     </article>
   );
 }
@@ -323,6 +318,14 @@ function Preco({ a, compacto = false, empilhado = false }) {
         <strong>{money(a.preco)}</strong>
         {a.condicao_preco && !compacto && <em className="ap-vpreco__cond">{a.condicao_preco}</em>}
       </span>
+      {a.preco_cupom != null && a.cupom && (
+        <span className="ap-vpreco__cupom">
+          <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M3 9a3 3 0 0 0 0 6v4h18v-4a3 3 0 0 0 0-6V5H3z" /><path d="M13 5v2M13 11v2M13 17v2" />
+          </svg>
+          {money(a.preco_cupom)} com cupom
+        </span>
+      )}
     </span>
   );
 }
@@ -349,6 +352,18 @@ export function Medalha({ nivel, tamanho = 18 }) {
       <circle cx="10" cy="10.5" r="9" fill={m.cor} />
       <path d={CHAMA} fill="#fff" transform="translate(10 11) scale(.56) translate(-10 -12)" />
     </svg>
+  );
+}
+
+/** A medalha e o rótulo dela ("Menor preço"), nos cards compactos. */
+function RotuloMedalha({ a }) {
+  const nivel = a.medalha?.nivel;
+  if (!nivel) return null;
+  return (
+    <span className={`ap-vrotulo ap-vrotulo--${nivel}`}>
+      <Medalha nivel={nivel} tamanho={14} />
+      <span>{MEDALHAS[nivel].rotulo}</span>
+    </span>
   );
 }
 
@@ -389,6 +404,7 @@ export function textoWhatsApp(a, origem) {
   const por = `*POR ${money(a.preco)}*${a.condicao_preco ? ` ${a.condicao_preco}` : ""}`;
   linhas.push(a.preco_original > a.preco ? `~DE ${money(a.preco_original)}~ | ${por}` : por);
   if (a.cupom) linhas.push(`CUPOM: *${a.cupom.codigo}*${a.cupom.descricao ? ` (${a.cupom.descricao})` : ""}`);
+  if (a.cupom && a.preco_cupom != null) linhas.push(`*COM O CUPOM: ${money(a.preco_cupom)}*`);
   if (a.observacao) linhas.push(a.observacao);
   if (a.medalha?.motivo) linhas.push(a.medalha.motivo);
   linhas.push("", `${origem}${a.href}`, "", `Calcule o preço das suas peças 3D grátis: ${origem}`);

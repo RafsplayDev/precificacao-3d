@@ -19,7 +19,7 @@ export async function GET(req) {
   const { results } = await banco
     .prepare(
       `SELECT origem_id, loja, titulo, url_produto, link_afiliado, preco, preco_original, estoque,
-              cupom_codigo, cupom_descricao, cupom_validade, ativo, verificado_em, ultima_observacao,
+              cupom_codigo, cupom_descricao, cupom_validade, preco_cupom, ativo, verificado_em, ultima_observacao,
               ROUND((julianday('now') - julianday(verificado_em)) * 24, 1) AS horas_desde
          FROM anuncios
         WHERE ativo = 1 OR link_afiliado IS NULL

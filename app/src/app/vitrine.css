@@ -58,11 +58,6 @@
   box-shadow: 0 2px 6px rgba(14, 15, 18, .12); font-size: 12px; font-weight: 700; color: #08090B;
 }
 .ap-vmedalha { flex: none; display: block; }
-.ap-vchamada {
-  font-size: 12px; line-height: 1.3; font-weight: 700; text-transform: uppercase;
-  letter-spacing: .01em; color: #08090B;
-}
-.ap-vchamada--mini { display: flex; align-items: flex-start; gap: 6px; font-size: 11px; }
 .ap-vloja {
   align-self: flex-start; padding: 2px 8px; border-radius: 999px;
   font-size: 11px; font-weight: 700; line-height: 1.5; white-space: nowrap;
@@ -82,7 +77,21 @@
   font-family: var(--font-display); font-size: 24px; font-weight: 600; letter-spacing: -.01em; color: #08090B;
 }
 .ap-vpreco__cond { font-style: normal; font-size: 12px; font-weight: 700; color: #0B7F57; }
-.ap-vpreco--compacto { flex-direction: row; align-items: baseline; flex-wrap: wrap; gap: 6px; }
+.ap-vpreco__cupom {
+  display: inline-flex; align-items: center; gap: 4px; margin-top: 2px;
+  font-size: 13px; font-weight: 700; color: #C9134D;
+}
+.ap-vpreco__cupom svg { flex: none; }
+.ap-vpreco--compacto { flex-direction: row; align-items: baseline; flex-wrap: wrap; gap: 0 6px; }
+.ap-vpreco--compacto .ap-vpreco__cupom { flex-basis: 100%; font-size: 12px; }
+.ap-vpreco--empilhado .ap-vpreco__cupom { font-size: 12px; white-space: nowrap; }
+.ap-vrotulo {
+  display: flex; align-items: center; gap: 6px; font-size: 11px; line-height: 1.3;
+  font-weight: 700; text-transform: uppercase; letter-spacing: .02em;
+}
+.ap-vrotulo--ouro { color: #8A6A06; }
+.ap-vrotulo--prata { color: #5F6772; }
+.ap-vrotulo--bronze { color: #8A4F24; }
 .ap-vpreco--compacto strong { font-family: var(--font-body); font-size: 18px; }
 .ap-vpreco--empilhado { align-items: flex-end; text-align: right; }
 .ap-vpreco--empilhado strong { font-size: 20px; white-space: nowrap; }
@@ -95,9 +104,11 @@
 .ap-vobs { display: flex; align-items: flex-start; gap: 4px; font-size: 12px; color: #1C1E23; }
 .ap-vobs svg, .ap-vobs .dc-icon { flex: none; margin-top: 1px; }
 .ap-vbotao {
-  margin-top: auto; display: flex; align-items: center; justify-content: center; min-height: 40px;
+  display: flex; align-items: center; justify-content: center; min-height: 40px;
   border-radius: 999px; background: #08090B; color: #fff; font-size: 14px; font-weight: 500;
+  text-decoration: none;
 }
+a.ap-vbotao:hover { color: #fff; background: #2A2D34; }
 
 /* ---- Card da loja ---- */
 .ap-vcard {
@@ -109,8 +120,9 @@
 .ap-vcard__link { display: flex; flex-direction: column; flex: 1; color: inherit; text-decoration: none; }
 .ap-vcard__link:focus-visible { outline: 2px solid #FF2D6F; outline-offset: -2px; border-radius: 18px; }
 .ap-vcard__midia { position: relative; display: block; }
-.ap-vcard__corpo { flex: 1; display: flex; flex-direction: column; gap: 6px; padding: 14px 16px 16px; }
-.ap-vcard__cupom { padding: 0 12px 12px; }
+.ap-vcard__corpo { flex: 1; display: flex; flex-direction: column; gap: 6px; padding: 14px 16px 12px; }
+.ap-vcard__pe { display: flex; flex-direction: column; gap: 10px; padding: 0 16px 16px; }
+.ap-vcard__pe .ap-vcupom { margin: 0 -4px; width: calc(100% + 8px); }
 .ap-vcompartilhar {
   position: absolute; bottom: 10px; left: 10px; z-index: 2;
   display: grid; place-items: center; width: 34px; height: 34px; padding: 0;
@@ -216,11 +228,14 @@
   align-self: flex-start; display: flex; align-items: center; gap: 6px; padding: 5px 12px 5px 8px;
   border-radius: 999px; background: #fff; color: #08090B; font-size: 12px; font-weight: 700;
 }
-.ap-vdest__chamada {
-  font-family: var(--font-display); font-weight: 700; font-size: clamp(22px, 3vw, 30px); line-height: 1.08;
-  letter-spacing: -.015em; text-transform: uppercase;
+.ap-vdest__titulo {
+  font-family: var(--font-display); font-weight: 700; font-size: clamp(22px, 2.6vw, 30px); line-height: 1.12;
+  letter-spacing: -.015em; color: #fff; text-decoration: none;
 }
-.ap-vdest__titulo { font-size: 15px; line-height: 1.4; color: #fff; text-decoration: none; }
+.ap-vdest__comcupom {
+  align-self: flex-start; padding: 4px 12px; border-radius: 999px; background: rgba(8, 9, 11, .28);
+  font-size: 14px; font-weight: 700;
+}
 .ap-vdest__titulo:hover { color: #fff; }
 .ap-vdest__preco { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
 .ap-vdest__preco s { font-size: 15px; }
@@ -386,7 +401,8 @@
   .ap-vitrine { padding: 0 var(--space-4) var(--space-8); margin-top: calc(-1 * var(--space-6)); }
   .ap-vitrine__lista { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
   .ap-vcard__corpo { padding: 12px; }
-  .ap-vcard .ap-vbotao { display: none; }
+  .ap-vcard__pe { padding: 0 12px 12px; }
+  .ap-vcard .ap-vbotao { min-height: 36px; font-size: 13px; }
   .ap-vpreco strong { font-size: 20px; }
   .ap-vcalc__pe { flex-wrap: wrap; }
   .ap-vlinha__link { grid-template-columns: 72px minmax(0, 1fr) auto; gap: 10px; }
@@ -421,7 +437,6 @@
     margin: 0 -16px; padding: 0 16px 4px;
   }
   .ap-loja__trilho > li { scroll-snap-align: start; }
-  .ap-loja__trilho .ap-vbotao { display: flex; }
   .ap-catalogo__ordem { margin-left: 0; }
   .ap-segmento { width: 100%; }
   .ap-segmento button { flex: 1; padding: 6px 8px; }

@@ -3,12 +3,10 @@ import React from "react";
 import { Button, IconButton, Icon, Dialog, Input, Select, Combobox } from "@/design-system";
 import { salvarLinha, inserirLinha, removerLinha, tratarMensagemErro } from "@/lib/useDados";
 import { useToast } from "@/components/AppShell";
-import { useTutorial } from "@/components/Tutorial";
-import { AvisoTeste, deveAvisarTeste } from "@/components/AvisoTeste";
 import { toNum, money, num, mascaraMoeda, moedaParaNumero, numeroParaMoeda, hojeISO } from "@/lib/format";
 
 /**
- * Tabela editável ligada direto a uma tabela do Supabase.
+ * Tabela editável ligada a uma tabela do banco (via /api/dados).
  * Cada célula grava no blur; colunas `calc` são só leitura (vêm do banco).
  *
  * colunas: { key, label, tipo: "texto"|"numero"|"moeda"|"percent"|"minutos"|"data"|"select"|"calc", options?, formato? }
@@ -29,12 +27,6 @@ import { toNum, money, num, mascaraMoeda, moedaParaNumero, numeroParaMoeda, hoje
  */
 export function TabelaEditavel({ tabela, colunas, linhas, novoRegistro, recarregar, aplicar, remover, vazio, semRemover = false, rotulo = "linha", abrirRef, semBotao = false, semTabela = false, colunasFormulario, obrigatorios }) {
   const toast = useToast();
-  // O aviso do modo teste mora aqui, e não em cada tela: impressora,
-  // filamento, insumo e peça são cadastrados todos por esta tabela, e
-  // repetir a fiação em cada página é onde as telas começam a discordar
-  // sobre quando avisar. O aviso em si só aparece uma vez por navegador.
-  const { ativo: tutorialAtivo } = useTutorial();
-  const [avisoTeste, setAvisoTeste] = React.useState(false);
   const [salvando, setSalvando] = React.useState(null);
   const [itemParaExcluir, setItemParaExcluir] = React.useState(null);
   const [excluindo, setExcluindo] = React.useState(false);
@@ -84,10 +76,8 @@ export function TabelaEditavel({ tabela, colunas, linhas, novoRegistro, recarreg
   /**
    * Campos sem os quais o botão não libera.
    *
-   * Usado pelo tutorial: lá o formulário fica com dois ou três campos e
-   * todos importam para o preço. Deixar "Adicionar" clicável antes deles
-   * criaria uma impressora de R$ 0,00 — e a calculadora, no fim do
-   * roteiro, mostraria um custo que não é o da pessoa.
+   * Deixar "Adicionar" clicável antes deles criaria, por exemplo, uma
+   * impressora de R$ 0,00 — e a calculadora mostraria um custo errado.
    */
   const faltando = (obrigatorios || []).some((k) => {
     const col = camposDoForm.find((c) => c.key === k);
@@ -127,10 +117,6 @@ export function TabelaEditavel({ tabela, colunas, linhas, novoRegistro, recarreg
       const criado = await inserirLinha(tabela, campos);
       if (aplicar) aplicar(tabela, criado); else await recarregar();
       setNovo(null);
-      // Acabou de entrar trabalho da pessoa no localStorage. Fora do
-      // tutorial, onde o cadastro é do roteiro e o guia está no meio de um
-      // passo.
-      if (!tutorialAtivo && deveAvisarTeste()) setAvisoTeste(true);
     } catch (e) {
       toast({ tone: "danger", title: "Não foi possível criar", message: tratarMensagemErro(e, tabela) });
     } finally {
@@ -212,12 +198,9 @@ export function TabelaEditavel({ tabela, colunas, linhas, novoRegistro, recarreg
 
       {novoRegistro && !semBotao && (
         <div style={{ marginTop: "var(--space-4)" }}>
-          {/* O tutorial acha este botão pelo atributo para passar o feixe de
-              luz nele — pelo mesmo motivo dos alvos de passo: seletor de
-              classe quebra em silêncio quando o CSS muda. */}
           <Button
             variant="secondary" size="sm" icon={<Icon name="plus" size={16} />}
-            onClick={abrirFormulario} data-tutorial-acao="adicionar"
+            onClick={abrirFormulario}
           >
             Adicionar {rotulo}
           </Button>
@@ -264,9 +247,7 @@ export function TabelaEditavel({ tabela, colunas, linhas, novoRegistro, recarreg
                     const extras = col.aoMudar ? col.aoMudar(paraBanco(v, col), campos) : null;
                     for (const [k, val] of Object.entries(extras || {})) {
                       const alvo = camposDoForm.find((c) => c.key === k);
-                      // Fora do formulário o valor vai direto para a linha:
-                      // é assim que o formulário curto do tutorial preenche
-                      // sozinho um campo que ele nem mostra.
+                      // Fora do formulário o valor vai direto para a linha.
                       if (alvo) campos[k] = paraTexto(val, alvo);
                       else base = { ...base, [k]: val };
                     }
@@ -309,7 +290,6 @@ export function TabelaEditavel({ tabela, colunas, linhas, novoRegistro, recarreg
         />
       )}
 
-      <AvisoTeste open={avisoTeste} onClose={() => setAvisoTeste(false)} />
     </div>
   );
 }

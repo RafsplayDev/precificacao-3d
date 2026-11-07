@@ -311,7 +311,7 @@ export default function Calculadora() {
 
       {/* ---- Assinatura: a pilha de custo e os preços sugeridos, lado a lado ---- */}
       <div className="ap-hero">
-      <Card padding="var(--space-5)" className="ap-cardpilha" data-tutorial="calc-pilha">
+      <Card padding="var(--space-5)" className="ap-cardpilha">
         <div className="ap-figuras">
           <div className="ap-figure">
             <span className="dc-eyebrow">CUSTO TOTAL POR UNIDADE</span>
@@ -353,7 +353,7 @@ export default function Calculadora() {
           />
         </div>
 
-        <div className="ap-sugeridos" data-tutorial="calc-sugeridos">
+        <div className="ap-sugeridos">
           <CartaoSugerido
             canal="varejo"
             rotulo="VAREJO"
@@ -392,7 +392,7 @@ export default function Calculadora() {
       <div className="ap-grid ap-grid--main">
         {/* ============ COLUNA ESQUERDA: CUSTOS ============ */}
         <div style={{ display: "grid", gap: "var(--space-6)", alignContent: "start" }}>
-          <Card padding="var(--space-6)" data-tutorial="calc-custos">
+          <Card padding="var(--space-6)">
             <div className="ap-sectionhead">
               <h2>Custos de produção</h2>
               {pecas.length > 1 ? (
@@ -520,7 +520,7 @@ export default function Calculadora() {
 
         {/* ============ COLUNA DIREITA: PREÇO ============ */}
         <div style={{ display: "grid", gap: "var(--space-6)", alignContent: "start" }}>
-          <Card padding="var(--space-6)" data-tutorial="calc-preco">
+          <Card padding="var(--space-6)">
             <div className="ap-sectionhead ap-precovenda__head">
               <h2>Preço de venda</h2>
               <Tabs
@@ -1471,14 +1471,13 @@ function ErroBanco({ mensagem }) {
   return (
     <div className="ap-wrap">
       <Card padding="var(--space-8)" style={{ maxWidth: 640 }}>
-        <span className="dc-eyebrow">SUPABASE</span>
+        <span className="dc-eyebrow">BANCO DE DADOS</span>
         <h2 style={{ fontSize: "var(--text-h2)", fontWeight: "var(--weight-medium)", margin: "8px 0 12px" }}>
-          O banco respondeu, mas as tabelas não estão lá
+          Não foi possível carregar seus dados
         </h2>
         <p style={{ color: "var(--text-muted)" }}>
-          Abra o SQL Editor do seu projeto no Supabase e rode, nesta ordem,
-          <code> supabase/migrations/0001_schema.sql</code> e
-          <code> supabase/migrations/0002_seed.sql</code>. Depois recarregue esta página.
+          Recarregue a página em alguns instantes. Se o erro continuar, confira se as
+          migrações do D1 foram aplicadas (<code>npm run db:migrar</code>).
         </p>
         <p style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-body-sm)", color: "var(--status-danger)", marginTop: 16 }}>
           {mensagem}

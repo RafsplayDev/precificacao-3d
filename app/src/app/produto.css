@@ -1,7 +1,7 @@
 /* =====================================================================
-   Camada de produto — conta, paywall, vendas, afiliado e admin
-   Separado do globals.css porque é a casca comercial em volta do app,
-   não o app. Usa os mesmos tokens do design system.
+   Camada de produto — conta, login, vitrine de anúncios e admin
+   Separado do globals.css porque é a casca em volta da calculadora,
+   não a calculadora. Usa os mesmos tokens do design system.
    ===================================================================== */
 
 /* ---- Conta no cabeçalho ---- */
@@ -53,517 +53,105 @@
   color: var(--action-accent); text-decoration: underline; text-underline-offset: 3px;
 }
 
-/* ---- Paywall ---- */
-.ap-paywall__selo {
-  display: inline-block; margin-bottom: var(--space-3);
-  font-size: var(--text-eyebrow); letter-spacing: var(--ls-eyebrow);
-  text-transform: uppercase; color: var(--action-accent);
+/* ---- Botão do Google ---- */
+.ap-google {
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--space-3);
+  width: 100%; min-height: 48px; padding: 0 var(--space-5);
+  border: var(--border-w) solid var(--border-default); border-radius: var(--radius-pill);
+  background: var(--surface-card); color: var(--text-strong);
+  font: inherit; font-weight: var(--weight-medium); text-decoration: none;
+  transition: background var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
 }
-.ap-paywall__sub { color: var(--text-muted); margin: 0 0 var(--space-6); }
-.ap-paywall__preco {
-  display: flex; align-items: baseline; gap: var(--space-2);
-  margin-bottom: var(--space-6);
-}
-.ap-paywall__preco strong {
-  font-family: var(--font-display); font-size: var(--text-display-2);
-  letter-spacing: var(--ls-display-2); color: var(--text-strong);
-}
-.ap-paywall__preco span { color: var(--text-faint); font-size: var(--text-body-sm); }
+.ap-google:hover { background: var(--surface-sunken); border-color: var(--border-strong); }
+.ap-google:focus-visible { outline: 2px solid var(--border-focus); outline-offset: 2px; }
 
-.ap-paywall__lista { list-style: none; margin: 0 0 var(--space-6); padding: 0; }
-.ap-paywall__lista li {
-  position: relative; padding: var(--space-2) 0 var(--space-2) var(--space-6);
-  font-size: var(--text-body-md); color: var(--text-body);
-  border-bottom: var(--border-hairline);
-}
-.ap-paywall__lista li:last-child { border-bottom: 0; }
-.ap-paywall__lista li::before {
-  content: "\2713"; position: absolute; left: 0;
-  color: var(--action-accent); font-weight: 600;
-}
-.ap-paywall__pagamento {
-  margin: var(--space-3) 0 0; text-align: center;
-  font-size: var(--text-caption); color: var(--text-faint);
-}
-.ap-paywall__sair {
-  display: block; margin: var(--space-6) auto 0;
-  background: none; border: 0; cursor: pointer; font: inherit;
-  font-size: var(--text-body-sm); color: var(--text-faint);
-  text-decoration: underline; text-underline-offset: 3px;
-}
+.ap-conta__foto { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; }
 
-/* ---- Página de vendas ---- */
-.ap-vendas {
-  max-width: var(--max-content); margin: 0 auto;
-  padding: var(--space-12) var(--gutter-page) var(--space-20);
+/* ---- Vitrine de afiliados ---- */
+/* Mesma largura e margens do .ap-wrap, para alinhar com o conteúdo da tela. */
+.ap-vitrine {
+  max-width: var(--max-content); margin: calc(-1 * var(--space-12)) auto 0;
+  padding: 0 var(--gutter-page) var(--space-12);
 }
-.ap-vendas__hero { max-width: var(--max-prose); margin-bottom: var(--space-20); }
-.ap-vendas__hero h1 {
-  font-family: var(--font-display); font-size: var(--text-display-2);
-  letter-spacing: var(--ls-display-2); color: var(--text-strong);
-  margin: 0 0 var(--space-4);
+@media (min-width: 1280px) {
+  .ap-vitrine { max-width: 1360px; padding-left: var(--gutter-page-lg); padding-right: var(--gutter-page-lg); }
 }
-.ap-vendas__hero p {
-  font-size: var(--text-body-lg); color: var(--text-muted); margin: 0 0 var(--space-8);
+.ap-auth .ap-vitrine { padding: 0; margin-top: var(--space-8); max-width: none; }
+.ap-vitrine__topo {
+  display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-3);
+  margin-bottom: var(--space-4);
 }
-.ap-vendas__cta { display: flex; align-items: center; gap: var(--space-4); flex-wrap: wrap; }
-.ap-vendas__cta span { font-size: var(--text-body-sm); color: var(--text-faint); }
-
-.ap-vendas__blocos {
-  display: grid; gap: var(--space-6); margin-bottom: var(--space-20);
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+.ap-vitrine__topo h2 {
+  margin: 0; font-family: var(--font-display); font-size: var(--text-h4, 1.125rem);
+  color: var(--text-strong);
 }
-.ap-vendas__blocos h2 {
-  font-size: var(--text-h4); color: var(--text-strong); margin: 0 0 var(--space-2);
-}
-.ap-vendas__blocos p { color: var(--text-muted); margin: 0; }
-
-.ap-vendas__inclui { margin-bottom: var(--space-20); }
-.ap-vendas__inclui h2 {
-  font-size: var(--text-h3); letter-spacing: var(--ls-h3);
-  color: var(--text-strong); margin: 0 0 var(--space-6);
-}
-.ap-vendas__inclui ul {
-  list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-2);
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-}
-.ap-vendas__inclui li { position: relative; padding-left: var(--space-6); color: var(--text-body); }
-.ap-vendas__inclui li::before {
-  content: "\2713"; position: absolute; left: 0; color: var(--action-accent);
-}
-
-.ap-vendas__fecho {
-  text-align: center; padding: var(--space-12) 0; border-top: var(--border-hairline);
-}
-.ap-vendas__fecho h2 {
-  font-family: var(--font-display); font-size: var(--text-h1);
-  letter-spacing: var(--ls-h1); color: var(--text-strong); margin: 0 0 var(--space-3);
-}
-.ap-vendas__fecho p { color: var(--text-muted); margin: 0 0 var(--space-6); }
-.ap-vendas__entrar { margin-top: var(--space-6) !important; font-size: var(--text-body-sm); }
-
-/* =====================================================================
-   PALETA DO BETA — o rosa da Drop Color, com laranja e âmbar de apoio
-   Vale enquanto a página do beta estiver na tela, e some sozinha ao sair.
-   O gatilho é `body:has(.ap-beta)`: a paleta segue a presença da página, sem
-   atributo para ligar no <html> e sem efeito para desligar no desmonte.
-
-   A cor das ações continua sendo a do app: o rosa da marca, que já é o
-   --action-accent do design system. As três cores abaixo entram como apoio
-   pontual — a régua de vagas e o cartão de fundador — e nunca no lugar do
-   rosa. Foi por isso que a versão anterior desta paleta saiu errada: o
-   magenta escuro assumiu os botões e a página virou roxa.
-   ===================================================================== */
-body:has(.ap-beta) {
-  --dc-rosa:var(--fil-magenta);
-  --dc-magenta:#AC2293;
-  --dc-laranja:#FE7F00;
-  --dc-ambar:#FEB101;
-}
-
-/* Sem cabeçalho: esta página é uma landing page, não uma tela do app. A
-   barra do topo é a casca de quem já está dentro — aqui ela só ofereceria
-   uma saída para quem ainda nem entrou. */
-body:has(.ap-beta) .ap-header { display: none; }
-/* O globals.css reserva 72px no rodapé do main para a barra de navegação do
-   celular. Aqui não existe barra nenhuma, e esse espaço é exatamente o que
-   fazia a página passar da altura da tela e voltar a rolar. */
-body:has(.ap-beta) .ap-main { padding-bottom: 0; }
-
-/* ---- Beta fechado: a aplicação do lote de fundador ---- */
-/* A página inteira cabe na altura da tela: o formulário é uma pergunta de
-   cada vez, e rolar para achar a próxima opção quebra o ritmo de quem está
-   respondendo. `dvh` e não `vh` por causa da barra do navegador no celular,
-   que muda de altura conforme a pessoa rola.
-
-   `justify-content: center` em vez de altura fixa no card: se um dia o
-   conteúdo passar da tela — telefone muito baixo, fonte aumentada — ele
-   volta a rolar em vez de ser cortado. Perder o "sem rolagem" é chato;
-   perder o botão de continuar é quebrado. */
-.ap-beta {
-  max-width: 620px; margin: 0 auto;
-  min-height: 100dvh;
-  display: flex; flex-direction: column; justify-content: center;
-  padding: var(--space-6) var(--space-4);
-}
-
-/* O contador é o único elemento destacado acima do card: é ele que diz que
-   o lote é finito, sem que a página precise anunciar exclusividade. */
-.ap-beta__vagas { margin-bottom: var(--space-4); }
-.ap-beta__vagas-topo { margin-bottom: var(--space-2); }
-.ap-beta__vagas-topo strong {
-  font-size: var(--text-h4); color: var(--text-strong);
-}
-/* O contador é o que precisa ser lido primeiro: ganha o rosa da marca. */
-body:has(.ap-beta) .ap-beta__vagas-topo strong { color: var(--dc-rosa); }
-.ap-beta__barra {
-  height: 8px; border-radius: 999px; overflow: hidden;
-  background: var(--surface-sunken);
-}
-.ap-beta__barra-cheia {
-  height: 100%; border-radius: 999px;
-  background: linear-gradient(90deg, var(--dc-rosa, var(--action-accent)), var(--dc-laranja, var(--action-accent)));
-  transition: width var(--dur-md, 240ms) ease;
-}
-@media (prefers-reduced-motion: reduce) { .ap-beta__barra-cheia { transition: none; } }
-
-/* A abertura. O título é uma pergunta, não um anúncio: no tamanho de uma
-   manchete de display ele soaria promocional, que é o oposto do que a tela
-   está tentando fazer. */
-.ap-beta__abertura { text-align: center; padding: var(--space-6) var(--space-5); }
-.ap-beta__abertura h1 {
-  font-family: var(--font-display); font-size: var(--text-h2);
-  line-height: var(--lh-h2); letter-spacing: var(--ls-h2);
-  color: var(--text-strong); margin: 0 0 var(--space-3);
-  text-wrap: balance;
-}
-.ap-beta__abertura-texto {
-  font-size: var(--text-body-md); line-height: var(--lh-body-md);
-  color: var(--text-muted); margin: 0 auto var(--space-5); max-width: 42ch;
-}
-.ap-beta__abertura-nota {
-  margin: var(--space-3) 0 0; font-size: var(--text-caption);
-  color: var(--text-faint);
-}
-@media (max-width: 560px) {
-  .ap-beta__abertura { padding: var(--space-5) var(--space-4); }
-  .ap-beta__abertura h1 { font-size: var(--text-h3); letter-spacing: var(--ls-h3); }
-}
-
-/* Quem já entrou. Some junto com a lista quando ela está vazia — a regra
-   abaixo só existe a partir do primeiro fundador. */
-.ap-beta__fundadores { margin: 0 0 var(--space-6); }
-.ap-beta__fundadores-rot {
-  display: block; margin-bottom: var(--space-2);
+.ap-vitrine__selo {
   font-size: var(--text-eyebrow); letter-spacing: var(--ls-eyebrow);
   text-transform: uppercase; color: var(--text-faint);
 }
-.ap-beta__fundadores ul {
+.ap-vitrine__lista {
   list-style: none; margin: 0; padding: 0;
-  display: flex; flex-wrap: wrap; gap: var(--space-2);
-}
-.ap-beta__fundadores li {
-  display: flex; align-items: baseline; gap: var(--space-2);
-  padding: 6px var(--space-3); border-radius: var(--radius-pill);
-  background: var(--surface-sunken); border: var(--border-hairline);
-  font-size: var(--text-body-sm);
-}
-.ap-beta__fundadores strong { color: var(--text-body); font-weight: var(--weight-medium); }
-.ap-beta__fundadores span { color: var(--text-faint); font-size: var(--text-caption); }
-
-.ap-beta__selo {
-  display: inline-block; margin-bottom: var(--space-3);
-  font-size: var(--text-eyebrow); letter-spacing: var(--ls-eyebrow);
-  text-transform: uppercase; color: var(--action-accent);
-}
-.ap-beta__resultado h1 {
-  margin-bottom: var(--space-2);
-  font-family: var(--font-display); font-size: var(--text-h1);
-  letter-spacing: var(--ls-h1); color: var(--text-strong);
-  margin: 0 0 var(--space-4);
-}
-.ap-beta__resultado p {
-  color: var(--text-muted); margin: 0 0 var(--space-4);
-}
-
-.ap-beta__progresso {
-  display: flex; justify-content: space-between; align-items: center;
-  gap: var(--space-4); margin-bottom: var(--space-6);
-  font-size: var(--text-caption); color: var(--text-faint);
-}
-.ap-beta__passos { display: flex; gap: 6px; }
-.ap-beta__passos i {
-  width: 22px; height: 3px; border-radius: 999px; background: var(--border-hairline);
-  /* A cor é o único sinal de avanço, então ela vira em vez de saltar. */
-  transition: background var(--dur-fast, 180ms) ease;
-}
-.ap-beta__passos i.on { background: var(--action-accent); }
-
-.ap-beta__pergunta h2 {
-  font-size: var(--text-h4); color: var(--text-strong); margin: 0 0 var(--space-5);
-}
-.ap-beta__opcoes { display: flex; flex-direction: column; gap: var(--space-2); }
-
-/* Segurar para concordar — a última pergunta é um compromisso, e a interação
-   custa o tempo que um compromisso custa. */
-.ap-beta__firmar { display: flex; flex-direction: column; align-items: stretch; gap: var(--space-3); }
-.ap-beta__segurar {
-  position: relative; overflow: hidden;
-  height: var(--control-h-lg); border-radius: var(--radius-pill);
-  border: var(--border-w-strong) solid var(--action-accent);
-  background: color-mix(in srgb, var(--action-accent) 8%, transparent);
-  color: var(--text-strong);
-  font: inherit; font-size: var(--text-body-md); font-weight: var(--weight-semibold);
-  cursor: pointer; touch-action: none; user-select: none;
-  display: flex; align-items: center; justify-content: center;
-}
-.ap-beta__segurar:focus-visible { outline: 2px solid var(--border-focus); outline-offset: 3px; }
-
-/* A carga é o rosa cheio da marca, e leva junto a própria cópia do rótulo
-   em branco. O recorte é clip-path, não largura: assim o texto de dentro não
-   estica nem se desloca enquanto a barra avança. */
-.ap-beta__segurar-carga {
-  position: absolute; inset: 0;
-  display: flex; align-items: center; justify-content: center;
-  background: var(--action-accent); color: var(--text-inverse);
-  clip-path: inset(0 100% 0 0);
-}
-.ap-beta__segurar-rot { position: relative; z-index: 1; }
-
-.ap-beta__segurar--firmado {
-  background: var(--action-accent); border-color: var(--action-accent);
-  color: var(--text-inverse); cursor: default;
-}
-
-.ap-beta__recusar {
-  align-self: center; background: none; border: 0; padding: var(--space-2); cursor: pointer;
-  font: inherit; font-size: var(--text-body-sm); color: var(--text-faint);
-  text-decoration: underline; text-underline-offset: 3px;
-}
-.ap-beta__recusar:hover { color: var(--text-muted); }
-
-.ap-beta__form { display: flex; flex-direction: column; gap: var(--space-4); }
-/* O veredito no topo do passo de contato. Verde quando entra, neutro quando
-   não — nunca vermelho: não passar no filtro do lote não é um erro de quem
-   respondeu. */
-.ap-beta__veredito {
-  display: flex; flex-direction: column; gap: var(--space-1);
-  padding: var(--space-3); border-radius: var(--radius-sm);
-  border-left: 3px solid var(--border-strong);
-  background: var(--surface-sunken);
-}
-.ap-beta__veredito strong {
-  font-size: var(--text-body); color: var(--text-strong);
-}
-.ap-beta__veredito p {
-  margin: 0; font-size: var(--text-body-sm); color: var(--text-muted);
-}
-.ap-beta__veredito--sim {
-  border-left-color: var(--status-success);
-  background: var(--status-success-soft);
-}
-/* O passo de contato virou cadastro, e o título é o que explica a senha
-   aparecendo num formulário que até aqui só perguntava sobre vendas. */
-.ap-beta__form-cabeca { display: flex; flex-direction: column; gap: var(--space-1); }
-.ap-beta__form-cabeca h2 {
-  margin: 0; font-family: var(--font-display);
-  font-size: var(--text-h4); letter-spacing: var(--ls-h4); color: var(--text-strong);
-}
-.ap-beta__form-cabeca p {
-  margin: 0; font-size: var(--text-body-sm); color: var(--text-muted);
-}
-.ap-beta__nota {
-  margin: 0; font-size: var(--text-body-sm); color: var(--text-faint);
-}
-.ap-beta__erro {
-  margin: 0; padding: var(--space-3); border-radius: var(--radius-sm);
-  font-size: var(--text-body-sm); color: var(--status-danger);
-  background: color-mix(in srgb, var(--status-danger) 8%, transparent);
-}
-.ap-beta__voltar {
-  align-self: flex-start; margin-top: var(--space-2);
-  background: none; border: 0; padding: 0; cursor: pointer; font: inherit;
-  font-size: var(--text-body-sm); color: var(--text-muted);
-  text-decoration: underline; text-underline-offset: 3px;
-}
-.ap-beta__voltar:hover { color: var(--text-strong); }
-
-/* ---- A moldura do cartão aprovado ----
-   O "premium" aqui é a moldura, não o conteúdo: uma borda de um pixel com as
-   três cores da Drop Color e um brilho difuso por trás do cartão. A cor fica
-   toda na borda e no halo; o miolo continua claro e legível, porque é onde
-   está o preço. */
-.ap-beta__premium {
-  position: relative;
-  border-radius: calc(var(--radius-card, var(--radius-lg)) + 1px);
-  padding: 1px;
-  background: linear-gradient(150deg, var(--dc-rosa) 0%, var(--dc-magenta) 40%, var(--dc-laranja) 75%, var(--dc-ambar) 100%);
-  box-shadow: 0 18px 44px -20px color-mix(in srgb, var(--dc-magenta) 55%, transparent);
-}
-/* O halo: uma cópia borrada da própria moldura, atrás dela. */
-.ap-beta__premium::before {
-  content: ""; position: absolute; inset: -6px; z-index: -1;
-  border-radius: inherit; background: inherit;
-  filter: blur(22px); opacity: .35;
-}
-.ap-beta__premium > .dc-card {
-  border: 0;
-  /* Um véu rosa quase imperceptível descendo do topo: dá temperatura ao
-     branco sem tingir o texto. */
-  background:
-    radial-gradient(120% 80% at 50% -20%, color-mix(in srgb, var(--dc-rosa) 10%, transparent), transparent 60%),
-    var(--surface-card);
-}
-
-/* ---- Tela de aprovação ---- */
-/* O preço é o que a pessoa veio conferir: o maior tipo da tela, sólido, no
-   texto mais escuro que existe. Sem gradiente — ele troca contraste por
-   enfeite, e aqui contraste é a função. */
-/* Escritos com o pai no seletor porque `.ap-beta__resultado p` já pinta todo
-   parágrafo de muted: sem isso o preço nasceria cinza, que é o oposto do que
-   ele precisa ser. */
-.ap-beta__resultado .ap-beta__preco {
-  font-family: var(--font-display); font-size: var(--text-display-1);
-  line-height: 1; letter-spacing: var(--ls-display-1);
-  color: var(--text-strong); margin: var(--space-4) 0 var(--space-1);
-}
-.ap-beta__resultado .ap-beta__preco-sub {
-  margin: 0 0 var(--space-5);
-  font-size: var(--text-body-sm); color: var(--text-muted);
-}
-@media (max-width: 480px) {
-  .ap-beta__resultado .ap-beta__preco {
-    font-size: var(--text-display-2); letter-spacing: var(--ls-display-2);
-  }
-  .ap-beta__resultado h1 { font-size: var(--text-h2); letter-spacing: var(--ls-h2); }
-}
-
-.ap-beta__itens { list-style: none; margin: 0 0 var(--space-5); padding: 0; }
-.ap-beta__itens li {
-  position: relative; padding: 6px 0 6px var(--space-5);
-  color: var(--text-body);
-}
-/* Marcador discreto: um pingo na cor da marca. A cor entra como acento, não
-   como fundo — fundo colorido em volta de uma frase curta lê como alerta. */
-.ap-beta__itens li::before {
-  content: ""; position: absolute; left: 0; top: 1.05em;
-  width: 6px; height: 6px; border-radius: 999px;
-  background: var(--action-accent);
-}
-
-.ap-beta__resultado .ap-beta__parte {
-  margin: 0 0 var(--space-5);
-  font-size: var(--text-body-sm); color: var(--text-muted);
-}
-.ap-beta__parte strong { color: var(--text-strong); }
-
-.ap-beta__resultado .ap-beta__nota { margin-top: var(--space-3); text-align: center; }
-.ap-beta__link {
-  display: inline-block; margin-top: var(--space-2);
-  color: var(--action-accent); text-decoration: underline; text-underline-offset: 3px;
-}
-
-
-/* ---- Afiliado e admin ---- */
-.ap-pagina {
-  max-width: var(--max-content); margin: 0 auto;
-  padding: var(--space-8) var(--gutter-page) var(--space-20);
-  display: grid; gap: var(--space-6);
-}
-.ap-pagina__topo h1 {
-  font-family: var(--font-display); font-size: var(--text-h1);
-  letter-spacing: var(--ls-h1); color: var(--text-strong); margin: 0 0 var(--space-2);
-}
-.ap-pagina__topo p { color: var(--text-muted); margin: 0; }
-.ap-pagina h2 { font-size: var(--text-h4); color: var(--text-strong); margin: 0 0 var(--space-2); }
-
-.ap-afiliado__numeros {
   display: grid; gap: var(--space-4);
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
 }
-.ap-afiliado__numeros span {
-  display: block; font-size: var(--text-caption);
-  color: var(--text-faint); margin-bottom: var(--space-1);
-}
-.ap-afiliado__numeros strong {
-  font-family: var(--font-display); font-size: var(--text-h1);
-  letter-spacing: var(--ls-h1); color: var(--text-strong);
-}
-.ap-afiliado__dica { font-size: var(--text-body-sm); color: var(--text-muted); margin: 0 0 var(--space-4); }
-.ap-afiliado__link { display: flex; gap: var(--space-3); align-items: center; flex-wrap: wrap; }
-.ap-afiliado__link code {
-  flex: 1; min-width: 240px; padding: var(--space-3);
-  background: var(--surface-sunken); border-radius: var(--radius-sm);
-  font-family: var(--font-mono); font-size: var(--text-body-sm);
-  color: var(--text-strong); overflow-wrap: anywhere;
-}
-.ap-afiliado__codigo { margin: var(--space-4) 0 0; font-size: var(--text-body-sm); color: var(--text-muted); }
-.ap-afiliado__codigo strong { font-family: var(--font-mono); color: var(--text-strong); letter-spacing: 0.08em; }
-.ap-afiliado__pix { display: flex; gap: var(--space-3); align-items: flex-end; flex-wrap: wrap; }
-.ap-afiliado__pix > :first-child { flex: 1; min-width: 240px; }
+.ap-auth .ap-vitrine__lista { grid-template-columns: 1fr; }
 
-.ap-tabela { width: 100%; border-collapse: collapse; font-size: var(--text-body-sm); }
-.ap-tabela th, .ap-tabela td {
-  text-align: left; padding: var(--space-3) var(--space-2);
-  border-bottom: var(--border-hairline); vertical-align: top;
+.ap-vitrine__item {
+  display: flex; flex-direction: column; height: 100%;
+  border: var(--border-w) solid var(--border-hairline); border-radius: var(--radius-md);
+  background: var(--surface-card); color: inherit; text-decoration: none; overflow: hidden;
+  transition: border-color var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
 }
-.ap-tabela th {
-  font-size: var(--text-caption); color: var(--text-faint);
-  text-transform: uppercase; letter-spacing: var(--ls-eyebrow); font-weight: 500;
+.ap-auth .ap-vitrine__item { flex-direction: row; }
+.ap-vitrine__item:hover { border-color: var(--border-strong); transform: translateY(-2px); }
+.ap-vitrine__item:focus-visible { outline: 2px solid var(--border-focus); outline-offset: 2px; }
+.ap-vitrine__img {
+  position: relative; display: grid; place-items: center;
+  aspect-ratio: 4 / 3; background: var(--surface-sunken); color: var(--text-faint);
 }
-.ap-tabela td { color: var(--text-body); }
-.ap-tabela small { color: var(--text-faint); }
-.ap-tabela code { font-family: var(--font-mono); color: var(--text-strong); letter-spacing: 0.08em; }
-
-/* Tabelas largas rolam dentro de si mesmas em vez de espremer a página. */
-.ap-admin .ap-tabela { display: block; overflow-x: auto; }
-
-.ap-admin__cabeca-lista {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 1rem;
-  flex-wrap: wrap;
+.ap-auth .ap-vitrine__img { flex: 0 0 96px; aspect-ratio: 1; }
+.ap-vitrine__img img { width: 100%; height: 100%; object-fit: contain; padding: var(--space-2); }
+.ap-vitrine__etiqueta {
+  position: absolute; top: var(--space-2); left: var(--space-2);
+  padding: 2px 8px; border-radius: var(--radius-pill);
+  background: var(--fil-magenta); color: #fff; font-size: 11px; font-weight: var(--weight-medium);
 }
-.ap-admin__cabeca-lista button {
-  background: none;
-  border: 0;
-  padding: 0;
-  font: inherit;
-  font-size: 0.85rem;
-  color: var(--cor-texto-suave, #6b7280);
-  text-decoration: underline;
-  cursor: pointer;
+.ap-vitrine__corpo {
+  display: flex; flex-direction: column; gap: var(--space-1); flex: 1;
+  padding: var(--space-3) var(--space-4) var(--space-4);
 }
-.ap-admin__cabeca-lista button:hover { color: inherit; }
-
-/* ---- Beta fechado (admin) ---- */
-.ap-admin__beta-resumo { font-size: var(--text-body-sm); color: var(--text-muted); }
-
-/* A situação da vaga é a coluna que se lê de relance: cor só onde ela muda
-   uma decisão — pago (fechado), reserva vencida (alguém para cutucar). */
-.ap-admin__vaga {
-  display: inline-block; padding: 2px var(--space-2); border-radius: 999px;
-  font-size: var(--text-caption); background: var(--surface-sunken);
-  color: var(--text-muted); white-space: nowrap;
+.ap-vitrine__loja { font-size: 12px; color: var(--text-faint); }
+.ap-vitrine__titulo {
+  font-size: var(--text-body-sm); color: var(--text-strong); line-height: 1.35;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
 }
-.ap-admin__vaga--pago {
-  background: color-mix(in srgb, var(--status-success, #16a34a) 12%, transparent);
-  color: var(--status-success, #16a34a);
-}
-.ap-admin__vaga--vencida {
-  background: color-mix(in srgb, var(--status-danger) 10%, transparent);
-  color: var(--status-danger);
+.ap-vitrine__nota { font-size: 12px; color: var(--text-muted); }
+.ap-vitrine__preco { display: flex; align-items: baseline; gap: var(--space-2); margin-top: auto; }
+.ap-vitrine__preco s { font-size: 12px; color: var(--text-faint); }
+.ap-vitrine__preco strong { color: var(--text-strong); }
+.ap-vitrine__cta {
+  margin-top: var(--space-2); font-size: var(--text-body-sm);
+  color: var(--action-accent); font-weight: var(--weight-medium);
 }
 
-.ap-admin__beta-detalhe > td { background: var(--surface-sunken); }
-.ap-admin__beta-detalhe dl {
-  display: grid; gap: var(--space-3); margin: 0;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+/* No celular (e no login) cada anúncio vira uma linha compacta: imagem à
+   esquerda, texto à direita. Cartões altos empurrariam o app para longe. */
+@media (max-width: 640px) {
+  .ap-vitrine { padding: 0 var(--space-4) var(--space-8); margin-top: calc(-1 * var(--space-6)); }
+  .ap-vitrine__lista { grid-template-columns: 1fr; gap: var(--space-3); }
+  .ap-vitrine__item { flex-direction: row; }
+  .ap-vitrine__img { flex: 0 0 96px; aspect-ratio: 1; }
 }
-.ap-admin__beta-detalhe dt {
-  font-size: var(--text-caption); color: var(--text-faint);
-  text-transform: uppercase; letter-spacing: var(--ls-eyebrow);
+/* ---- Admin de anúncios ---- */
+.ap-admin { max-width: 1360px; margin: 0 auto; padding: var(--space-8) var(--gutter-page); }
+.ap-admin h1 { font-family: var(--font-display); font-size: var(--text-h2); color: var(--text-strong); margin: 0 0 var(--space-2); }
+.ap-admin__sub { color: var(--text-muted); margin: 0 0 var(--space-6); }
+.ap-admin__tabela { width: 100%; border-collapse: collapse; font-size: var(--text-body-sm); }
+.ap-admin__tabela th, .ap-admin__tabela td {
+  text-align: left; padding: var(--space-2) var(--space-3); border-bottom: var(--border-hairline);
+  vertical-align: middle;
 }
-.ap-admin__beta-detalhe dd { margin: 2px 0 0; color: var(--text-body); }
-.ap-admin__beta-detalhe dd.barrou { color: var(--status-danger); }
-
-/* ---- Preço e promoções (admin) ---- */
-.ap-admin__precos {
-  display: grid; gap: var(--space-4);
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  margin-bottom: var(--space-4);
-}
-.ap-admin__promo-topo {
-  display: flex; align-items: center; gap: var(--space-4);
-  flex-wrap: wrap; margin-bottom: var(--space-4);
-}
-.ap-admin__promo-resumo { font-size: var(--text-body-sm); color: var(--text-muted); }
-.ap-admin__promo-resumo s { color: var(--text-faint); }
-.ap-admin__promo-resumo strong { color: var(--text-strong); }
-
-/* O preço antigo riscado, na vitrine e no paywall. */
-.ap-vendas__de, .ap-paywall__de {
-  color: var(--text-faint); font-weight: 400;
-  margin-right: var(--space-2);
-}
+.ap-admin__tabela th { color: var(--text-faint); font-weight: var(--weight-medium); }
+.ap-admin__tabela td.num { text-align: right; font-variant-numeric: tabular-nums; }
+.ap-admin__tabela tr.is-off td { opacity: .5; }
+.ap-admin__rolar { overflow-x: auto; }

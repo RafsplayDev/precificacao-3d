@@ -1,29 +1,39 @@
 "use client";
 import React from "react";
-import { supabase } from "./supabaseClient";
-import { ehTeste } from "./modo";
-import { listarLocal, inserirLocal, atualizarLocal, removerLocal, temDadosDeTeste } from "./dadosLocais";
-import { migrarTesteParaConta } from "./migrarTeste";
 
 const TABELAS = [
-  ["impressoras", "nome"],
-  ["filamentos", "nome"],
-  ["marketplaces", "nome"],
-  ["insumos", "nome"],
-  ["maos_obra", "nome"],
-  ["configuracoes", "id"],
-  ["bens_depreciacao", "bem"],
-  ["produtos", "nome"],
-  ["pecas", "numero"],
-  ["custos_adicionais", "created_at"],
-  ["produto_trabalhos", "created_at"],
-  ["faixas_atacado", "qtd_min"],
-  ["concorrentes", "created_at"],
-  ["gastos", "data"],
-  ["vendas", "data"],
+  "impressoras", "filamentos", "marketplaces", "insumos", "maos_obra", "configuracoes",
+  "bens_depreciacao", "produtos", "pecas", "custos_adicionais", "produto_trabalhos",
+  "faixas_atacado", "concorrentes", "gastos", "vendas",
 ];
 
-const VAZIO = Object.fromEntries(TABELAS.map(([t]) => [t, []]));
+const VAZIO = Object.fromEntries(TABELAS.map((t) => [t, []]));
+
+/**
+ * Chamada à API de dados (/api/dados), que roda no Worker da Cloudflare e
+ * fala com o D1. A sessão vai no cookie httpOnly `dc_sessao`; o servidor
+ * filtra tudo pelo usuário dela, como o RLS fazia no Supabase.
+ */
+async function api(caminho, metodo = "GET", corpo) {
+  const res = await fetch(`/api/dados${caminho}`, {
+    method: metodo,
+    headers: corpo ? { "content-type": "application/json" } : undefined,
+    body: corpo ? JSON.stringify(corpo) : undefined,
+    cache: "no-store",
+    credentials: "same-origin",
+  });
+  const dados = await res.json().catch(() => ({}));
+  if (res.status === 401) {
+    // Sessão vencida: volta para o login e depois para esta mesma tela.
+    window.location.assign(`/entrar?proximo=${encodeURIComponent(window.location.pathname)}`);
+  }
+  if (!res.ok) {
+    const e = new Error(dados.message || "Não foi possível falar com o servidor.");
+    e.code = dados.code;
+    throw e;
+  }
+  return dados;
+}
 
 /** Carrega o banco inteiro de uma vez. O volume aqui é pequeno (dezenas de linhas). */
 export function useDados() {
@@ -34,32 +44,8 @@ export function useDados() {
   const carregar = React.useCallback(async () => {
     setCarregando(true);
     try {
-      if (ehTeste()) {
-        // No teste o "banco" é o localStorage. A leitura é síncrona, mas a
-        // função continua async para as telas não precisarem saber disso.
-        setDados(Object.fromEntries(TABELAS.map(([t, ord]) => [t, listarLocal(t, ord)])));
-        setErro(null);
-        return;
-      }
-
-      // A licença acabou de ser liberada e o teste ficou para trás: o que
-      // a pessoa digitou antes de pagar sobe agora, antes da primeira
-      // leitura — senão ela veria a tela vazia e acharia que perdeu tudo.
-      if (temDadosDeTeste()) {
-        try {
-          await migrarTesteParaConta();
-        } catch {
-          // Falhou? Os dados locais continuam guardados e a próxima carga
-          // tenta de novo. Travar o app por causa disso seria pior.
-        }
-      }
-
-      const res = await Promise.all(
-        TABELAS.map(([t, ord]) => supabase.from(t).select("*").order(ord))
-      );
-      const falha = res.find((r) => r.error);
-      if (falha) throw falha.error;
-      setDados(Object.fromEntries(TABELAS.map(([t], i) => [t, res[i].data || []])));
+      const tudo = await api("");
+      setDados(Object.fromEntries(TABELAS.map((t) => [t, tudo[t] || []])));
       setErro(null);
     } catch (e) {
       setErro(e.message || "Não foi possível ler o banco.");
@@ -90,46 +76,25 @@ export function useDados() {
     setDados((atual) => ({ ...atual, [tabela]: (atual[tabela] || []).filter((l) => l.id !== id) }));
   }, []);
 
-  return { ...dados, carregando, erro, teste: ehTeste(), recarregar: carregar, aplicar, remover };
+  return { ...dados, carregando, erro, recarregar: carregar, aplicar, remover };
 }
-
-/**
- * As três escritas do app inteiro.
- *
- * Toda tela passa por aqui — é por isso que o modo teste coube num `if`:
- * trocar o destino da escrita neste ponto troca o destino de tudo, sem que
- * TabelaEditavel, produtos ou a calculadora precisem saber que existe um
- * modo teste. O formato do retorno é o mesmo dos dois lados.
- */
 
 /** Escreve uma linha e devolve o registro atualizado. */
 export async function salvarLinha(tabela, id, campos) {
-  if (ehTeste()) return atualizarLocal(tabela, id, campos);
-  const { data, error } = await supabase.from(tabela).update(campos).eq("id", id).select().single();
-  if (error) throw error;
-  return data;
+  return api(`/${tabela}/${encodeURIComponent(id)}`, "PATCH", campos);
 }
 
 export async function inserirLinha(tabela, campos) {
-  if (ehTeste()) return inserirLocal(tabela, campos);
-  const { data, error } = await supabase.from(tabela).insert(campos).select().single();
-  if (error) throw error;
-  return data;
+  return api(`/${tabela}`, "POST", campos);
 }
 
 export async function removerLinha(tabela, id) {
-  if (ehTeste()) return removerLocal(tabela, id);
-  const { error } = await supabase.from(tabela).delete().eq("id", id);
-  if (error) throw error;
+  await api(`/${tabela}/${encodeURIComponent(id)}`, "DELETE");
 }
 
 export function tratarMensagemErro(e, tabela) {
   if (!e) return "Ocorreu um erro inesperado.";
   const code = e.code;
-
-  // O limite do teste não é uma falha do banco: a mensagem já vem pronta,
-  // escrita para quem está decidindo se compra.
-  if (code === "LIMITE_TESTE") return e.message;
 
   const msg = String(e.message || e);
 

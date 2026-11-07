@@ -1,0 +1,30 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  // Worker que serve o app inteiro (telas + API), gerado pelo OpenNext.
+  "name": "precifica-3d",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-10-01",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "observability": { "enabled": true },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "precifica-3d",
+      // Troque pelo id que `npx wrangler d1 create precifica-3d` imprimir.
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "vars": {
+    // Domínio final, sem barra no fim. Vazio = usa a origem da requisição.
+    "NEXT_PUBLIC_URL_SITE": "",
+    // E-mails que viram admin (painel /admin de anúncios), separados por vírgula.
+    "ADMIN_EMAILS": "dropcolorec@gmail.com"
+  }
+  // Segredos (NÃO ficam aqui): defina com `npx wrangler secret put NOME`
+  //   GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, ANUNCIOS_TOKEN
+}

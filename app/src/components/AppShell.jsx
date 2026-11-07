@@ -5,15 +5,13 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { motion, useReducedMotion } from "motion/react";
 import { Toast, Icon } from "@/design-system";
-import { supabase } from "@/lib/supabaseClient";
-import { ehTeste } from "@/lib/modo";
 import { irPara } from "@/lib/navegar";
-import { TutorialProvider, useTutorial } from "@/components/Tutorial";
+import { Vitrine } from "@/components/Vitrine";
 
 const NAV = [
-  { href: "/", label: "Calculadora", icone: "calculator", tour: "nav-calculadora" },
-  { href: "/produtos", label: "Produtos", icone: "box", tour: "nav-produtos" },
-  { href: "/cadastros", label: "Cadastros", icone: "layers", tour: "nav-cadastros" },
+  { href: "/", label: "Calculadora", icone: "calculator" },
+  { href: "/produtos", label: "Produtos", icone: "box" },
+  { href: "/cadastros", label: "Cadastros", icone: "layers" },
   // Gestão fica de fora do MVP: a tela continua inteira em
   // app/gestao/pagina-oculta.jsx e volta renomeando o arquivo para page.jsx e
   // devolvendo esta linha (e o "/gestao" na lista APP do middleware).
@@ -21,77 +19,51 @@ const NAV = [
   { href: "/concorrentes", label: "Concorrentes", icone: "store" },
 ];
 
-/**
- * Páginas que existem antes do acesso liberado. Elas se bastam: mostrar o
- * menu do app para quem ainda não pagou seria oferecer portas fechadas.
- */
-const SEM_MENU = ["/entrar", "/assinar", "/vendas", "/beta", "/tutorial"];
+/** Páginas que se bastam: sem menu do app e sem a vitrine no rodapé. */
+const SEM_MENU = ["/entrar"];
+
+/** Onde a vitrine de afiliados não aparece no rodapé. */
+const SEM_VITRINE = ["/entrar", "/admin"];
 
 const ToastCtx = React.createContext(() => {});
 export const useToast = () => React.useContext(ToastCtx);
 
 export function AppShell({ children }) {
-  return (
-    <TutorialProvider>
-      <Casca>{children}</Casca>
-    </TutorialProvider>
-  );
-}
-
-function Casca({ children }) {
   const pathname = usePathname();
   const reduzido = useReducedMotion();
   const [toasts, setToasts] = React.useState([]);
   const [conta, setConta] = React.useState(null);
-  const [logado, setLogado] = React.useState(null);
-  const [extras, setExtras] = React.useState({ afiliado: false, admin: false });
   // "perfil" ou nada: a única gaveta que resta é a da conta.
   const [aberto, setAberto] = React.useState(null);
   const alternar = (qual) => setAberto((v) => (v === qual ? null : qual));
   const inicial = (conta?.email || "?").trim().charAt(0).toUpperCase();
   const itens = React.useMemo(() => [
     ...NAV,
-    ...(extras.afiliado ? [{ href: "/afiliado", label: "Indicações", icone: "gift" }] : []),
-    ...(extras.admin ? [{ href: "/admin", label: "Admin", icone: "shield" }] : []),
-  ], [extras.afiliado, extras.admin]);
+    ...(conta?.admin ? [{ href: "/admin", label: "Anúncios", icone: "megaphone" }] : []),
+  ], [conta?.admin]);
 
   const publica = SEM_MENU.some((p) => pathname === p || pathname.startsWith(p + "/"));
 
+  const comVitrine = !SEM_VITRINE.some((p) => pathname === p || pathname.startsWith(p + "/"));
+
   React.useEffect(() => {
-    if (publica) return;
+    if (publica || conta) return;
     let vivo = true;
-    (async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!vivo) return;
-      // `false` e `null` querem dizer coisas diferentes: null é "ainda não
-      // sei", e é o que segura a gaveta de oferecer criar conta a quem já
-      // tem uma.
-      setLogado(!!user);
-      if (!user) return;
-      setConta(user);
-      // Duas consultas curtas que o RLS já filtra: se voltou linha, a pessoa
-      // tem aquele papel. Definem quais links aparecem no menu.
-      const [{ data: af }, { data: ad }] = await Promise.all([
-        supabase.from("afiliados").select("id").maybeSingle(),
-        supabase.from("admins").select("user_id").maybeSingle(),
-      ]);
-      if (vivo) setExtras({ afiliado: !!af, admin: !!ad });
-    })();
+    fetch("/api/auth/eu", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((d) => vivo && setConta(d.user || null))
+      .catch(() => {});
     return () => {
       vivo = false;
     };
-  }, [publica, pathname]);
+  }, [publica, conta]);
 
   React.useEffect(() => {
     setAberto(null);
   }, [pathname]);
 
   async function sair() {
-    await supabase.auth.signOut();
-    // O carimbo do modo dura 24h e não tem por que sobreviver à sessão que
-    // o gerou: deixá-lo para trás faria a próxima pessoa neste navegador
-    // ser tratada como se estivesse no teste de outra.
-    document.cookie = "dc_modo=; Max-Age=0; path=/";
+    await fetch("/api/auth/sair", { method: "POST" }).catch(() => {});
     irPara("/entrar");
   }
 
@@ -106,7 +78,6 @@ function Casca({ children }) {
           key={n.href}
           href={n.href}
           aria-current={atual ? "page" : undefined}
-          data-tutorial={n.tour}
         >
           {atual && (
             <motion.span
@@ -160,25 +131,15 @@ function Casca({ children }) {
 
                 <nav className="ap-nav" aria-label="Seções">{links(false)}</nav>
 
-                {/* Sem conta a gaveta continua existindo: é ali que mora o
-                    "ver o tutorial" e o convite para se cadastrar.
-                    Um botão de perfil que abre o vazio seria pior que não
-                    ter botão. */}
-                {(conta || logado === false) && (
+                {conta && (
                   <div className={"ap-gaveta" + (aberto === "perfil" ? " is-open" : "")}>
                     <div className="ap-conta">
-                      <span className="ap-conta__email">
-                        {conta ? conta.email : "Você está no teste grátis"}
-                      </span>
-                      {/* Só no teste: o tutorial é a demonstração de quem
-                          ainda não comprou. Quem já tem conta passou por ele
-                          e não precisa do atalho ocupando a gaveta. */}
-                      {!conta && <RepetirTutorial />}
-                      {conta ? (
-                        <button type="button" onClick={sair}>Sair</button>
-                      ) : (
-                        <Link href="/entrar?modo=criar">Criar minha conta</Link>
+                      {conta.foto_url && (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img className="ap-conta__foto" src={conta.foto_url} alt="" referrerPolicy="no-referrer" />
                       )}
+                      <span className="ap-conta__email">{conta.email}</span>
+                      <button type="button" onClick={sair}>Sair</button>
                     </div>
                   </div>
                 )}
@@ -187,18 +148,16 @@ function Casca({ children }) {
           </div>
         </header>
 
-        {/* A faixa fica fora do header, em fluxo normal: dentro dele ela
-            entraria no blur e no sticky, e uma tarja grudada no topo o dia
-            inteiro cansa mais do que avisa. */}
-        {!publica && conta && <FaixaTeste pathname={pathname} />}
-
         {/* A barra do rodapé vive fora do header de propósito: dentro dele o
             blur criaria bloco de contenção e ela deixaria de ser fixa. */}
         {!publica && (
           <nav className="ap-tabbar" aria-label="Seções">{links(true)}</nav>
         )}
 
-        <main className="ap-main">{children}</main>
+        <main className="ap-main">
+          {children}
+          {comVitrine && <Vitrine key={pathname} limite={4} recarregarEm={pathname} />}
+        </main>
 
         <div className="ap-toasts">
           {toasts.map((t) => (
@@ -213,57 +172,5 @@ function Casca({ children }) {
         </div>
       </div>
     </ToastCtx.Provider>
-  );
-}
-
-/**
- * O aviso de que os dados ainda são só deste navegador.
- *
- * Sem licença ativa o middleware carimba `dc_modo=teste` e deixa a pessoa
- * usar o app inteiro — o paywall saiu da porta de entrada de propósito
- * (ver o comentário do middleware). Só que nada dizia isso na tela: dava
- * para cadastrar impressora, filamentos e produtos achando que aquilo
- * estava guardado na conta, quando o `useDados` estava gravando tudo no
- * localStorage. Limpar o cache ou trocar de computador apagava o trabalho
- * sem aviso nenhum — e não havia como pagar mesmo querendo, porque nenhuma
- * tela levava a /assinar.
- *
- * Aparece só para quem tem conta: quem está no tutorial ainda não criou uma,
- * e cobrar de quem nem se cadastrou é justamente o que o modo teste evita.
- * Some enquanto o tutorial roda, para não disputar a atenção com o guia.
- */
-function FaixaTeste({ pathname }) {
-  const { ativo } = useTutorial();
-  // O cookie só existe no navegador, e o middleware o reescreve a cada
-  // request: reler a cada troca de tela é o que faz a faixa sumir sozinha
-  // assim que a licença é liberada.
-  const [teste, setTeste] = React.useState(false);
-  React.useEffect(() => {
-    setTeste(ehTeste());
-  }, [pathname]);
-
-  if (!teste || ativo) return null;
-
-  return (
-    <div className="ap-modoteste" role="status">
-      <span className="ap-modoteste__txt">
-        <strong>Modo teste.</strong> O que você cadastra fica salvo só neste
-        navegador. Limpar os dados do site, trocar de aparelho ou entrar em
-        outro computador e o trabalho não vem junto.
-      </span>
-      <Link href="/assinar" className="ap-modoteste__cta">
-        Guardar na minha conta
-      </Link>
-    </div>
-  );
-}
-
-/** Ver o tutorial de novo — de dentro da gaveta da conta, onde ninguém tropeça nele. */
-function RepetirTutorial() {
-  const { iniciar } = useTutorial();
-  return (
-    <button type="button" onClick={iniciar}>
-      Ver o tutorial
-    </button>
   );
 }

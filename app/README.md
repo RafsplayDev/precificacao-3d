@@ -1,61 +1,59 @@
 # Precificação 3D — Drop Color
 
 Aplicação web que substitui a planilha *Calculadora da Fórmula da Precificação 3D — FDM V2.5*.
-Next.js 14 (App Router) + Supabase, com o **Drop Color Design System** aplicado sem alteração.
+Next.js 15 (App Router) rodando no **Cloudflare Workers** (via OpenNext), banco **Cloudflare D1**,
+login com **Google** e o **Drop Color Design System** aplicado sem alteração.
 
----
+O app é **gratuito**. A renda vem da vitrine de produtos do ramo 3D com links de afiliado
+(veja [`docs/ANUNCIOS.md`](docs/ANUNCIOS.md)). Não há plano pago, lista de espera, tutorial
+de onboarding nem cobrança.
 
-## 1. Rodar o banco
+- Colocar no ar / migrar do Supabase: [`docs/MIGRACAO_CLOUDFLARE.md`](docs/MIGRACAO_CLOUDFLARE.md)
+- Abastecer a vitrine automaticamente: [`docs/ANUNCIOS.md`](docs/ANUNCIOS.md)
 
-O projeto Supabase informado (`agzqfgkmkuvxxjximyxf`) não está na conta ligada ao meu conector,
-então as tabelas não foram criadas por mim — os arquivos abaixo fazem isso em dois cliques.
-
-No painel do Supabase → **SQL Editor** → cole e rode, nesta ordem:
-
-1. `supabase/migrations/0001_schema.sql` — tabelas, colunas calculadas, views e RLS
-2. `supabase/migrations/0002_seed.sql` — impressoras, filamentos, marketplaces, bens e o Produto A
-
-Conferência: `select nome, custos_totais from public.vw_produtos_custos;`
-deve devolver **24.36248313** para o Produto A — o mesmo número da célula `C10` da planilha.
-
-> **RLS:** as políticas liberam leitura e escrita para a chave publishable (`anon`).
-> Serve para uso interno. Se o painel for para a internet aberta, troque por políticas
-> com `auth.uid()` e ponha login na frente.
-
-## 2. Rodar o app
+## Rodar localmente
 
 ```bash
 npm install
-npm run dev
+cp .dev.vars.example .dev.vars      # preencha GOOGLE_CLIENT_ID/SECRET e ANUNCIOS_TOKEN
+npm run db:migrar-local             # cria o D1 local em .wrangler/
+npm run dev                         # http://localhost:3000
 ```
 
-As chaves já estão em `.env.local`.
-
----
+`npm run preview` roda o app já empacotado no runtime do Workers (o mais próximo da produção).
 
 ## Estrutura
 
 ```
+migrations/             ← schema do D1 (wrangler d1 migrations apply)
+scripts/
+  exportar-supabase.mjs exporta os dados do Supabase para um .sql do D1
 src/
   design-system/        ← bundle Drop Color, isolado e sem edição
-    tokens/*.css        cores, tipografia, espaço, raio, sombra, motion
-    components/         Button, Card, Input, Select, Tabs, Badge, Toast…
-    styles.css          entrada única que importa todos os tokens
-    index.js            barrel "use client" — a única coisa que adicionei
   lib/
     calc.js             as fórmulas da planilha em JS (validadas dígito a dígito)
-    useDados.js         leitura/escrita no Supabase
+    useDados.js         leitura/escrita via /api/dados
     format.js           R$, %, número no padrão pt-BR
-    supabaseClient.js
+    servidor/           código que só roda no Worker
+      cf.js             acesso ao env do Worker (D1, segredos)
+      sessao.js         sessões em cookie httpOnly, guardadas (com hash) no D1
+      google.js         login com Google (OAuth 2.0 + PKCE)
+      tabelas.js        lista branca de tabelas/colunas (substitui o RLS)
+      anuncios.js       validação e regras da vitrine de afiliados
   components/
-    AppShell.jsx        header, navegação, toasts
+    AppShell.jsx        header, navegação, toasts e vitrine no rodapé
+    Vitrine.jsx         os anúncios de afiliado
     TabelaEditavel.jsx  tabela que grava célula a célula
   app/
     page.jsx            calculadora
     produtos/           peças e custos adicionais
     cadastros/          impressoras, filamentos, marketplaces, depreciação
     concorrentes/       seu preço contra o mercado
-supabase/migrations/    o SQL
+    entrar/             login com Google
+    admin/              desempenho dos anúncios (só ADMIN_EMAILS)
+    api/dados/          CRUD do usuário logado
+    api/auth/           google, callback, sair, eu
+    api/anuncios/       vitrine (GET), carga da tarefa (POST), clique (/:id/ir)
 ```
 
 O design system fica intocado: nenhum arquivo dentro de `src/design-system/` foi editado.
@@ -84,31 +82,33 @@ Desgaste por nível de uso: básico 10%, médio 20%, profissional 30%, intenso 4
 **Preço sugerido** = custos totais × markup
 **Preço no marketplace** = (preço base + taxa fixa) ÷ (1 − comissão)
 
-As mesmas contas existem em dois lugares, de propósito: nas views do Postgres
-(`vw_pecas_custos`, `vw_produtos_custos`, `vw_produtos_precos`), para quem consultar o banco
-direto, e em `src/lib/calc.js`, para o simulador responder enquanto você digita.
+As contas rodam em `src/lib/calc.js`, para o simulador responder enquanto você digita.
+As colunas derivadas dos cadastros (custo por grama, desgaste, R$/hora…) são colunas
+geradas do próprio D1.
 
 ### Uma observação sobre a fórmula original
 
 O *custo de depreciação* da planilha divide horas por reais (`uso estimado anual ÷ depreciação
 mensal`), o que não fecha dimensionalmente — o resultado não é R$, apesar de entrar na soma
 como se fosse. Mantive idêntico para o número bater com o que você já usa. Se um dia quiser
-corrigir, o ajuste é só na view `vw_pecas_custos` e na função `custosPeca`.
+corrigir, o ajuste é na função `custosPeca`.
 
 ---
 
-## Tabelas
+## Tabelas (D1)
 
 | Tabela | Origem na planilha |
 |---|---|
 | `impressoras` | Listas · Tabela_impressoras |
 | `filamentos` | Listas · Tabela_filamentos |
 | `marketplaces` | Listas · Tabela_mktplace |
-| `bens_depreciacao` | Listas · bloco de depreciação fiscal (intervalo `Depreciação`) |
-| `produtos` | aba Produto · markup, hora, preço final, simulador |
-| `pecas` | Listas · Tabela_produtos (uma linha por peça) |
-| `custos_adicionais` | aba Produto · B25:C34 |
+| `insumos`, `maos_obra` | custos adicionais e mão de obra por tipo |
+| `bens_depreciacao` | Listas · bloco de depreciação fiscal |
+| `produtos`, `pecas`, `custos_adicionais`, `produto_trabalhos`, `faixas_atacado` | aba Produto |
 | `concorrentes` | aba Produtos & Concorrentes |
+| `configuracoes` | tarifa de energia e markups padrão (uma linha por conta) |
+| `gastos`, `vendas` | tela de Gestão (oculta no MVP) |
+| `usuarios`, `sessoes` | contas Google e sessões |
+| `anuncios` | vitrine de afiliados |
 
-`impressoras`, `filamentos` e `bens_depreciacao` têm colunas `GENERATED ALWAYS` — desgaste,
-uso estimado, R$/hora, R$/grama e depreciação mensal saem prontas do banco.
+Toda linha de dado tem `user_id`; a API só lê e grava as linhas da sessão atual.

@@ -1,204 +1,61 @@
 "use client";
 import React, { Suspense } from "react";
-import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Button, Card, Input } from "@/design-system";
-import { supabase } from "@/lib/supabaseClient";
-import { irPara, caminhoInterno } from "@/lib/navegar";
-import { urlDoSite } from "@/lib/site";
-import { tutorialVisto } from "@/components/Tutorial";
+import { Card } from "@/design-system";
+import { caminhoInterno } from "@/lib/navegar";
+import { Vitrine } from "@/components/Vitrine";
 
-function traduzirErro(e) {
-  const m = String(e?.message || e || "").toLowerCase();
-  if (m.includes("invalid login credentials")) return "E-mail ou senha incorretos.";
-  if (m.includes("email not confirmed")) return "Confirme seu e-mail antes de entrar. Veja sua caixa de entrada.";
-  if (m.includes("already registered") || m.includes("already been registered"))
-    return "Já existe uma conta com este e-mail. Escolha 'Entrar'.";
-  if (m.includes("password should be at least")) return "A senha precisa ter pelo menos 6 caracteres.";
-  if (m.includes("rate limit") || m.includes("too many"))
-    return "Muitas tentativas seguidas. Espere um minuto e tente de novo.";
-  return e?.message || "Não foi possível concluir. Tente novamente.";
-}
-
+/**
+ * Entrar com o Google.
+ *
+ * Não há mais cadastro com senha nem confirmação de e-mail: o Google já
+ * confirmou quem é a pessoa. O botão é um link comum para
+ * /api/auth/google, que faz o vai-e-volta e devolve a pessoa para
+ * `proximo` com a sessão gravada em cookie.
+ */
 function Formulario() {
   const params = useSearchParams();
   const proximo = caminhoInterno(params.get("proximo"));
-
-  const [modo, setModo] = React.useState(params.get("modo") === "criar" ? "criar" : "entrar");
-  const [nome, setNome] = React.useState("");
-  // O e-mail pode vir pronto na URL — é assim que a aplicação do beta manda
-  // a pessoa para cá. O preço de fundador está amarrado ao e-mail com que ela
-  // se candidatou; deixá-la redigitar de memória era o caminho mais curto
-  // para uma conta com outro e-mail e a cobrança do preço cheio.
-  const [email, setEmail] = React.useState(params.get("email") || "");
-  const [senha, setSenha] = React.useState("");
-  const [erro, setErro] = React.useState(
-    params.get("confirmacao") === "falhou"
-      ? "Este link de confirmação já foi usado ou venceu. Entre com seu e-mail e senha; " +
-          "se ainda não deu, crie a conta de novo para receber outro link."
-      : null
-  );
-  const [aviso, setAviso] = React.useState(null);
-  const [enviando, setEnviando] = React.useState(false);
-
-  const criando = modo === "criar";
-
-  /**
-   * Quem chegou aqui empurrado por uma tela do app fez o tutorial primeiro
-   * e tem coisa digitada no navegador. Dizer que esse trabalho vai junto é
-   * o que separa "criar conta" de "recomeçar do zero".
-   */
-  const vindoDoTeste = criando && proximo !== "/";
-
-  /**
-   * O rodapé é o convite de quem chegou aqui sem saber o que é o app. Só
-   * pode ser lido no navegador (localStorage), então começa desligado e
-   * aparece depois — o contrário faria o link piscar na tela de quem
-   * acabou de sair do tutorial.
-   */
-  const [jaViuTutorial, setJaViuTutorial] = React.useState(true);
-  React.useEffect(() => {
-    setJaViuTutorial(tutorialVisto());
-  }, []);
-  const mostrarConvites = !(criando && jaViuTutorial);
-
-  async function enviar(ev) {
-    ev.preventDefault();
-    setErro(null);
-    setAviso(null);
-    setEnviando(true);
-    try {
-      if (criando) {
-        const { data, error } = await supabase.auth.signUp({
-          email: email.trim(),
-          password: senha,
-          options: {
-            data: { nome: nome.trim() },
-            // Sem isto o link do e-mail usa a "Site URL" do painel do
-            // Supabase — que aponta para o localhost do desenvolvimento e
-            // deixa quem se cadastra em produção sem como confirmar a conta.
-            emailRedirectTo: `${urlDoSite()}/auth/callback?proximo=${encodeURIComponent(proximo)}`,
-          },
-        });
-        if (error) throw error;
-
-        // Com confirmação de e-mail ligada no Supabase, o signUp não devolve
-        // sessão: a pessoa só entra depois de clicar no link. Sem sessão não
-        // adianta redirecionar — cairia de volta aqui.
-        if (!data.session) {
-          setAviso(
-            "Conta criada. Enviamos um link de confirmação para " +
-              email.trim() +
-              ". Confirme e volte para entrar."
-          );
-          setEnviando(false);
-          return;
-        }
-      } else {
-        const { error } = await supabase.auth.signInWithPassword({
-          email: email.trim(),
-          password: senha,
-        });
-        if (error) throw error;
-      }
-      // Navegação de página inteira, e não router.push: o middleware precisa
-      // rodar de novo já com o cookie de sessão recém-criado para liberar o
-      // painel. Com o push, a rota vinha do cache do cliente e a tela ficava
-      // parada na própria página de login.
-      irPara(proximo);
-      // Sem setEnviando(false) aqui: a saída é a troca de página, e reabilitar
-      // o botão durante o carregamento só convidaria a um segundo envio.
-    } catch (e) {
-      setErro(traduzirErro(e));
-      setEnviando(false);
-    }
-  }
+  const erro =
+    params.get("erro") === "google"
+      ? "Não foi possível entrar com o Google. Tente de novo; se continuar, use outra conta Google."
+      : null;
+  const href = `/api/auth/google?proximo=${encodeURIComponent(proximo)}`;
 
   return (
     <div className="ap-auth">
       <Card>
         <div className="ap-auth__cabeca">
-          <h1>{criando ? "Criar conta" : "Entrar"}</h1>
+          <h1>Precificação 3D</h1>
           <p>
-            {!criando
-              ? "Bem-vindo de volta à sua calculadora."
-              : vindoDoTeste
-                ? "Leva um minuto. O que você cadastrou no teste continua aí e vai junto para a sua conta."
-                : "Leva um minuto. Depois é só liberar o acesso."}
+            Calcule custo e preço de venda das suas impressões 3D. É grátis: entre com
+            sua conta Google para salvar impressoras, filamentos e produtos.
           </p>
         </div>
 
-        <form onSubmit={enviar} className="ap-auth__form">
-          {criando && (
-            <Input
-              id="cadastro-nome" label="Seu nome"
-              value={nome}
-              onChange={(e) => setNome(e.target.value)}
-              autoComplete="name"
-              required
-            />
-          )}
-          <Input
-            id="auth-email" label="E-mail"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            autoComplete="email"
-            required
-          />
-          <Input
-            id="auth-senha" label="Senha"
-            type="password"
-            value={senha}
-            onChange={(e) => setSenha(e.target.value)}
-            autoComplete={criando ? "new-password" : "current-password"}
-            hint={criando ? "Mínimo de 6 caracteres." : undefined}
-            minLength={6}
-            required
-          />
-
+        <div className="ap-auth__form">
           {erro && <p className="ap-auth__erro">{erro}</p>}
-          {aviso && <p className="ap-auth__aviso">{aviso}</p>}
-
-          <Button type="submit" block disabled={enviando}>
-            {enviando ? "Aguarde…" : criando ? "Criar minha conta" : "Entrar"}
-          </Button>
-        </form>
-
-        <div className="ap-auth__troca">
-          {criando ? (
-            <>
-              Já tem conta?{" "}
-              <button type="button" onClick={() => { setModo("entrar"); setErro(null); }}>
-                Entrar
-              </button>
-            </>
-          ) : (
-            <>
-              Ainda não tem acesso?{" "}
-              <button type="button" onClick={() => { setModo("criar"); setErro(null); }}>
-                Criar conta
-              </button>
-            </>
-          )}
+          <a className="ap-google" href={href} rel="nofollow">
+            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 48 48">
+              <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/>
+              <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/>
+              <path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/>
+              <path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/>
+            </svg>
+            Entrar com Google
+          </a>
+          <p className="ap-auth__rodape">
+            Ao entrar, você concorda em guardarmos seu nome, e-mail e os dados que você
+            cadastrar no app, só para o app funcionar.
+          </p>
         </div>
-
-        {mostrarConvites && (
-        <p className="ap-auth__rodape">
-          <Link href="/vendas">Conhecer a Precificação 3D</Link>
-          {" · "}
-          {/* A saída para quem caiu aqui sem querer criar conta ainda: o
-              tutorial roda sem cadastro e mostra o preço de uma peça real. */}
-          <Link href="/tutorial">Testar sem cadastro</Link>
-        </p>
-        )}
       </Card>
+      <Vitrine limite={3} titulo="Achados para sua impressora 3D" />
     </div>
   );
 }
 
 export default function EntrarPage() {
-  // useSearchParams exige Suspense para a página não virar dinâmica inteira.
   return (
     <Suspense fallback={null}>
       <Formulario />

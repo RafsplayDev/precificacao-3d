@@ -95,6 +95,7 @@ export default function Admin() {
                 <th>Categoria</th>
                 <th className="num">Preço</th>
                 <th>Cupom</th>
+                <th>Medalha</th>
                 <th className="num">Pontuação</th>
                 <th className="num">Impressões</th>
                 <th className="num">Cliques</th>
@@ -114,6 +115,13 @@ export default function Admin() {
                   <td>{a.categoria}</td>
                   <td className="num">{a.preco != null ? money(a.preco) : "—"}</td>
                   <td>{a.cupom_codigo || "—"}</td>
+                  <td title={a.medalha?.motivo || ""}>
+                    {a.medalha?.nivel
+                      ? a.medalha.nivel[0].toUpperCase() + a.medalha.nivel.slice(1)
+                      : a.medalha?.aquecendo
+                        ? `aquecendo (${a.medalha.aquecendo.faltam} d)`
+                        : "—"}
+                  </td>
                   <td className="num">{num(a.pontuacao, 1)}</td>
                   <td className="num">{a.impressoes.toLocaleString("pt-BR")}</td>
                   <td className="num">{a.cliques.toLocaleString("pt-BR")}</td>
@@ -122,7 +130,7 @@ export default function Admin() {
                 </tr>
               ))}
               {lista && lista.length === 0 && (
-                <tr><td colSpan={11}>Nenhum anúncio ainda. A tarefa automática publica em POST /api/anuncios.</td></tr>
+                <tr><td colSpan={12}>Nenhum anúncio ainda. A tarefa automática publica em POST /api/anuncios.</td></tr>
               )}
             </tbody>
           </table>

@@ -1,7 +1,7 @@
 "use client";
 import React from "react";
 import Link from "next/link";
-import { Vitrine } from "@/components/Vitrine";
+import { Vitrine, Medalha, MEDALHAS, textoWhatsApp } from "@/components/Vitrine";
 import { Catalogo } from "@/components/Catalogo";
 import { ANUNCIOS_EXEMPLO } from "@/lib/anunciosExemplo";
 
@@ -34,6 +34,35 @@ export default function PreviaVitrine() {
         do app (com 4 produtos) e o catálogo completo fica em <strong>Achados</strong>. Compare
         os estilos A, B e C e escolha um para o rodapé.
       </p>
+
+      <section className="ap-previa__opcao">
+        <div className="ap-previa__rotulo">
+          <strong>Medalhas</strong>
+          <span>
+            Calculadas pelo histórico de preços do próprio site, depois de {14} dias de aquecimento.
+            O motivo aparece embaixo do preço.
+          </span>
+        </div>
+        <div className="ap-previa__medalhas">
+          {["ouro", "prata", "bronze"].map((n) => (
+            <div key={n} className="ap-previa__medalha">
+              <Medalha nivel={n} tamanho={32} />
+              <div>
+                <strong>{MEDALHAS[n].nome} · {MEDALHAS[n].rotulo}</strong>
+                <span>{{
+                  ouro: "No menor preço dos últimos 30 dias e 15% ou mais abaixo da média.",
+                  prata: "10% ou mais abaixo da média dos últimos 30 dias.",
+                  bronze: "5% ou mais abaixo da média dos últimos 30 dias.",
+                }[n]}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="ap-previa__whats">
+          <strong>Texto do botão Compartilhar no WhatsApp</strong>
+          <pre>{textoWhatsApp(ANUNCIOS_EXEMPLO[0], "https://precifica.dropcolor.com.br")}</pre>
+        </div>
+      </section>
 
       <section className="ap-previa__opcao">
         <div className="ap-previa__rotulo">

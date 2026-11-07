@@ -417,3 +417,46 @@
   padding: var(--space-2); border: 1px dashed var(--border-default); border-radius: var(--radius-sm);
   text-decoration: none;
 }
+
+/* ---- Chamada, medalha, motivo e extras ---- */
+.ap-vchamada {
+  display: flex; align-items: flex-start; gap: 6px;
+  font-size: 12px; line-height: 1.3; font-weight: var(--weight-semibold);
+  text-transform: uppercase; letter-spacing: .01em; color: var(--text-strong);
+}
+.ap-vchamada .ap-vmedalha { flex: none; margin-top: -4px; }
+.ap-vchamada--grande { font-size: 14px; }
+.ap-vmotivo { font-size: 11.5px; line-height: 1.35; font-weight: var(--weight-medium); }
+.ap-vmotivo--ouro { color: #9A7206; }
+.ap-vmotivo--prata { color: #5F6772; }
+.ap-vmotivo--bronze { color: #8A4F24; }
+.ap-vobs { font-size: 12px; color: var(--text-body); }
+.ap-vpreco__cond { font-style: normal; font-size: 12px; color: var(--text-muted); }
+.ap-vcard { position: relative; }
+.ap-vcompartilhar {
+  position: absolute; top: var(--space-2); left: var(--space-2); z-index: 2;
+  display: grid; place-items: center; width: 32px; height: 32px; padding: 0;
+  border: 0; border-radius: 50%; cursor: pointer;
+  background: rgba(255,255,255,.92); color: #1FA855; box-shadow: 0 1px 4px rgba(8,9,11,.18);
+  opacity: 0; transition: opacity var(--dur-fast) var(--ease-out);
+}
+.ap-vcard:hover .ap-vcompartilhar, .ap-vcompartilhar:focus-visible { opacity: 1; }
+@media (hover: none) { .ap-vcompartilhar { opacity: 1; } }
+/* Com o botão de compartilhar no canto esquerdo, o selo desce para o pé da imagem (já está lá). */
+.ap-vlinha__meta { display: flex; align-items: center; flex-wrap: wrap; gap: 4px var(--space-2); }
+.ap-vmotivo, .ap-vobs { display: flex; align-items: flex-start; gap: 4px; }
+.ap-vmotivo .dc-icon, .ap-vobs .dc-icon, .ap-vmotivo svg, .ap-vobs svg { flex: none; margin-top: 1px; }
+.ap-previa__medalhas { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: var(--space-3); margin-bottom: var(--space-5); }
+.ap-previa__medalha {
+  display: flex; gap: var(--space-3); align-items: center; padding: var(--space-4);
+  background: var(--surface-card); border: var(--border-w) solid var(--border-hairline); border-radius: var(--radius-md);
+}
+.ap-previa__medalha div { display: flex; flex-direction: column; gap: 2px; font-size: var(--text-body-sm); color: var(--text-muted); }
+.ap-previa__medalha strong { color: var(--text-strong); }
+.ap-previa__whats { max-width: 460px; }
+.ap-previa__whats strong { display: block; font-size: var(--text-body-sm); color: var(--text-strong); margin-bottom: var(--space-2); }
+.ap-previa__whats pre {
+  margin: 0; padding: var(--space-4); white-space: pre-wrap; font-family: inherit; font-size: 13px; line-height: 1.45;
+  background: #E7FFDB; color: #111B21; border-radius: var(--radius-md) var(--radius-md) var(--radius-md) 4px;
+}
+.ap-chip--medalha.is-on { background: #8A6A06; border-color: #8A6A06; }

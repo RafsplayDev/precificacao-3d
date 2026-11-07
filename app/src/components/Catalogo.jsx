@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import { CartaoAnuncio } from "@/components/Vitrine";
+import { CartaoAnuncio, Medalha } from "@/components/Vitrine";
 
 export const CATEGORIAS_ROTULO = {
   filamentos: "Filamentos",
@@ -25,6 +25,7 @@ const LOJAS = [
 
 const ORDENS = [
   { valor: "destaque", rotulo: "Destaques" },
+  { valor: "melhores", rotulo: "Melhores ofertas" },
   { valor: "desconto", rotulo: "Maior desconto" },
   { valor: "menor-preco", rotulo: "Menor preço" },
   { valor: "avaliacao", rotulo: "Mais bem avaliados" },
@@ -40,6 +41,7 @@ export function Catalogo({ exemplo }) {
   const [loja, setLoja] = React.useState("");
   const [categoria, setCategoria] = React.useState("");
   const [cupom, setCupom] = React.useState(false);
+  const [medalha, setMedalha] = React.useState(false);
   const [ordem, setOrdem] = React.useState("destaque");
   const [itens, setItens] = React.useState(null);
   const [todasCategorias, setTodasCategorias] = React.useState([]);
@@ -47,7 +49,10 @@ export function Catalogo({ exemplo }) {
   React.useEffect(() => {
     if (exemplo) {
       let l = exemplo.filter((a) =>
-        (!loja || a.loja_codigo === loja) && (!categoria || a.categoria === categoria) && (!cupom || a.cupom));
+        (!loja || a.loja_codigo === loja) && (!categoria || a.categoria === categoria) && (!cupom || a.cupom)
+        && (!medalha || a.medalha));
+      const rank = (a) => ({ ouro: 3, prata: 2, bronze: 1 })[a.medalha?.nivel] || 0;
+      if (ordem === "melhores") l = [...l].sort((a, b) => rank(b) - rank(a));
       const desc = (a) => (a.preco_original > a.preco ? 1 - a.preco / a.preco_original : 0);
       if (ordem === "desconto") l = [...l].sort((a, b) => desc(b) - desc(a));
       if (ordem === "menor-preco") l = [...l].sort((a, b) => a.preco - b.preco);
@@ -60,6 +65,7 @@ export function Catalogo({ exemplo }) {
     if (loja) q.set("loja", loja);
     if (categoria) q.set("categoria", categoria);
     if (cupom) q.set("cupom", "1");
+    if (medalha) q.set("medalha", "1");
     fetch(`/api/anuncios?${q}`, { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : { anuncios: [] }))
       .then((d) => vivo && setItens(d.anuncios || []))
@@ -67,7 +73,7 @@ export function Catalogo({ exemplo }) {
     return () => {
       vivo = false;
     };
-  }, [exemplo, loja, categoria, cupom, ordem]);
+  }, [exemplo, loja, categoria, cupom, medalha, ordem]);
 
   // As categorias que aparecem nos chips são as que têm produto — sem
   // filtro de categoria aplicado, para o chip não sumir depois de clicado.
@@ -104,6 +110,10 @@ export function Catalogo({ exemplo }) {
           <input type="checkbox" checked={cupom} onChange={(e) => setCupom(e.target.checked)} />
           Só com cupom
         </label>
+        <label className={"ap-chip ap-chip--medalha" + (medalha ? " is-on" : "")}>
+          <input type="checkbox" checked={medalha} onChange={(e) => setMedalha(e.target.checked)} />
+          <Medalha nivel="ouro" tamanho={12} /> Com medalha
+        </label>
         <label className="ap-catalogo__ordem">
           <span>Ordenar</span>
           <select value={ordem} onChange={(e) => setOrdem(e.target.value)}>
@@ -130,7 +140,7 @@ export function Catalogo({ exemplo }) {
         <p className="ap-catalogo__vazio">Carregando achados…</p>
       ) : itens.length === 0 ? (
         <p className="ap-catalogo__vazio">
-          {loja || categoria || cupom
+          {loja || categoria || cupom || medalha
             ? "Nenhum achado com esses filtros agora. Tente tirar algum."
             : "Os achados estão sendo selecionados. Volte em breve."}
         </p>

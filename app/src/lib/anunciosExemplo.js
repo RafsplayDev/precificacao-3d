@@ -32,6 +32,8 @@ const base = (i, p) => ({
 
 export const ANUNCIOS_EXEMPLO = [
   base(1, {
+    chamada: "Arco-íris no carretel, lucro no bolso", condicao_preco: "no Pix",
+    medalha: { nivel: "ouro", motivo: "Menor preço em 30 dias · 24% abaixo da média" },
     loja_codigo: "shopee", categoria: "filamentos",
     titulo: "Filamento PLA Silk 1kg 1,75mm Arco-íris Dupla Cor",
     imagem_url: ilustracao("carretel", "#FF2D6F"),
@@ -39,6 +41,8 @@ export const ANUNCIOS_EXEMPLO = [
     cupom: { codigo: "FILAMENTO10", descricao: "10% off acima de R$ 80" },
   }),
   base(2, {
+    chamada: "O PETG que aguenta o tranco", observacao: "De 2 unidades em diante sai R$ 89,90 cada",
+    medalha: null,
     loja_codigo: "mercado-livre", categoria: "filamentos",
     titulo: "Filamento PETG 1kg 1,75mm Preto Alta Resistência",
     imagem_url: ilustracao("carretel", "#15171B"),
@@ -46,6 +50,8 @@ export const ANUNCIOS_EXEMPLO = [
     cupom: null,
   }),
   base(3, {
+    chamada: "Bico entupiu? Troca e segue o baile", condicao_preco: "o kit",
+    medalha: { nivel: "prata", motivo: "12% abaixo da média de 30 dias (R$ 28,30)" },
     loja_codigo: "shopee", categoria: "bicos-hotend",
     titulo: "Kit 10 Bicos 0,4mm Latão MK8 para Ender 3 / CR-10",
     imagem_url: ilustracao("bico", "#FF7A18"),
@@ -53,6 +59,8 @@ export const ANUNCIOS_EXEMPLO = [
     cupom: { codigo: "BICO5", descricao: "R$ 5 off na primeira compra" },
   }),
   base(4, {
+    chamada: "Peça soltando da mesa? Acabou o drama",
+    medalha: { nivel: "bronze", motivo: "7% abaixo da média de 30 dias (R$ 85,90)" },
     loja_codigo: "mercado-livre", categoria: "mesas-superficies",
     titulo: "Mesa PEI Texturizada Magnética 235x235mm Dupla Face",
     imagem_url: ilustracao("mesa", "#C9A227"),
@@ -60,6 +68,8 @@ export const ANUNCIOS_EXEMPLO = [
     cupom: { codigo: "MESA15", descricao: "R$ 15 off acima de R$ 70" },
   }),
   base(5, {
+    chamada: "Filamento úmido nunca mais", condicao_preco: "no Pix",
+    medalha: { nivel: "prata", motivo: "11% abaixo da média de 30 dias (R$ 212,40)" },
     loja_codigo: "shopee", categoria: "secadores-armazenamento",
     titulo: "Secador de Filamento com Controle de Temperatura e Umidade",
     imagem_url: ilustracao("secador", "#16C0F0"),
@@ -67,6 +77,7 @@ export const ANUNCIOS_EXEMPLO = [
     cupom: null,
   }),
   base(6, {
+    chamada: null, medalha: null,
     loja_codigo: "mercado-livre", categoria: "ferramentas",
     titulo: "Espátula de Remoção para Mesa de Impressora 3D Inox",
     imagem_url: ilustracao("ferramenta", "#7B5BFF"),
@@ -74,6 +85,8 @@ export const ANUNCIOS_EXEMPLO = [
     cupom: null,
   }),
   base(7, {
+    chamada: "Acabamento de vitrine sem sair de casa",
+    medalha: { nivel: "ouro", motivo: "Menor preço em 30 dias · 18% abaixo da média" },
     loja_codigo: "shopee", categoria: "acabamento",
     titulo: "Kit Acabamento 3D: Lixas, Estiletes e Rebarbador (12 peças)",
     imagem_url: ilustracao("kit", "#0FD9A0"),
@@ -81,6 +94,8 @@ export const ANUNCIOS_EXEMPLO = [
     cupom: { codigo: "KIT3D", descricao: "Frete grátis acima de R$ 39" },
   }),
   base(8, {
+    chamada: "Flexível como o seu prazo de entrega", observacao: "Leve 3 e ganhe 10% OFF",
+    medalha: null,
     loja_codigo: "mercado-livre", categoria: "filamentos",
     titulo: "Filamento TPU Flexível 95A 500g 1,75mm Branco",
     imagem_url: ilustracao("carretel", "#FFFFFF"),

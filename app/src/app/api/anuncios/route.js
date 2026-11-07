@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/servidor/cf";
 import { normalizarProduto, podeGerenciar, ehTarefa, paraVitrine, MAX_LOTE, CATEGORIAS, LOJAS } from "@/lib/servidor/anuncios";
 import { gerarLinkShopee, credenciaisShopee } from "@/lib/servidor/shopee";
+import { estatisticasHistorico, medalhaDe, ORDEM_MEDALHA, REGRAS } from "@/lib/servidor/medalhas";
 
 export const dynamic = "force-dynamic";
 
@@ -24,8 +25,10 @@ export async function GET(req) {
   if (p.get("todos")) {
     if (!(await podeGerenciar(req))) return json({ message: "Sem permissão." }, 403);
     const { results } = await banco.prepare("SELECT * FROM anuncios ORDER BY ativo DESC, pontuacao DESC").all();
+    const est = await estatisticasHistorico(banco, results.map((a) => a.origem_id));
     return json({
-      anuncios: results,
+      anuncios: results.map((a) => ({ ...a, medalha: medalhaDe(a, est[a.origem_id]) })),
+      regras_medalha: REGRAS,
       categorias: CATEGORIAS,
       lojas: Object.keys(LOJAS),
       shopee_api: !!(await credenciaisShopee()),
@@ -63,7 +66,15 @@ export async function GET(req) {
     desconto: "(CASE WHEN preco_original > preco THEN 1 - preco / preco_original ELSE 0 END) DESC, pontuacao DESC",
     avaliacao: "avaliacao IS NULL, avaliacao DESC, num_avaliacoes DESC",
   };
+  // "melhores": medalha primeiro (ordenado depois do cálculo), destaque como desempate.
+  ORDENS.melhores = ORDENS.destaque;
   const ordenarPor = ORDENS[ordem] || ORDENS.destaque;
+
+  // Medalha não é coluna: sai do histórico. Para filtrar ou ordenar por ela,
+  // a consulta traz mais produtos e o corte acontece depois do cálculo.
+  const soMedalha = !!p.get("medalha");
+  const porMedalha = ordem === "melhores";
+  const buscar = soMedalha || porMedalha ? 200 : limite;
 
   const { results } = await banco
     .prepare(
@@ -71,18 +82,26 @@ export async function GET(req) {
         ORDER BY ${ordenarPor}
         LIMIT ?`
     )
-    .bind(...valores, limite)
+    .bind(...valores, buscar)
     .all();
 
-  if (results.length) {
-    const ids = results.map((a) => a.id);
+  const est = await estatisticasHistorico(banco, results.map((a) => a.origem_id));
+  let lista = results.map((a) => ({ a, m: medalhaDe(a, est[a.origem_id]) }));
+  if (soMedalha) lista = lista.filter((x) => x.m.nivel);
+  if (porMedalha) {
+    lista.sort((x, y) => (ORDEM_MEDALHA[y.m.nivel] || 0) - (ORDEM_MEDALHA[x.m.nivel] || 0));
+  }
+  lista = lista.slice(0, limite);
+
+  if (lista.length) {
+    const ids = lista.map((x) => x.a.id);
     await banco
-      .prepare(`UPDATE anuncios SET impressoes = impressoes + 1 WHERE id IN (${ids.map(() => "?").join(",")})`)
-      .bind(...ids)
+      .prepare("UPDATE anuncios SET impressoes = impressoes + 1 WHERE id IN (SELECT value FROM json_each(?))")
+      .bind(JSON.stringify(ids))
       .run();
   }
 
-  return json({ anuncios: results.map(paraVitrine) }, 200, { "cache-control": "no-store" });
+  return json({ anuncios: lista.map((x) => paraVitrine(x.a, x.m)) }, 200, { "cache-control": "no-store" });
 }
 
 /**
@@ -147,6 +166,19 @@ export async function POST(req) {
       .bind(crypto.randomUUID(), ...cols.map((c) => linha[c]), agora);
   });
 
+  // O preço de hoje vai para o histórico (um por dia; o último do dia vale).
+  for (const { linha, enviados } of validos) {
+    if (linha.preco == null || !enviados.includes("preco")) continue;
+    stmts.push(
+      banco
+        .prepare(
+          `INSERT INTO precos_historico (origem_id, dia, preco) VALUES (?, date('now'), ?)
+           ON CONFLICT(origem_id, dia) DO UPDATE SET preco = excluded.preco`
+        )
+        .bind(linha.origem_id, linha.preco)
+    );
+  }
+
   const desativar = corpo?.desativar_ausentes && validos.length;
   if (desativar) {
     const ids = validos.map((v) => v.linha.origem_id);
@@ -154,9 +186,9 @@ export async function POST(req) {
       banco
         .prepare(
           `UPDATE anuncios SET ativo = 0, atualizado_em = ?
-            WHERE ativo = 1 AND origem_id NOT IN (${ids.map(() => "?").join(",")})`
+            WHERE ativo = 1 AND origem_id NOT IN (SELECT value FROM json_each(?))`
         )
-        .bind(agora, ...ids)
+        .bind(agora, JSON.stringify(ids))
     );
   }
 
@@ -174,9 +206,9 @@ export async function POST(req) {
     const { results } = await banco
       .prepare(
         `SELECT origem_id, loja, titulo, url_produto FROM anuncios
-          WHERE link_afiliado IS NULL AND origem_id IN (${ids.map(() => "?").join(",")})`
+          WHERE link_afiliado IS NULL AND origem_id IN (SELECT value FROM json_each(?))`
       )
-      .bind(...ids)
+      .bind(JSON.stringify(ids))
       .all();
     pendentes_link = results;
   }

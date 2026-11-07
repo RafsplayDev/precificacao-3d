@@ -95,6 +95,9 @@ Content-Type: application/json
 | `imagem_url` | não | `https://`. |
 | `preco`, `preco_original` | não | Reais. Com `preco_original` maior, o antigo aparece riscado. |
 | `avaliacao`, `num_avaliacoes`, `vendas`, `comissao_pct` | não | Usados no painel e para a tarefa decidir; só nota e avaliações aparecem na vitrine. |
+| `chamada` | não | Frase curta (até 70 caracteres), direta e com bom humor, como nos grupos de promoção: "Bico entupiu? Troca e segue o baile". **Sem emoji** (o site remove). Aparece em caixa alta acima do produto. |
+| `condicao_preco` | não | Condição do preço, até 20 caracteres: "no Pix", "cada", "o kit". |
+| `observacao` | não | Uma vantagem extra que não é cupom, até 70 caracteres: "De 1 a 3 unidades com 20% OFF". Sem emoji. |
 | `selo` | não | Etiqueta curta, ex.: `-25%`, `Frete grátis`. |
 | `cupom_codigo` | não | Código do cupom (até 40 caracteres, vira maiúsculo). |
 | `cupom_descricao` | não | O que o cupom dá, ex.: `R$ 20 off acima de R$ 150`. |
@@ -122,6 +125,24 @@ Devolve todos os anúncios com `impressoes`, `cliques`, `ativo`, `link_afiliado`
 
 `PATCH /api/anuncios/<id>` com `{ "ativo": false }`, `{ "pontuacao": 3 }` ou
 `{ "cupom_codigo": null }` ajusta um anúncio; `DELETE /api/anuncios/<id>` remove.
+
+## Medalhas (ouro, prata e bronze)
+
+Calculadas pelo site, **nunca pela tarefa**, só com o histórico próprio de preços:
+cada vez que a tarefa envia um produto com `preco`, o preço do dia é guardado em
+`precos_historico` (um por dia).
+
+- **Aquecimento:** o produto só concorre depois de 14 dias desde o primeiro registro e
+  com preço visto em pelo menos 4 dias diferentes. Antes disso, `medalha.aquecendo`
+  diz quantos dias faltam.
+- **Referência:** menor preço e média dos 30 dias anteriores a hoje.
+- **Ouro:** no menor preço já visto e 15% ou mais abaixo da média.
+- **Prata:** 10% ou mais abaixo da média. **Bronze:** 5% ou mais.
+- Nota abaixo de 4 não ganha medalha.
+
+As regras ficam em `src/lib/servidor/medalhas.js` (`REGRAS`). Para a medalha funcionar,
+a tarefa precisa **reenviar o preço atual dos produtos ativos em toda rodada**, mesmo dos
+que não mudaram.
 
 ## Como a vitrine escolhe
 
@@ -160,7 +181,14 @@ afiliado. O selo "Patrocinado" e o `rel="sponsored"` identificam a publicidade.
 > 6. **Desative** (`ativo: false`) o que estiver sem estoque, mais caro, com nota menor ou
 >    com CTR bem abaixo da média depois de 500 impressões. Remova cupons vencidos
 >    (`cupom_codigo: null`).
-> 7. **Envie** tudo num `POST /api/anuncios` com `origem_id` estável (`shopee:<itemId>`,
+> 7. **Chamada:** para cada produto, escreva uma `chamada` curta (até 70 caracteres),
+>    direta e com bom humor, no estilo de grupo de promoções ("Peça soltando da mesa?
+>    Acabou o drama"). **Nunca use emoji.** Preencha `condicao_preco` ("no Pix", "cada")
+>    e `observacao` para vantagens que não são cupom ("De 1 a 3 unidades com 20% OFF").
+>    Não invente medalha nem desconto: as medalhas o site calcula sozinho.
+> 8. **Reenvie o preço atual de todos os produtos ativos**, mesmo os que não mudaram: é
+>    isso que forma o histórico das medalhas.
+> 9. **Envie** tudo num `POST /api/anuncios` com `origem_id` estável (`shopee:<itemId>`,
 >    `mercadolivre:<MLB…>`). Ofertas relâmpago levam `expira_em`.
-> 8. **Resuma:** gravados, desativados, erros, a lista `pendentes_link` (para eu gerar os
+> 10. **Resuma:** gravados, desativados, erros, a lista `pendentes_link` (para eu gerar os
 >    links do Mercado Livre) e o top 5 por CTR.

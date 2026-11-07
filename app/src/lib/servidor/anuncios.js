@@ -26,6 +26,18 @@ function texto(v, max) {
   return s ? s.slice(0, max) : null;
 }
 
+/**
+ * Sem emoji: a chamada e a vantagem extra são texto. Os ícones são do
+ * próprio site, e um emoji vindo da tarefa destoaria deles.
+ */
+function semEmoji(v) {
+  if (v == null) return v;
+  return String(v)
+    .replace(/[\p{Extended_Pictographic}\u{1F1E6}-\u{1F1FF}\u{FE0F}\u{200D}\u{20E3}]/gu, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 function numero(v) {
   if (v === undefined || v === null || v === "") return null;
   const n = Number(String(v).replace(",", "."));
@@ -87,7 +99,7 @@ function data(v) {
 }
 
 /** Campos opcionais: numa atualização, só mudam os que vieram no envio. */
-const OPCIONAIS = ["descricao", "categoria", "imagem_url", "url_produto", "link_afiliado", "preco",
+const OPCIONAIS = ["chamada", "condicao_preco", "observacao", "descricao", "categoria", "imagem_url", "url_produto", "link_afiliado", "preco",
   "preco_original", "avaliacao", "num_avaliacoes", "vendas", "comissao_pct", "selo",
   "cupom_codigo", "cupom_descricao", "cupom_validade", "pontuacao", "ativo", "expira_em"];
 
@@ -133,6 +145,9 @@ export function normalizarProduto(p) {
       loja,
       titulo,
       descricao: texto(p.descricao, 400),
+      chamada: texto(semEmoji(p.chamada), 70),
+      condicao_preco: texto(p.condicao_preco, 20),
+      observacao: texto(semEmoji(p.observacao), 70),
       categoria: CATEGORIAS.includes(cat) ? cat : "outros",
       imagem_url: p.imagem_url && urlHttps(p.imagem_url) ? urlHttps(p.imagem_url).toString() : null,
       url_produto,
@@ -175,13 +190,16 @@ export async function podeGerenciar(req) {
 }
 
 /** O que o navegador recebe: sem métricas internas, com o link de clique rastreado. */
-export function paraVitrine(a) {
+export function paraVitrine(a, medalha) {
   const cupomValendo = a.cupom_codigo && (!a.cupom_validade || a.cupom_validade > new Date().toISOString());
   return {
     id: a.id,
     loja: LOJAS[a.loja]?.nome || a.loja,
     loja_codigo: a.loja,
     titulo: a.titulo,
+    chamada: a.chamada,
+    condicao_preco: a.condicao_preco,
+    observacao: a.observacao,
     descricao: a.descricao,
     categoria: a.categoria,
     imagem_url: a.imagem_url,
@@ -191,6 +209,7 @@ export function paraVitrine(a) {
     num_avaliacoes: a.num_avaliacoes,
     selo: a.selo,
     cupom: cupomValendo ? { codigo: a.cupom_codigo, descricao: a.cupom_descricao } : null,
+    medalha: medalha?.nivel ? { nivel: medalha.nivel, motivo: medalha.motivo } : null,
     href: `/api/anuncios/${a.id}/ir`,
   };
 }

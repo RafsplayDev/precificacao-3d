@@ -2,6 +2,7 @@
 import React from "react";
 import Link from "next/link";
 import { money } from "@/lib/format";
+import { Icon } from "@/design-system";
 
 /**
  * A vitrine de produtos com link de afiliado — a fonte de renda do app.
@@ -76,9 +77,9 @@ function ListaAnuncios({ itens }) {
           <a className="ap-vlinha__link" href={a.href} target="_blank" rel="sponsored nofollow noopener">
             <Imagem a={a} />
             <span className="ap-vlinha__info">
-              <Loja a={a} />
+              <Chamada a={a} />
               <span className="ap-vcard__titulo">{a.titulo}</span>
-              <Nota a={a} />
+              <span className="ap-vlinha__meta"><Loja a={a} /><Nota a={a} /></span>
             </span>
             <span className="ap-vlinha__lado">
               <Preco a={a} />
@@ -101,11 +102,15 @@ function DestaqueAnuncios({ itens }) {
         <a className="ap-vdestaque__link" href={principal.href} target="_blank" rel="sponsored nofollow noopener">
           <Imagem a={principal} grande />
           <span className="ap-vdestaque__info">
-            <span className="ap-vdestaque__chamada">Oferta em destaque</span>
+            {principal.chamada || principal.medalha
+              ? <Chamada a={principal} grande />
+              : <span className="ap-vdestaque__chamada">Oferta em destaque</span>}
             <Loja a={principal} />
             <span className="ap-vdestaque__titulo">{principal.titulo}</span>
             <Nota a={principal} />
             <Preco a={principal} grande />
+            <Motivo a={principal} />
+            {principal.observacao && <Observacao texto={principal.observacao} />}
             <span className="ap-vbotao">Ver {daLoja(principal)}</span>
           </span>
         </a>
@@ -129,13 +134,17 @@ export function CartaoAnuncio({ a, compacto = false }) {
       <a className="ap-vcard__link" href={a.href} target="_blank" rel="sponsored nofollow noopener">
         <Imagem a={a} />
         <span className="ap-vcard__corpo">
+          <Chamada a={a} />
           <Loja a={a} />
           <span className="ap-vcard__titulo">{a.titulo}</span>
           <Nota a={a} />
           <Preco a={a} />
+          <Motivo a={a} />
+          {a.observacao && !compacto && <Observacao texto={a.observacao} />}
           {!compacto && <span className="ap-vbotao ap-vbotao--contorno">Ver {daLoja(a)}</span>}
         </span>
       </a>
+      {!compacto && <Compartilhar a={a} />}
       {a.cupom && <Cupom cupom={a.cupom} />}
     </article>
   );
@@ -190,7 +199,107 @@ function Preco({ a, grande = false }) {
     <span className={"ap-vpreco" + (grande ? " ap-vpreco--grande" : "")}>
       {a.preco_original > a.preco && <s>{money(a.preco_original)}</s>}
       <strong>{money(a.preco)}</strong>
+      {a.condicao_preco && <em className="ap-vpreco__cond">{a.condicao_preco}</em>}
     </span>
+  );
+}
+
+/* ---- Medalha e chamada ---- */
+
+export const MEDALHAS = {
+  ouro: { nome: "Ouro", rotulo: "Menor preço", de: "#FFE08A", ate: "#D4A017", borda: "#A87C0A" },
+  prata: { nome: "Prata", rotulo: "Ótimo preço", de: "#F2F4F7", ate: "#A9B0BA", borda: "#7D8591" },
+  bronze: { nome: "Bronze", rotulo: "Bom preço", de: "#F6C49A", ate: "#B9703A", borda: "#8A4F24" },
+};
+
+/** A medalha desenhada: fita + moeda, nas cores do metal. */
+export function Medalha({ nivel, tamanho = 18 }) {
+  const m = MEDALHAS[nivel];
+  if (!m) return null;
+  const id = `med-${nivel}`;
+  return (
+    <svg className="ap-vmedalha" width={tamanho} height={tamanho * 1.25} viewBox="0 0 20 25" role="img" aria-label={`Medalha de ${m.nome.toLowerCase()}`}>
+      <defs>
+        <linearGradient id={id} x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor={m.de} />
+          <stop offset="1" stopColor={m.ate} />
+        </linearGradient>
+      </defs>
+      <path d="M5 0h4l2 7H7z" fill="#FF2D6F" />
+      <path d="M15 0h-4l-2 7h4z" fill="#C8164F" />
+      <circle cx="10" cy="15.5" r="8" fill={`url(#${id})`} stroke={m.borda} strokeWidth="1.2" />
+      <circle cx="10" cy="15.5" r="5" fill="none" stroke="#fff" strokeOpacity=".55" strokeWidth="1" />
+    </svg>
+  );
+}
+
+/**
+ * A chamada da oferta, no estilo dos grupos de promoção: a medalha (quando
+ * há) e uma frase curta e bem-humorada. Sem frase, a medalha diz o rótulo
+ * dela ("Menor preço"); sem nenhum dos dois, nada aparece.
+ */
+function Chamada({ a, grande = false }) {
+  const nivel = a.medalha?.nivel;
+  const texto = a.chamada || (nivel ? MEDALHAS[nivel].rotulo : null);
+  if (!texto) return null;
+  return (
+    <span className={"ap-vchamada" + (grande ? " ap-vchamada--grande" : "") + (nivel ? ` ap-vchamada--${nivel}` : "")}>
+      {nivel && <Medalha nivel={nivel} tamanho={grande ? 22 : 18} />}
+      <span>{texto}</span>
+    </span>
+  );
+}
+
+/** Por que a oferta ganhou a medalha — a transparência que faz confiar nela. */
+function Motivo({ a }) {
+  if (!a.medalha?.motivo) return null;
+  return (
+    <span className={`ap-vmotivo ap-vmotivo--${a.medalha.nivel}`}>
+      <Icon name="trending-down" size={13} />
+      <span>{a.medalha.motivo}</span>
+    </span>
+  );
+}
+
+/** A vantagem extra que não é cupom ("De 1 a 3 unidades com 20% OFF"). */
+function Observacao({ texto }) {
+  return (
+    <span className="ap-vobs">
+      <Icon name="package" size={13} />
+      <span>{texto}</span>
+    </span>
+  );
+}
+
+/** O texto da oferta no formato dos grupos de WhatsApp. */
+export function textoWhatsApp(a, origem) {
+  // Sem emoji: só texto e a formatação do próprio WhatsApp (*negrito*, ~riscado~).
+  const linhas = [];
+  const nivel = a.medalha?.nivel;
+  const med = nivel ? `[${MEDALHAS[nivel].nome.toUpperCase()}] ` : "";
+  if (a.chamada || nivel) linhas.push(`*${med}${(a.chamada || MEDALHAS[nivel].rotulo).toUpperCase()}*`, "");
+  linhas.push(`*${a.titulo}*`, "");
+  const por = `*POR ${money(a.preco)}*${a.condicao_preco ? ` ${a.condicao_preco}` : ""}`;
+  linhas.push(a.preco_original > a.preco ? `~DE ${money(a.preco_original)}~ | ${por}` : por);
+  if (a.cupom) linhas.push(`CUPOM: *${a.cupom.codigo}*${a.cupom.descricao ? ` (${a.cupom.descricao})` : ""}`);
+  if (a.observacao) linhas.push(a.observacao);
+  if (a.medalha?.motivo) linhas.push(a.medalha.motivo);
+  linhas.push("", `${origem}${a.href}`, "", `Calcule o preço das suas peças 3D grátis: ${origem}`);
+  return linhas.join("\n");
+}
+
+/** Mandar a oferta para um contato ou grupo de WhatsApp. */
+function Compartilhar({ a }) {
+  function abrir() {
+    const url = `https://wa.me/?text=${encodeURIComponent(textoWhatsApp(a, window.location.origin))}`;
+    window.open(url, "_blank", "noopener");
+  }
+  return (
+    <button type="button" className="ap-vcompartilhar" onClick={abrir} aria-label="Compartilhar no WhatsApp" title="Compartilhar no WhatsApp">
+      <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
+        <path fill="currentColor" d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.2-.4.2-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.1 5.1 0 0 0 1.1 2.7 11.7 11.7 0 0 0 4.5 4c1.7.7 2.3.8 3.2.6a2.7 2.7 0 0 0 1.8-1.3 2.2 2.2 0 0 0 .2-1.3c-.1-.1-.3-.2-.6-.3z" />
+      </svg>
+    </button>
   );
 }
 

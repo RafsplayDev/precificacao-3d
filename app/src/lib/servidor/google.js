@@ -14,8 +14,12 @@ import { variavel } from "./cf";
 export const COOKIE_OAUTH = "dc_oauth";
 
 export async function credenciais() {
-  const id = await variavel("GOOGLE_CLIENT_ID");
-  const segredo = await variavel("GOOGLE_CLIENT_SECRET");
+  // Sem espaço, quebra de linha ou aspas: colar o valor no `wrangler secret put`
+  // costuma trazer um desses junto, e aí o Google responde "OAuth client was
+  // not found" sem dizer por quê.
+  const limpar = (v) => String(v || "").trim().replace(/^["']|["']$/g, "").trim();
+  const id = limpar(await variavel("GOOGLE_CLIENT_ID"));
+  const segredo = limpar(await variavel("GOOGLE_CLIENT_SECRET"));
   if (!id || !segredo) throw new Error("Faltam GOOGLE_CLIENT_ID e/ou GOOGLE_CLIENT_SECRET.");
   return { id, segredo };
 }

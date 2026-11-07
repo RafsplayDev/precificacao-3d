@@ -105,7 +105,23 @@ export async function GET(req) {
       .run();
   }
 
-  return json({ anuncios: lista.map((x) => paraVitrine(x.a, x.m)) }, 200, { "cache-control": "no-store" });
+  // Catálogo: o que esgotou nas últimas 24 h vai no fim, sem link — mostra
+  // que as ofertas acabam rápido, sem mandar ninguém para um produto sem estoque.
+  let esgotados = [];
+  if (p.get("esgotados")) {
+    const desde = new Date(Date.now() - 24 * 3600e3).toISOString();
+    const r = await banco
+      .prepare(
+        `SELECT * FROM anuncios WHERE ativo = 0 AND esgotado_em > ? AND link_afiliado IS NOT NULL
+         ${loja && LOJAS[loja] ? "AND loja = ?" : ""} ${categoria && CATEGORIAS.includes(categoria) ? "AND categoria = ?" : ""}
+         ORDER BY esgotado_em DESC LIMIT 12`
+      )
+      .bind(desde, ...(loja && LOJAS[loja] ? [loja] : []), ...(categoria && CATEGORIAS.includes(categoria) ? [categoria] : []))
+      .all();
+    esgotados = r.results.map((a) => ({ ...paraVitrine(a, null), href: null, cupom: null, esgotado_em: a.esgotado_em }));
+  }
+
+  return json({ anuncios: lista.map((x) => paraVitrine(x.a, x.m)), esgotados }, 200, { "cache-control": "no-store" });
 }
 
 /**

@@ -57,7 +57,8 @@ export async function POST(req) {
     if (preco !== null) { sets.push("preco = ?"); vals.push(preco); }
     if (original !== null) { sets.push("preco_original = ?"); vals.push(original); }
     // Esgotado (disponível falso ou estoque zero): sai da vitrine na hora.
-    if (!disponivel || estoque === 0) { sets.push("ativo = 0"); desativados++; }
+    if (!disponivel || estoque === 0) { sets.push("ativo = 0", "esgotado_em = ?"); vals.push(agora); desativados++; }
+    else sets.push("esgotado_em = NULL");
     if (novoCupom) {
       sets.push("cupom_codigo = ?", "cupom_descricao = ?", "cupom_validade = ?");
       const val = v.cupom_validade ? new Date(v.cupom_validade) : null;

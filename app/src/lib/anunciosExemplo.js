@@ -68,7 +68,7 @@ export const ANUNCIOS_EXEMPLO = [
     cupom: { codigo: "MESA15", descricao: "R$ 15 off acima de R$ 70" },
   }),
   base(5, {
-    chamada: "Filamento úmido nunca mais", condicao_preco: "no Pix",
+    chamada: "Filamento úmido nunca mais", condicao_preco: "no Pix", estoque_baixo: 4,
     medalha: { nivel: "prata", motivo: "11% abaixo da média de 30 dias (R$ 212,40)" },
     loja_codigo: "shopee", categoria: "secadores-armazenamento",
     titulo: "Secador de Filamento com Controle de Temperatura e Umidade",
@@ -77,7 +77,7 @@ export const ANUNCIOS_EXEMPLO = [
     cupom: null,
   }),
   base(6, {
-    chamada: null, medalha: null,
+    chamada: null, medalha: null, esgotado_em: new Date(Date.now() - 3 * 3600e3).toISOString(),
     loja_codigo: "mercado-livre", categoria: "ferramentas",
     titulo: "Espátula de Remoção para Mesa de Impressora 3D Inox",
     imagem_url: ilustracao("ferramenta", "#7B5BFF"),

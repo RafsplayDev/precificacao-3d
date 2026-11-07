@@ -12,6 +12,9 @@
 ALTER TABLE anuncios ADD COLUMN verificado_em TEXT;
 ALTER TABLE anuncios ADD COLUMN estoque INTEGER;
 ALTER TABLE anuncios ADD COLUMN ultima_observacao TEXT;
+-- Quando a verificação viu o produto esgotado. O catálogo mostra, no fim,
+-- o que esgotou nas últimas 24 h (em cinza, sem link).
+ALTER TABLE anuncios ADD COLUMN esgotado_em TEXT;
 
 -- O que já existe conta como verificado na última atualização.
 UPDATE anuncios SET verificado_em = atualizado_em WHERE verificado_em IS NULL;

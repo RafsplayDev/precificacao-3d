@@ -44,6 +44,7 @@ export function Catalogo({ exemplo }) {
   const [medalha, setMedalha] = React.useState(false);
   const [ordem, setOrdem] = React.useState("destaque");
   const [itens, setItens] = React.useState(null);
+  const [esgotados, setEsgotados] = React.useState([]);
   const [todasCategorias, setTodasCategorias] = React.useState([]);
 
   React.useEffect(() => {
@@ -57,18 +58,23 @@ export function Catalogo({ exemplo }) {
       if (ordem === "desconto") l = [...l].sort((a, b) => desc(b) - desc(a));
       if (ordem === "menor-preco") l = [...l].sort((a, b) => a.preco - b.preco);
       if (ordem === "avaliacao") l = [...l].sort((a, b) => (b.avaliacao || 0) - (a.avaliacao || 0));
-      setItens(l);
+      setItens(l.filter((a) => !a.esgotado_em));
+      setEsgotados(l.filter((a) => a.esgotado_em));
       return;
     }
     let vivo = true;
-    const q = new URLSearchParams({ limite: "60", ordem });
+    const q = new URLSearchParams({ limite: "60", ordem, esgotados: "1" });
     if (loja) q.set("loja", loja);
     if (categoria) q.set("categoria", categoria);
     if (cupom) q.set("cupom", "1");
     if (medalha) q.set("medalha", "1");
     fetch(`/api/anuncios?${q}`, { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : { anuncios: [] }))
-      .then((d) => vivo && setItens(d.anuncios || []))
+      .then((d) => {
+        if (!vivo) return;
+        setItens(d.anuncios || []);
+        setEsgotados(d.esgotados || []);
+      })
       .catch(() => vivo && setItens([]));
     return () => {
       vivo = false;
@@ -154,6 +160,16 @@ export function Catalogo({ exemplo }) {
             {itens.map((a) => <li key={a.id}><CartaoAnuncio a={a} /></li>)}
           </ul>
         </>
+      )}
+
+      {esgotados.length > 0 && !cupom && !medalha && (
+        <section className="ap-catalogo__esgotados">
+          <h2>Esgotaram nas últimas 24 horas</h2>
+          <p>Oferta boa acaba rápido. Estes saíram da vitrine assim que o estoque acabou.</p>
+          <ul className="ap-vitrine__lista ap-catalogo__grade">
+            {esgotados.map((a) => <li key={a.id}><CartaoAnuncio a={a} /></li>)}
+          </ul>
+        </section>
       )}
     </div>
   );

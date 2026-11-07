@@ -141,6 +141,7 @@ function DestaqueAnuncios({ itens }) {
 
 /** O cartão de um produto — usado na grade, no carrossel e no catálogo. */
 export function CartaoAnuncio({ a, compacto = false }) {
+  if (a.esgotado_em) return <CartaoEsgotado a={a} />;
   return (
     <article className={"ap-vcard" + (compacto ? " ap-vcard--compacto" : "")}>
       <a className="ap-vcard__link" href={a.href} target="_blank" rel="sponsored nofollow noopener">
@@ -159,6 +160,25 @@ export function CartaoAnuncio({ a, compacto = false }) {
       </a>
       {!compacto && <Compartilhar a={a} />}
       {a.cupom && <Cupom cupom={a.cupom} />}
+    </article>
+  );
+}
+
+/** Esgotou há pouco: em cinza, sem link e sem cupom. */
+function CartaoEsgotado({ a }) {
+  const horas = Math.max(1, Math.round((Date.now() - Date.parse(a.esgotado_em)) / 3600e3));
+  return (
+    <article className="ap-vcard ap-vcard--esgotado" aria-label={`${a.titulo} — esgotado`}>
+      <div className="ap-vcard__link">
+        <Imagem a={{ ...a, preco_original: null, selo: null }} />
+        <span className="ap-vcard__corpo">
+          <span className="ap-vesgotado">Esgotou há {horas} h</span>
+          <Loja a={a} />
+          <span className="ap-vcard__titulo">{a.titulo}</span>
+          <Preco a={{ ...a, preco_original: null }} />
+          <span className="ap-vbotao ap-vbotao--contorno" aria-disabled="true">Esgotado</span>
+        </span>
+      </div>
     </article>
   );
 }

@@ -171,3 +171,6 @@ INSERT OR REPLACE INTO precos_historico VALUES ('ex:10', date('now'), 84.9);
 -- Verificados agora (senão a regra de validade tira da vitrine) e um com estoque baixo.
 UPDATE anuncios SET verificado_em = strftime('%Y-%m-%dT%H:%M:%fZ','now'), ultima_observacao = 'Exemplo: conferido agora, preço e cupom ok.' WHERE origem_id LIKE 'ex:%';
 UPDATE anuncios SET estoque = 6, ultima_observacao = 'Exemplo: estoque caiu de 40 para 6.' WHERE origem_id = 'ex:3';
+-- Um esgotado há 3 h (aparece no fim do catálogo, em cinza) e estoque baixo no secador.
+UPDATE anuncios SET ativo = 0, esgotado_em = strftime('%Y-%m-%dT%H:%M:%fZ','now','-3 hours'), ultima_observacao = 'Exemplo: esgotou na verificação das 14h.' WHERE origem_id = 'ex:6';
+UPDATE anuncios SET estoque = 4 WHERE origem_id = 'ex:5';

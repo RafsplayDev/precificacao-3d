@@ -18,7 +18,7 @@
   text-decoration: underline; text-underline-offset: 3px;
 }
 .ap-conta button:hover, .ap-conta a:hover { color: var(--text-strong); }
-@media (max-width: 640px) { .ap-conta__email { display: none; } }
+
 
 /* ---- Páginas centradas: entrar e paywall ---- */
 .ap-auth, .ap-paywall {

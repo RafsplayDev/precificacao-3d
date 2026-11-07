@@ -75,6 +75,20 @@ function Casca({ children }) {
     setAberto(null);
   }, [pathname]);
 
+  // Clicar fora do menu da conta (ou apertar Esc) fecha o menu.
+  const barraRef = React.useRef(null);
+  React.useEffect(() => {
+    if (aberto !== "perfil") return;
+    const fora = (e) => { if (barraRef.current && !barraRef.current.contains(e.target)) setAberto(null); };
+    const esc = (e) => { if (e.key === "Escape") setAberto(null); };
+    document.addEventListener("pointerdown", fora);
+    document.addEventListener("keydown", esc);
+    return () => {
+      document.removeEventListener("pointerdown", fora);
+      document.removeEventListener("keydown", esc);
+    };
+  }, [aberto]);
+
   async function sair() {
     await fetch("/api/auth/sair", { method: "POST" }).catch(() => {});
     irPara("/entrar");
@@ -131,33 +145,43 @@ function Casca({ children }) {
             </Link>
             {!publica && (
               <>
-                <div className="ap-barra">
+                <nav className="ap-nav" aria-label="Seções">{links(false)}</nav>
+
+                <div className="ap-barra" ref={barraRef}>
                   <button
                     type="button"
-                    className={"ap-perfil" + (aberto === "perfil" ? " is-on" : "")}
+                    className={"ap-perfil" + (aberto === "perfil" ? " is-on" : "") + (conta?.foto_url ? " ap-perfil--foto" : "")}
                     aria-label="Sua conta"
                     aria-expanded={aberto === "perfil"}
                     onClick={() => alternar("perfil")}
                   >
-                    <span aria-hidden="true">{inicial}</span>
+                    {conta?.foto_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={conta.foto_url} alt="" referrerPolicy="no-referrer" />
+                    ) : (
+                      <span aria-hidden="true">{inicial}</span>
+                    )}
                   </button>
-                </div>
 
-                <nav className="ap-nav" aria-label="Seções">{links(false)}</nav>
-
-                {conta && (
-                  <div className={"ap-gaveta" + (aberto === "perfil" ? " is-open" : "")}>
-                    <div className="ap-conta">
-                      {conta.foto_url && (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img className="ap-conta__foto" src={conta.foto_url} alt="" referrerPolicy="no-referrer" />
-                      )}
-                      <span className="ap-conta__email">{conta.email}</span>
-                      <RepetirTutorial />
-                      <button type="button" onClick={sair}>Sair</button>
+                  {conta && (
+                    <div className={"ap-gaveta" + (aberto === "perfil" ? " is-open" : "")}>
+                      <div className="ap-conta">
+                        <div className="ap-conta__quem">
+                          {conta.foto_url && (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img className="ap-conta__foto" src={conta.foto_url} alt="" referrerPolicy="no-referrer" />
+                          )}
+                          <span className="ap-conta__textos">
+                            {conta.nome && <strong className="ap-conta__nome">{conta.nome}</strong>}
+                            <span className="ap-conta__email">{conta.email}</span>
+                          </span>
+                        </div>
+                        <RepetirTutorial />
+                        <button type="button" onClick={sair}>Sair</button>
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
               </>
             )}
           </div>

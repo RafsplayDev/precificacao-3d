@@ -70,8 +70,9 @@ html, body { max-width: 100%; overflow-x: clip; }
 }
 .ap-nav__rot { position: relative; display: inline-flex; align-items: center; gap: var(--space-2); }
 
-/* Botão de perfil: só no mobile, onde o e-mail e o "Sair" não cabem no topo. */
-.ap-barra { display: none; margin-left: auto; align-items: center; }
+/* Botão de perfil: a foto da conta Google (ou a inicial). O e-mail, o
+   tutorial e o "Sair" ficam no menu que ele abre — no topo só cabe a foto. */
+.ap-barra { position: relative; display: flex; align-items: center; flex: none; }
 .ap-perfil {
   width: 40px; height: 40px; padding: 0; flex: none;
   display: inline-flex; align-items: center; justify-content: center;
@@ -82,19 +83,52 @@ html, body { max-width: 100%; overflow-x: clip; }
   transition: background var(--dur-fast) var(--ease-standard), color var(--dur-fast) var(--ease-standard);
 }
 .ap-perfil.is-on { background: var(--ink-950); border-color: var(--ink-950); color: var(--text-inverse); }
+.ap-perfil--foto { overflow: hidden; border-color: transparent; }
+.ap-perfil--foto img { width: 100%; height: 100%; object-fit: cover; }
+.ap-perfil--foto.is-on { background: none; box-shadow: 0 0 0 2px var(--surface-card), 0 0 0 4px var(--ink-950); }
 
-/* No desktop o menu é texto em linha no header: a barra de rodapé nem existe. */
+/* No desktop a barra de rodapé nem existe. */
 .ap-tabbar { display: none; }
-.ap-gaveta { display: contents; }
+.ap-logo__name { white-space: nowrap; }
+
+/* Menu da conta no desktop: um balão abaixo da foto. */
+.ap-gaveta {
+  position: absolute; top: calc(100% + 10px); right: 0; z-index: 45; width: 280px;
+  background: var(--surface-card); border: var(--border-w) solid var(--border-hairline);
+  border-radius: var(--radius-md); box-shadow: 0 16px 40px -18px rgba(8, 9, 11, .35);
+  opacity: 0; transform: translateY(-4px); visibility: hidden; pointer-events: none;
+  transition: opacity var(--dur-fast) var(--ease-standard), transform var(--dur-fast) var(--ease-standard),
+              visibility var(--dur-fast) var(--ease-standard);
+}
+.ap-gaveta.is-open { opacity: 1; transform: none; visibility: visible; pointer-events: auto; }
+.ap-gaveta .ap-conta {
+  flex-direction: column; align-items: stretch; gap: var(--space-1);
+  padding: var(--space-3);
+}
+.ap-conta__quem {
+  display: flex; align-items: center; gap: var(--space-3);
+  padding: var(--space-1) var(--space-1) var(--space-3);
+  margin-bottom: var(--space-1); border-bottom: var(--border-hairline);
+}
+.ap-gaveta .ap-conta__foto { width: 40px; height: 40px; flex: none; }
+.ap-conta__textos { display: flex; flex-direction: column; min-width: 0; }
+.ap-conta__nome { font-size: var(--text-body-sm); color: var(--text-strong); font-weight: var(--weight-medium); }
+.ap-gaveta .ap-conta__email { display: block; max-width: none; overflow-wrap: anywhere; white-space: normal; }
+.ap-gaveta .ap-conta > button {
+  text-align: left; text-decoration: none; padding: var(--space-2) var(--space-2);
+  border-radius: var(--radius-sm); color: var(--text-body);
+}
+.ap-gaveta .ap-conta > button:hover { background: var(--surface-sunken); color: var(--text-strong); }
 
 @media (max-width: 860px) {
   .ap-header__in { gap: var(--space-3); }
   .ap-logo__sub { display: none; }
-  .ap-barra { display: flex; }
+  .ap-barra { margin-left: auto; position: static; }
 
   /* Gaveta da conta: desce colada no header, largura toda. */
   .ap-gaveta {
-    display: grid; grid-template-rows: 0fr;
+    display: grid; grid-template-rows: 0fr; width: auto; border-radius: 0; border: 0;
+    opacity: 1; transform: none;
     position: absolute; top: 100%; left: 0; right: 0; z-index: 45;
     background: var(--surface-page);
     border-bottom: var(--border-w) solid transparent;
@@ -113,6 +147,7 @@ html, body { max-width: 100%; overflow-x: clip; }
     padding: var(--space-4) var(--gutter-page);
   }
   .ap-conta__email { display: block; overflow-wrap: anywhere; }
+  .ap-gaveta .ap-conta { padding: var(--space-4) var(--gutter-page); }
   .ap-conta button, .ap-conta a { text-align: left; }
 
   /* ---- Menu fixo no rodapé ---- */

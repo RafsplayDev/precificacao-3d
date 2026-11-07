@@ -20,6 +20,16 @@ export const CATEGORIAS = [
 
 const MAX_LOTE = 200;
 
+/**
+ * Quanto tempo uma verificação vale. A tarefa roda várias vezes por dia;
+ * passou disso sem ninguém conferir, o produto sai da vitrine até a
+ * próxima verificação — melhor sumir do que mostrar oferta que acabou.
+ */
+export const VALIDADE_HORAS = 30;
+
+/** Abaixo disso o cartão avisa "Últimas N unidades". */
+export const ESTOQUE_BAIXO = 10;
+
 function texto(v, max) {
   if (v === undefined || v === null) return null;
   const s = String(v).replace(/\s+/g, " ").trim();
@@ -210,6 +220,7 @@ export function paraVitrine(a, medalha) {
     selo: a.selo,
     cupom: cupomValendo ? { codigo: a.cupom_codigo, descricao: a.cupom_descricao } : null,
     medalha: medalha?.nivel ? { nivel: medalha.nivel, motivo: medalha.motivo } : null,
+    estoque_baixo: a.estoque != null && a.estoque > 0 && a.estoque <= ESTOQUE_BAIXO ? a.estoque : null,
     href: `/api/anuncios/${a.id}/ir`,
   };
 }

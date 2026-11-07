@@ -73,23 +73,34 @@ function ListaAnuncios({ itens }) {
   return (
     <ul className="ap-vlinhas">
       {itens.map((a) => (
-        <li key={a.id} className="ap-vlinha">
-          <a className="ap-vlinha__link" href={a.href} target="_blank" rel="sponsored nofollow noopener">
-            <Imagem a={a} />
-            <span className="ap-vlinha__info">
-              <Chamada a={a} />
-              <span className="ap-vcard__titulo">{a.titulo}</span>
-              <span className="ap-vlinha__meta"><Loja a={a} /><Nota a={a} /></span>
-            </span>
-            <span className="ap-vlinha__lado">
-              <Preco a={a} />
-              <span className="ap-vlinha__seta" aria-hidden="true">→</span>
-            </span>
-          </a>
-          {a.cupom && <Cupom cupom={a.cupom} />}
-        </li>
+        <li key={a.id} className="ap-vlinha"><CartaoLinhaConteudo a={a} /></li>
       ))}
     </ul>
+  );
+}
+
+/** Um produto em linha compacta — a lista e a oferta do cadastro de filamento. */
+export function CartaoLinha({ a }) {
+  return <div className="ap-vlinha"><CartaoLinhaConteudo a={a} /></div>;
+}
+
+function CartaoLinhaConteudo({ a }) {
+  return (
+    <>
+      <a className="ap-vlinha__link" href={a.href} target="_blank" rel="sponsored nofollow noopener">
+        <Imagem a={a} />
+        <span className="ap-vlinha__info">
+          <Chamada a={a} />
+          <span className="ap-vcard__titulo">{a.titulo}</span>
+          <span className="ap-vlinha__meta"><Loja a={a} /><Nota a={a} /></span>
+        </span>
+        <span className="ap-vlinha__lado">
+          <Preco a={a} />
+          <span className="ap-vlinha__seta" aria-hidden="true">→</span>
+        </span>
+      </a>
+      {a.cupom && <Cupom cupom={a.cupom} />}
+    </>
   );
 }
 
@@ -110,6 +121,7 @@ function DestaqueAnuncios({ itens }) {
             <Nota a={principal} />
             <Preco a={principal} grande />
             <Motivo a={principal} />
+            <Estoque a={principal} />
             {principal.observacao && <Observacao texto={principal.observacao} />}
             <span className="ap-vbotao">Ver {daLoja(principal)}</span>
           </span>
@@ -140,6 +152,7 @@ export function CartaoAnuncio({ a, compacto = false }) {
           <Nota a={a} />
           <Preco a={a} />
           <Motivo a={a} />
+          <Estoque a={a} />
           {a.observacao && !compacto && <Observacao texto={a.observacao} />}
           {!compacto && <span className="ap-vbotao ap-vbotao--contorno">Ver {daLoja(a)}</span>}
         </span>
@@ -257,6 +270,17 @@ function Motivo({ a }) {
     <span className={`ap-vmotivo ap-vmotivo--${a.medalha.nivel}`}>
       <Icon name="trending-down" size={13} />
       <span>{a.medalha.motivo}</span>
+    </span>
+  );
+}
+
+/** Estoque baixo, conferido na última verificação da tarefa. */
+function Estoque({ a }) {
+  if (!a.estoque_baixo) return null;
+  return (
+    <span className="ap-vestoque">
+      <Icon name="clock" size={13} />
+      <span>{a.estoque_baixo === 1 ? "Última unidade" : `Últimas ${a.estoque_baixo} unidades`}</span>
     </span>
   );
 }

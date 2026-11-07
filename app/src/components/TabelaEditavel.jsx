@@ -3,6 +3,7 @@ import React from "react";
 import { Button, IconButton, Icon, Dialog, Input, Select, Combobox } from "@/design-system";
 import { salvarLinha, inserirLinha, removerLinha, tratarMensagemErro } from "@/lib/useDados";
 import { useToast } from "@/components/AppShell";
+import { CampoSugestivo, useSugestoes } from "@/components/CampoSugestivo";
 import { toNum, money, num, mascaraMoeda, moedaParaNumero, numeroParaMoeda, hojeISO } from "@/lib/format";
 
 /**
@@ -25,7 +26,9 @@ import { toNum, money, num, mascaraMoeda, moedaParaNumero, numeroParaMoeda, hoje
  *   - a largura de cada coluna vem do maior texto que ela tem hoje (valores ou
  *     rótulo), com teto; passando disso a tabela rola na horizontal.
  */
-export function TabelaEditavel({ tabela, colunas, linhas, novoRegistro, recarregar, aplicar, remover, vazio, semRemover = false, rotulo = "linha", abrirRef, semBotao = false, semTabela = false, colunasFormulario, obrigatorios }) {
+export function TabelaEditavel({ tabela, colunas, linhas, novoRegistro, recarregar, aplicar, remover, vazio, semRemover = false, rotulo = "linha", abrirRef, semBotao = false, semTabela = false, colunasFormulario, obrigatorios, sugestoes, extraFormulario }) {
+  // Sugestões de preenchimento (impressoras, filamentos): carregadas uma vez.
+  const dadosSugestao = useSugestoes(sugestoes);
   const toast = useToast();
   const [salvando, setSalvando] = React.useState(null);
   const [itemParaExcluir, setItemParaExcluir] = React.useState(null);
@@ -262,9 +265,24 @@ export function TabelaEditavel({ tabela, colunas, linhas, novoRegistro, recarreg
                   })
                 }
                 onEnter={() => !criando && !faltando && adicionar()}
+                sugestoes={col.sugestao && dadosSugestao ? dadosSugestao[col.sugestao.lista] || [] : null}
+                onPreencher={(extras) =>
+                  setNovo((n) => {
+                    const campos = { ...n.campos };
+                    let base = n.base;
+                    for (const [k, val] of Object.entries(extras || {})) {
+                      if (val == null) continue;
+                      const alvo = camposDoForm.find((c) => c.key === k);
+                      if (alvo) campos[k] = paraTexto(val, alvo);
+                      else base = { ...base, [k]: val };
+                    }
+                    return { ...n, base, campos };
+                  })
+                }
               />
             ))}
           </div>
+          {extraFormulario && extraFormulario({ ...novo.base, ...Object.fromEntries(Object.entries(novo.campos).map(([k, v]) => [k, v])) })}
         </Dialog>
       )}
 
@@ -460,8 +478,24 @@ function paraBanco(texto, coluna) {
   return texto === "" ? null : texto;
 }
 
-function CampoFormulario({ coluna, linha, valor, onChange, onEnter, autoFocus, placeholder }) {
+function CampoFormulario({ coluna, linha, valor, onChange, onEnter, autoFocus, placeholder, sugestoes, onPreencher }) {
   const rotulo = coluna.rotulo ? coluna.rotulo(linha) : coluna.label;
+
+  if (coluna.sugestao && sugestoes) {
+    return (
+      <CampoSugestivo
+        label={rotulo}
+        valor={valor}
+        autoFocus={autoFocus}
+        placeholder={placeholder || coluna.sugestao.placeholder}
+        opcoes={sugestoes}
+        detalhe={coluna.sugestao.detalhe}
+        onChange={onChange}
+        onEnter={onEnter}
+        onEscolher={(o) => onPreencher?.(coluna.sugestao.preencher ? coluna.sugestao.preencher(o) : {})}
+      />
+    );
+  }
 
   if (coluna.tipo === "select") {
     return (

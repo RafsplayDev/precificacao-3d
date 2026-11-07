@@ -165,3 +165,9 @@ INSERT OR REPLACE INTO precos_historico VALUES ('ex:6', date('now'), 19.9);
 INSERT OR REPLACE INTO precos_historico VALUES ('ex:7', date('now'), 42.9);
 INSERT OR REPLACE INTO precos_historico VALUES ('ex:8', date('now'), 69.9);
 INSERT OR REPLACE INTO precos_historico VALUES ('ex:9', date('now'), 59.9);
+INSERT INTO anuncios (id, origem_id, loja, titulo, categoria, link_afiliado, preco, preco_original, avaliacao, num_avaliacoes, chamada, condicao_preco, pontuacao, cupom_codigo, cupom_descricao)
+VALUES ('ex-10', 'ex:10', 'mercado-livre', 'Filamento PETG Masterprint 1kg 1,75mm Branco', 'filamentos', 'https://meli.la/exemplo10', 84.9, 104.9, 4.8, 1210, 'PETG branco que não amarela no primeiro sol', 'no Pix', 8, 'PRINT10', '10% off acima de R$ 80');
+INSERT OR REPLACE INTO precos_historico VALUES ('ex:10', date('now'), 84.9);
+-- Verificados agora (senão a regra de validade tira da vitrine) e um com estoque baixo.
+UPDATE anuncios SET verificado_em = strftime('%Y-%m-%dT%H:%M:%fZ','now'), ultima_observacao = 'Exemplo: conferido agora, preço e cupom ok.' WHERE origem_id LIKE 'ex:%';
+UPDATE anuncios SET estoque = 6, ultima_observacao = 'Exemplo: estoque caiu de 40 para 6.' WHERE origem_id = 'ex:3';

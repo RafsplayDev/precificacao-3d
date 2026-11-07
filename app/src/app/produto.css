@@ -460,3 +460,32 @@
   background: #E7FFDB; color: #111B21; border-radius: var(--radius-md) var(--radius-md) var(--radius-md) 4px;
 }
 .ap-chip--medalha.is-on { background: #8A6A06; border-color: #8A6A06; }
+.ap-vestoque { display: flex; align-items: center; gap: 4px; font-size: 12px; font-weight: var(--weight-semibold); color: var(--fil-coral); }
+.ap-admin__vencido { color: var(--status-danger); font-weight: var(--weight-medium); }
+.ap-admin__obs { font-size: 11.5px; color: var(--text-muted); max-width: 260px; white-space: normal; margin-top: 2px; }
+
+/* ---- Campo com sugestões (cadastro) ---- */
+.ap-sugestivo { position: relative; }
+.ap-sugestivo__lista {
+  position: absolute; left: 0; right: 0; top: calc(100% + 4px); z-index: 70;
+  list-style: none; margin: 0; padding: 4px; max-height: 280px; overflow-y: auto;
+  background: var(--surface-card); border: var(--border-w) solid var(--border-default);
+  border-radius: var(--radius-md); box-shadow: 0 16px 36px -16px rgba(8, 9, 11, .35);
+}
+.ap-sugestivo__lista button {
+  display: flex; justify-content: space-between; align-items: baseline; gap: var(--space-3);
+  width: 100%; padding: 8px 10px; border: 0; border-radius: var(--radius-sm);
+  background: none; font: inherit; font-size: var(--text-body-sm); color: var(--text-strong);
+  text-align: left; cursor: pointer;
+}
+.ap-sugestivo__lista button:hover, .ap-sugestivo__lista button.is-foco { background: var(--surface-sunken); }
+.ap-sugestivo__lista small { color: var(--text-muted); font-size: 12px; white-space: nowrap; }
+
+/* ---- Oferta no cadastro de filamento ---- */
+.ap-oferta-fil {
+  margin-top: var(--space-4); padding: var(--space-3);
+  border-radius: var(--radius-md); background: var(--fil-magenta-soft);
+}
+.ap-oferta-fil__topo { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-2); margin-bottom: var(--space-2); }
+.ap-oferta-fil__topo strong { font-size: var(--text-body-sm); color: var(--text-strong); }
+.ap-oferta-fil .ap-vlinha { background: var(--surface-card); }

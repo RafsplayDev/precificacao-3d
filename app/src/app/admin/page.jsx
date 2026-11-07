@@ -15,6 +15,7 @@ import { useToast } from "@/components/AppShell";
 export default function Admin() {
   const toast = useToast();
   const [lista, setLista] = React.useState(null);
+  const [validade, setValidade] = React.useState(30);
   const [erro, setErro] = React.useState(null);
 
   const carregar = React.useCallback(async () => {
@@ -23,7 +24,9 @@ export default function Admin() {
       setErro(r.status === 403 ? "Esta conta não é admin." : "Não foi possível carregar os anúncios.");
       return;
     }
-    setLista((await r.json()).anuncios);
+    const d = await r.json();
+    setLista(d.anuncios);
+    if (d.validade_horas) setValidade(d.validade_horas);
   }, []);
 
   React.useEffect(() => { carregar(); }, [carregar]);
@@ -96,6 +99,8 @@ export default function Admin() {
                 <th className="num">Preço</th>
                 <th>Cupom</th>
                 <th>Medalha</th>
+                <th>Verificado</th>
+                <th className="num">Estoque</th>
                 <th className="num">Pontuação</th>
                 <th className="num">Impressões</th>
                 <th className="num">Cliques</th>
@@ -122,6 +127,8 @@ export default function Admin() {
                         ? `aquecendo (${a.medalha.aquecendo.faltam} d)`
                         : "—"}
                   </td>
+                  <VerificadoCelula a={a} validade={validade} />
+                  <td className="num">{a.estoque ?? "—"}</td>
                   <td className="num">{num(a.pontuacao, 1)}</td>
                   <td className="num">{a.impressoes.toLocaleString("pt-BR")}</td>
                   <td className="num">{a.cliques.toLocaleString("pt-BR")}</td>
@@ -130,7 +137,7 @@ export default function Admin() {
                 </tr>
               ))}
               {lista && lista.length === 0 && (
-                <tr><td colSpan={12}>Nenhum anúncio ainda. A tarefa automática publica em POST /api/anuncios.</td></tr>
+                <tr><td colSpan={14}>Nenhum anúncio ainda. A tarefa automática publica em POST /api/anuncios.</td></tr>
               )}
             </tbody>
           </table>
@@ -169,5 +176,22 @@ function Pendente({ anuncio, onSalvar }) {
         {salvando ? "Salvando…" : "Salvar link"}
       </Button>
     </div>
+  );
+}
+
+/**
+ * Quando a tarefa conferiu o produto pela última vez, e o que ela viu.
+ * Em vermelho, o que passou da validade: está fora da vitrine até a
+ * próxima verificação.
+ */
+function VerificadoCelula({ a, validade }) {
+  if (!a.verificado_em) return <td>—</td>;
+  const horas = (Date.now() - Date.parse(a.verificado_em)) / 3600e3;
+  const texto = horas < 1 ? "agora há pouco" : horas < 48 ? `há ${Math.round(horas)} h` : `há ${Math.round(horas / 24)} dias`;
+  return (
+    <td title={a.ultima_observacao || ""} className={horas > validade ? "ap-admin__vencido" : undefined}>
+      {texto}
+      {a.ultima_observacao && <div className="ap-admin__obs">{a.ultima_observacao}</div>}
+    </td>
   );
 }

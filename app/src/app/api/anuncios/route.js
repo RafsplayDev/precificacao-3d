@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/servidor/cf";
-import { normalizarProduto, podeGerenciar, ehTarefa, paraVitrine, MAX_LOTE, CATEGORIAS, LOJAS } from "@/lib/servidor/anuncios";
+import { normalizarProduto, podeGerenciar, ehTarefa, paraVitrine, MAX_LOTE, CATEGORIAS, LOJAS, VALIDADE_HORAS } from "@/lib/servidor/anuncios";
 import { gerarLinkShopee, credenciaisShopee } from "@/lib/servidor/shopee";
 import { estatisticasHistorico, medalhaDe, ORDEM_MEDALHA, REGRAS } from "@/lib/servidor/medalhas";
 
@@ -29,6 +29,7 @@ export async function GET(req) {
     return json({
       anuncios: results.map((a) => ({ ...a, medalha: medalhaDe(a, est[a.origem_id]) })),
       regras_medalha: REGRAS,
+      validade_horas: VALIDADE_HORAS,
       categorias: CATEGORIAS,
       lojas: Object.keys(LOJAS),
       shopee_api: !!(await credenciaisShopee()),
@@ -42,8 +43,11 @@ export async function GET(req) {
   const agora = new Date().toISOString();
 
   // Sem link de afiliado o anúncio não rende nada: fica guardado, fora da vitrine.
-  const filtros = ["ativo = 1", "link_afiliado IS NOT NULL", "(expira_em IS NULL OR expira_em > ?)"];
-  const valores = [agora];
+  // Verificado há pouco: produto que ninguém confere há mais de
+  // VALIDADE_HORAS pode ter acabado, mudado de preço ou perdido o cupom.
+  const validoDesde = new Date(Date.now() - VALIDADE_HORAS * 3600e3).toISOString();
+  const filtros = ["ativo = 1", "link_afiliado IS NOT NULL", "(expira_em IS NULL OR expira_em > ?)", "verificado_em > ?"];
+  const valores = [agora, validoDesde];
   if (categoria && CATEGORIAS.includes(categoria)) {
     filtros.push("categoria = ?");
     valores.push(categoria);
@@ -157,13 +161,15 @@ export async function POST(req) {
     const cols = Object.keys(linha);
     return banco
       .prepare(
-        `INSERT INTO anuncios (id, ${cols.join(", ")}, atualizado_em)
-         VALUES (?, ${cols.map(() => "?").join(", ")}, ?)
+        `INSERT INTO anuncios (id, ${cols.join(", ")}, atualizado_em, verificado_em)
+         VALUES (?, ${cols.map(() => "?").join(", ")}, ?, ?)
          ON CONFLICT(origem_id) DO UPDATE SET
            ${enviados.map((c) => `${c} = excluded.${c}`).join(", ")},
-           atualizado_em = excluded.atualizado_em`
+           atualizado_em = excluded.atualizado_em,
+           verificado_em = excluded.verificado_em`
       )
-      .bind(crypto.randomUUID(), ...cols.map((c) => linha[c]), agora);
+      // Mandar o produto pelo POST conta como verificação: a tarefa acabou de vê-lo.
+      .bind(crypto.randomUUID(), ...cols.map((c) => linha[c]), agora, agora);
   });
 
   // O preço de hoje vai para o histórico (um por dia; o último do dia vale).

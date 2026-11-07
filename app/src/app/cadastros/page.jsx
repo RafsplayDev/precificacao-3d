@@ -7,6 +7,32 @@ import { Explicacao } from "@/components/Explicacao";
 import { TabelaEditavel } from "@/components/TabelaEditavel";
 import { money } from "@/lib/format";
 import { depreciacaoTotal } from "@/lib/calc";
+import { MATERIAIS, materialDe, metrosDoCarretel } from "@/lib/catalogoBase";
+import { OfertaFilamento } from "@/components/OfertaFilamento";
+
+/**
+ * Sugestões dos campos de cadastro (ver CampoSugestivo): escolher um modelo
+ * de impressora traz a marca e a potência média; escolher um material de
+ * filamento traz o comprimento do carretel de 1 kg.
+ */
+const SUGESTAO = {
+  impressoraModelo: {
+    lista: "modelos",
+    placeholder: "Ex.: Bambu Lab A1",
+    detalhe: (o) => (o.potencia_kw ? `${Math.round(o.potencia_kw * 1000)} W em média` : ""),
+    preencher: (o) => ({ marca: o.marca, potencia_kw: o.potencia_kw }),
+  },
+  impressoraMarca: { lista: "marcas" },
+  filamentoNome: {
+    lista: "nomes",
+    placeholder: "Ex.: PETG Branco",
+    preencher: (o) => {
+      const m = materialDe(o.valor) || MATERIAIS.find((x) => x.nome === o.material);
+      return m ? { peso_carretel_kg: 1, comprimento_carretel_m: metrosDoCarretel(m.densidade, 1) } : {};
+    },
+  },
+  filamentoMarca: { lista: "marcas", placeholder: "Ex.: Masterprint" },
+};
 
 const ABAS = [
   { id: "impressoras", label: "Impressoras" },
@@ -33,8 +59,8 @@ const tipoDe = (linha) => TIPOS_INSUMO.find((t) => t.id === linha?.tipo) || TIPO
 
 const COLUNAS = {
   impressoras: [
-    { key: "nome", label: "Impressora", tipo: "texto", estica: true },
-    { key: "marca", label: "Marca", tipo: "texto" },
+    { key: "nome", label: "Impressora", tipo: "texto", estica: true, sugestao: SUGESTAO.impressoraModelo },
+    { key: "marca", label: "Marca", tipo: "texto", sugestao: SUGESTAO.impressoraMarca },
     { key: "tempo_retorno_meses", label: "Retorno (meses)", tipo: "numero" },
     { key: "valor_maquina", label: "Valor (R$)", tipo: "moeda" },
     { key: "hrs_dia", label: "Hrs/dia", tipo: "numero" },
@@ -47,8 +73,8 @@ const COLUNAS = {
     { key: "valor_adicionar_hr", label: "R$/hora", tipo: "calc", formato: "moeda" },
   ],
   filamentos: [
-    { key: "nome", label: "Filamento", tipo: "texto", estica: true },
-    { key: "marca", label: "Marca", tipo: "texto" },
+    { key: "nome", label: "Filamento", tipo: "texto", estica: true, sugestao: SUGESTAO.filamentoNome },
+    { key: "marca", label: "Marca", tipo: "texto", sugestao: SUGESTAO.filamentoMarca },
     { key: "descricao", label: "Descrição", tipo: "texto" },
     { key: "peso_carretel_kg", label: "Carretel (kg)", tipo: "numero" },
     { key: "comprimento_carretel_m", label: "Comprimento (m)", tipo: "numero" },
@@ -308,6 +334,8 @@ export default function Cadastros() {
             recarregar={d.recarregar}
             aplicar={d.aplicar}
             remover={d.remover}
+            sugestoes={aba === "impressoras" || aba === "filamentos" ? aba : undefined}
+            extraFormulario={aba === "filamentos" ? (linha) => <OfertaFilamento linha={linha} /> : undefined}
           />
         </Card>
       )}

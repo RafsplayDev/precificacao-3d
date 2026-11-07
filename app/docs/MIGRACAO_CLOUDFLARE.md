@@ -14,18 +14,10 @@ npx wrangler login          # faça login com dropcolorec@gmail.com
 npx wrangler whoami         # confira o e-mail e anote o Account ID
 ```
 
-## 2. Criar o banco D1
+## 2. Banco D1 (já feito)
 
-```bash
-npx wrangler d1 create precifica-3d --location enam
-```
-
-Copie o `database_id` impresso para `wrangler.jsonc` (campo `d1_databases[0].database_id`)
-e aplique o schema:
-
-```bash
-npm run db:migrar
-```
+O banco `precifica-3d` já existe na conta, com o schema aplicado, e o id dele já está no
+`wrangler.jsonc`. Só rode `npm run db:migrar` quando houver migração nova em `migrations/`.
 
 ## 3. Criar o login com Google
 

@@ -14,8 +14,8 @@
     {
       "binding": "DB",
       "database_name": "precifica-3d",
-      // Troque pelo id que `npx wrangler d1 create precifica-3d` imprimir.
-      "database_id": "00000000-0000-0000-0000-000000000000",
+      // Banco já criado e com o schema 0001 aplicado (conta dropcolor).
+      "database_id": "a8ae2778-8ca3-432a-824d-cd03fcac0a24",
       "migrations_dir": "migrations"
     }
   ],

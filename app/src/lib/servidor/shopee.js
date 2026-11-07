@@ -85,6 +85,7 @@ export async function buscarShopee({ termo, pagina = 1, limite = 20, ordem = 2 }
       origem_id: `shopee:${n.itemId}`,
       loja: "shopee",
       titulo: n.productName,
+      titulo_original: n.productName,
       imagem_url: n.imageUrl,
       url_produto: n.productLink,
       link_afiliado: n.offerLink,

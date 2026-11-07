@@ -150,11 +150,15 @@ export async function POST(req) {
   if (lista.length > MAX_LOTE) return json({ message: `No máximo ${MAX_LOTE} produtos por lote.` }, 400);
 
   const erros = [];
+  const avisos = [];
   const validos = [];
   for (const item of lista) {
     const r = normalizarProduto(item);
     if (r.erro) erros.push(r.erro);
-    else validos.push({ linha: r.ok, enviados: r.enviados });
+    else {
+      validos.push({ linha: r.ok, enviados: r.enviados });
+      avisos.push(...r.avisos);
+    }
   }
 
   const banco = await db();
@@ -236,7 +240,7 @@ export async function POST(req) {
   }
 
   return json(
-    { gravados: validos.length, desativados, pendentes_link, erros },
+    { gravados: validos.length, desativados, pendentes_link, avisos, erros },
     erros.length && !validos.length ? 400 : 200
   );
 }

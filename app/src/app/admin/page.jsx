@@ -113,7 +113,12 @@ export default function Admin() {
                 <tr key={a.id} className={a.ativo ? undefined : "is-off"}>
                   <td><Switch checked={!!a.ativo} onChange={() => alternar(a)} /></td>
                   <td>
-                    <a href={a.link_afiliado || a.url_produto} target="_blank" rel="noopener noreferrer">{a.titulo}</a>
+                    <a
+                      href={a.link_afiliado || a.url_produto} target="_blank" rel="noopener noreferrer"
+                      title={a.titulo_original && a.titulo_original !== a.titulo ? `Título do vendedor: ${a.titulo_original}` : undefined}
+                    >
+                      {a.titulo}
+                    </a>
                     {!a.link_afiliado && <> · <em>sem link</em></>}
                   </td>
                   <td>{a.loja === "shopee" ? "Shopee" : "Mercado Livre"}</td>

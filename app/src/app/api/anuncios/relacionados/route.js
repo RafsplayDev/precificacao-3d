@@ -62,7 +62,16 @@ export async function GET(req) {
     .all();
 
   const melhores = results
-    .map((a) => ({ a, pontos: pontuar(busca, norm(a.titulo)) }))
+    .map((a) => {
+      // Com atributos (material, marca, cor), a combinação usa eles; sem,
+      // usa o título.
+      let ref = a.titulo;
+      try {
+        const at = a.atributos ? JSON.parse(a.atributos) : null;
+        if (at?.material) ref = [at.acabamento === "silk" || /silk/i.test(at.acabamento || "") ? "pla silk" : at.material, at.marca, at.cor].filter(Boolean).join(" ");
+      } catch {}
+      return { a, pontos: pontuar(busca, norm(ref)) };
+    })
     .filter((x) => x.pontos >= PONTOS_MINIMOS)
     .sort((x, y) => y.pontos - x.pontos || (y.a.pontuacao || 0) - (x.a.pontuacao || 0))
     .slice(0, limite);

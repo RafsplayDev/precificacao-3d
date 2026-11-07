@@ -1,6 +1,7 @@
 import "server-only";
 import { variavel } from "./cf";
 import { usuarioDaRequisicao } from "./sessao";
+import { tituloPadronizado } from "./titulos";
 
 /**
  * Regras da vitrine de afiliados.
@@ -109,7 +110,7 @@ function data(v) {
 }
 
 /** Campos opcionais: numa atualização, só mudam os que vieram no envio. */
-const OPCIONAIS = ["chamada", "condicao_preco", "observacao", "descricao", "categoria", "imagem_url", "url_produto", "link_afiliado", "preco",
+const OPCIONAIS = ["titulo_original", "atributos", "chamada", "condicao_preco", "observacao", "descricao", "categoria", "imagem_url", "url_produto", "link_afiliado", "preco",
   "preco_original", "avaliacao", "num_avaliacoes", "vendas", "comissao_pct", "selo",
   "cupom_codigo", "cupom_descricao", "cupom_validade", "pontuacao", "ativo", "expira_em"];
 
@@ -124,8 +125,17 @@ export function normalizarProduto(p) {
   if (!origem_id) return { erro: "falta origem_id" };
   const loja = codigoLoja(p.loja);
   if (!loja) return { erro: `${origem_id}: loja precisa ser "shopee" ou "mercado-livre"` };
-  const titulo = texto(p.titulo, 160);
-  if (!titulo) return { erro: `${origem_id}: falta titulo` };
+  const titulo_original = texto(p.titulo_original, 300);
+  const atributos = p.atributos && typeof p.atributos === "object" && !Array.isArray(p.atributos) ? p.atributos : null;
+  if (!texto(p.titulo, 160) && !titulo_original) return { erro: `${origem_id}: falta titulo ou titulo_original` };
+  const catBruta = slug(p.categoria);
+  const padrao = tituloPadronizado({
+    categoria: CATEGORIAS.includes(catBruta) ? catBruta : "outros",
+    atributos,
+    titulo: texto(p.titulo, 160),
+    titulo_original,
+  });
+  const titulo = texto(padrao.titulo, 160);
 
   const link_afiliado = p.link_afiliado ? daLoja(p.link_afiliado, loja) : null;
   if (p.link_afiliado && !link_afiliado) {
@@ -150,10 +160,13 @@ export function normalizarProduto(p) {
 
   return {
     enviados: ["loja", "titulo", ...enviados],
+    avisos: padrao.avisos.map((a) => `${origem_id}: ${a}`),
     ok: {
       origem_id,
       loja,
       titulo,
+      titulo_original,
+      atributos: atributos ? JSON.stringify(atributos).slice(0, 2000) : null,
       descricao: texto(p.descricao, 400),
       chamada: texto(semEmoji(p.chamada), 70),
       condicao_preco: texto(p.condicao_preco, 20),

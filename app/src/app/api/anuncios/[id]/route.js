@@ -15,7 +15,11 @@ export async function PATCH(req, { params }) {
   if (!atual) return json({ message: "Anúncio não encontrado." }, 404);
 
   const corpo = await req.json().catch(() => ({}));
-  const r = normalizarProduto({ ...atual, ...corpo, ativo: corpo.ativo ?? !!atual.ativo });
+  let atributos = corpo.atributos;
+  if (atributos === undefined && atual.atributos) {
+    try { atributos = JSON.parse(atual.atributos); } catch { atributos = null; }
+  }
+  const r = normalizarProduto({ ...atual, ...corpo, atributos, ativo: corpo.ativo ?? !!atual.ativo });
   if (r.erro) return json({ message: r.erro }, 400);
   const { origem_id, ...campos } = r.ok;
   const cols = Object.keys(campos);

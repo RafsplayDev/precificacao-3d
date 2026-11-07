@@ -89,8 +89,10 @@ Content-Type: application/json
 |---|---|---|
 | `origem_id` | sim | Chave estável do produto (ex.: `shopee:<itemId>`, `mercadolivre:MLB…`). Reenviar o mesmo id **atualiza**, não duplica. |
 | `loja` | sim | `shopee` ou `mercado-livre`. Qualquer outra é recusada. |
-| `titulo` | sim | Até 160 caracteres. |
+| `titulo` | um dos dois* | Até 160 caracteres. *Obrigatório `titulo` ou `titulo_original`. Com `atributos`, o site monta o título sozinho. |
 | `link_afiliado` / `url_produto` | um dos dois | `https://` e do domínio da própria loja (Shopee: `shopee.com.br`, `s.shopee.com.br`, `shp.ee`; Mercado Livre: `mercadolivre.com.br`, `meli.la`). Link de outro site é recusado. |
+| `titulo_original` | recomendado | O título **exatamente** como o vendedor escreveu. É com ele que o site confere os atributos. |
+| `atributos` | recomendado | O que a tarefa identificou no anúncio (ver abaixo). Com eles, o site monta o título padronizado. |
 | `categoria` | não | `filamentos`, `impressoras`, `pecas-reposicao`, `bicos-hotend`, `mesas-superficies`, `ferramentas`, `acabamento`, `resinas`, `secadores-armazenamento`, `eletronica`, `upgrades`, `outros`. |
 | `imagem_url` | não | `https://`. |
 | `preco`, `preco_original` | não | Reais. Com `preco_original` maior, o antigo aparece riscado. |
@@ -125,6 +127,27 @@ Devolve todos os anúncios com `impressoes`, `cliques`, `ativo`, `link_afiliado`
 
 `PATCH /api/anuncios/<id>` com `{ "ativo": false }`, `{ "pontuacao": 3 }` ou
 `{ "cupom_codigo": null }` ajusta um anúncio; `DELETE /api/anuncios/<id>` remove.
+
+## Títulos padronizados
+
+O título exibido não é o do vendedor: o site monta um título no mesmo formato para todo
+produto do mesmo tipo, a partir dos `atributos` que a tarefa manda. A imagem continua sendo
+a capa do anúncio real (`imagem_url`).
+
+| Categoria | Atributos | Título montado |
+|---|---|---|
+| `filamentos` | `material`*, `marca`*, `cor`, `acabamento` (silk, fosco, velvet), `peso_kg`, `diametro_mm` | Filamento PETG Masterprint Branco · 1 kg · 1,75 mm |
+| `bicos-hotend` | `diametro_mm`*, `quantidade`, `material`, `marca`, `padrao` (mk8, v6, volcano), `compatibilidade` | Kit 10 Bicos de Latão 0,4 mm · MK8 · Ender 3, CR-10 |
+| `mesas-superficies` | `tipo`* (PEI, vidro…), `acabamento`, `marca`, `tamanho_mm` ("235x235"), `magnetica`, `dupla_face` | Mesa PEI Texturizada 235 × 235 mm · Magnética · Dupla face |
+| `secadores-armazenamento` | `marca`, `modelo` | Secador de Filamento Sunlu S2 |
+| `impressoras` | `marca`*, `modelo`* | Impressora 3D Bambu Lab A1 |
+
+\* mínimos para padronizar. Outras categorias usam o `titulo` enviado.
+
+**Trava contra erro:** marca, material, cor, acabamento e modelo precisam aparecer no
+`titulo_original` (o site entende sinônimos: "white" = branco, "PLA Plus" = PLA+,
+"Voolt3D" = Voolt, "seda" = silk). Se algum não aparecer, o site mantém o título original
+e devolve um aviso em `avisos` — sinal de que a tarefa identificou algo errado.
 
 ## Medalhas (ouro, prata e bronze)
 
@@ -181,14 +204,74 @@ afiliado. O selo "Patrocinado" e o `rel="sponsored"` identificam a publicidade.
 > 6. **Desative** (`ativo: false`) o que estiver sem estoque, mais caro, com nota menor ou
 >    com CTR bem abaixo da média depois de 500 impressões. Remova cupons vencidos
 >    (`cupom_codigo: null`).
-> 7. **Chamada:** para cada produto, escreva uma `chamada` curta (até 70 caracteres),
+> 7. **Título e imagem:** use a imagem de capa do anúncio (`imagem_url`). Mande o título do
+>    vendedor em `titulo_original`, sem mudar nada, e os `atributos` do produto (material,
+>    marca, cor, peso, diâmetro… ver a tabela de títulos padronizados). Só informe um
+>    atributo se ele estiver no anúncio; na dúvida, deixe de fora. Se a resposta trouxer
+>    `avisos`, revise o produto: algum atributo não bate com o anúncio.
+> 8. **Chamada:** para cada produto, escreva uma `chamada` curta (até 70 caracteres),
 >    direta e com bom humor, no estilo de grupo de promoções ("Peça soltando da mesa?
 >    Acabou o drama"). **Nunca use emoji.** Preencha `condicao_preco` ("no Pix", "cada")
 >    e `observacao` para vantagens que não são cupom ("De 1 a 3 unidades com 20% OFF").
 >    Não invente medalha nem desconto: as medalhas o site calcula sozinho.
-> 8. **Reenvie o preço atual de todos os produtos ativos**, mesmo os que não mudaram: é
+> 9. **Reenvie o preço atual de todos os produtos ativos**, mesmo os que não mudaram: é
 >    isso que forma o histórico das medalhas.
-> 9. **Envie** tudo num `POST /api/anuncios` com `origem_id` estável (`shopee:<itemId>`,
+> 10. **Envie** tudo num `POST /api/anuncios` com `origem_id` estável (`shopee:<itemId>`,
 >    `mercadolivre:<MLB…>`). Ofertas relâmpago levam `expira_em`.
-> 10. **Resuma:** gravados, desativados, erros, a lista `pendentes_link` (para eu gerar os
+> 11. **Resuma:** gravados, desativados, erros, a lista `pendentes_link` (para eu gerar os
 >    links do Mercado Livre) e o top 5 por CTR.
+
+## Verificação periódica (a cada 3 horas)
+
+Duas tarefas agendadas funcionam melhor que uma:
+
+| Tarefa | Quando | O que faz |
+|---|---|---|
+| **Garimpo** (prompt acima) | 1 vez por dia, de manhã | Procura produtos novos, cupons e monta a vitrine |
+| **Verificação** (prompt abaixo) | A cada 3 h, das 8h às 22h | Confere os produtos que já estão no ar |
+
+Produto sem verificação há mais de **30 horas** sai da vitrine sozinho (`VALIDADE_HORAS`
+em `src/lib/servidor/anuncios.js`), então a verificação precisa rodar pelo menos 1 vez por dia.
+
+### Rotas
+
+```
+GET  /api/anuncios/verificar?limite=20      ← o lote a conferir (os mais antigos primeiro)
+POST /api/anuncios/verificacoes             ← o resultado de cada um
+GET  /api/anuncios/verificacoes?origem_id=… ← o histórico de verificações de um produto
+```
+
+```json
+{ "verificacoes": [
+  { "origem_id": "shopee:123", "disponivel": true, "estoque": 8, "preco": 84.9,
+    "preco_original": 119.9, "cupom_valido": false,
+    "observacao": "Estoque caiu de 30 para 8; cupom FILA10 expirou; preço igual." }
+] }
+```
+
+- `disponivel: false` ou `estoque: 0` → sai da vitrine na hora e aparece em "Esgotaram nas
+  últimas 24 horas".
+- `cupom_valido: false` → o cupom some. Mandando `cupom_codigo` (+ descrição e validade), o
+  cupom novo entra no lugar.
+- `preco` → atualiza e entra no histórico das medalhas.
+- `observacao` → aparece no `/admin` e fica no histórico.
+
+### Prompt sugerido para a verificação
+
+> Você confere os produtos da vitrine do Precifica 3D. Site: https://precifica.dropcolor.com.br.
+> Token: `{ANUNCIOS_TOKEN}`, no cabeçalho `Authorization: Bearer`.
+>
+> 1. Pegue o lote: `GET /api/anuncios/verificar?limite=20`.
+> 2. Para cada produto, abra o anúncio (`url_produto`, ou o `link_afiliado`) e confira:
+>    - se ainda está à venda e a quantidade disponível (se a loja mostrar);
+>    - o preço de agora e o preço "de" riscado;
+>    - se o cupom salvo (`cupom_codigo`) ainda vale para esse produto; se achar um cupom
+>      melhor, mande o novo (código, regra e validade confirmados — nunca invente).
+> 3. Escreva uma `observacao` curta e objetiva do que mudou desde a última verificação
+>    (`ultima_observacao`). Ex.: "Estoque caiu de 30 para 8; preço subiu R$ 5; cupom ok."
+>    Se nada mudou: "Sem mudanças."
+> 4. Na dúvida sobre disponibilidade (página não abriu, erro da loja), não marque como
+>    indisponível: deixe `disponivel` de fora e diga na observação.
+> 5. Envie tudo num `POST /api/anuncios/verificacoes`.
+> 6. Resuma: quantos conferidos, quantos esgotaram, cupons que caíram e mudanças de preço
+>    acima de 10%.

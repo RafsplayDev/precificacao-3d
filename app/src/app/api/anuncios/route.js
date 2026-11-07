@@ -32,8 +32,10 @@ export async function GET(req) {
     });
   }
 
-  const limite = Math.min(Math.max(Number(p.get("limite")) || 4, 1), 12);
+  const limite = Math.min(Math.max(Number(p.get("limite")) || 4, 1), 60);
   const categoria = p.get("categoria");
+  const loja = p.get("loja");
+  const ordem = p.get("ordem") || "destaque";
   const agora = new Date().toISOString();
 
   // Sem link de afiliado o anúncio não rende nada: fica guardado, fora da vitrine.
@@ -43,13 +45,30 @@ export async function GET(req) {
     filtros.push("categoria = ?");
     valores.push(categoria);
   }
+  if (loja && LOJAS[loja]) {
+    filtros.push("loja = ?");
+    valores.push(loja);
+  }
+  if (p.get("cupom")) {
+    filtros.push("cupom_codigo IS NOT NULL AND (cupom_validade IS NULL OR cupom_validade > ?)");
+    valores.push(agora);
+  }
+
+  // "destaque" é o sorteio ponderado (pontuação × CTR × acaso); as outras
+  // ordens são para quem está procurando algo no catálogo.
+  const ORDENS = {
+    destaque: `(pontuacao + 1) * (1 + 20.0 * (cliques + 1) / (impressoes + 100))
+               * (0.35 + (ABS(RANDOM()) % 1000) / 1000.0) DESC`,
+    "menor-preco": "preco IS NULL, preco ASC",
+    desconto: "(CASE WHEN preco_original > preco THEN 1 - preco / preco_original ELSE 0 END) DESC, pontuacao DESC",
+    avaliacao: "avaliacao IS NULL, avaliacao DESC, num_avaliacoes DESC",
+  };
+  const ordenarPor = ORDENS[ordem] || ORDENS.destaque;
 
   const { results } = await banco
     .prepare(
       `SELECT * FROM anuncios WHERE ${filtros.join(" AND ")}
-        ORDER BY (pontuacao + 1)
-               * (1 + 20.0 * (cliques + 1) / (impressoes + 100))
-               * (0.35 + (ABS(RANDOM()) % 1000) / 1000.0) DESC
+        ORDER BY ${ordenarPor}
         LIMIT ?`
     )
     .bind(...valores, limite)

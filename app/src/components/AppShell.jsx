@@ -18,13 +18,14 @@ const NAV = [
   // devolvendo esta linha (e o "/gestao" na lista APP do middleware).
   // { href: "/gestao", label: "Gestão", icone: "trending-up" },
   { href: "/concorrentes", label: "Concorrentes", icone: "store" },
+  { href: "/achados", label: "Achados", icone: "shopping-bag" },
 ];
 
 /** Páginas que se bastam: sem menu do app e sem a vitrine no rodapé. */
 const SEM_MENU = ["/entrar", "/tutorial", "/privacidade", "/termos"];
 
 /** Onde a vitrine de afiliados não aparece no rodapé. */
-const SEM_VITRINE = ["/entrar", "/admin", "/tutorial", "/privacidade", "/termos"];
+const SEM_VITRINE = ["/entrar", "/admin", "/tutorial", "/privacidade", "/termos", "/achados"];
 
 const ToastCtx = React.createContext(() => {});
 export const useToast = () => React.useContext(ToastCtx);

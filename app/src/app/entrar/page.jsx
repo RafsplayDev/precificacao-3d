@@ -51,7 +51,7 @@ function Formulario() {
           </p>
         </div>
       </Card>
-      <Vitrine limite={3} titulo="Achados para sua impressora 3D" />
+      <Vitrine limite={3} titulo="Achados para sua impressora 3D" variante="grade" verTodos={false} />
     </div>
   );
 }

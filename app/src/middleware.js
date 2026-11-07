@@ -10,7 +10,7 @@ import { NextResponse } from "next/server";
  * Quem garante de verdade é a API: /api/dados confere a sessão no D1 a cada
  * chamada, e com um cookie inválido a tela recebe 401 e volta para o login.
  */
-const PUBLICAS = ["/entrar", "/privacidade", "/termos"];
+const PUBLICAS = ["/entrar", "/privacidade", "/termos", "/achados"];
 const COOKIE_SESSAO = "dc_sessao";
 
 const comeca = (caminho, lista) => lista.some((p) => caminho === p || caminho.startsWith(p + "/"));

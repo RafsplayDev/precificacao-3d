@@ -61,6 +61,9 @@ export default function Admin() {
     <div className="ap-admin">
       <h1>Anúncios de afiliado</h1>
       <p className="ap-admin__sub">
+        <a href="/admin/vitrine">Ver a prévia dos estilos da vitrine →</a>
+      </p>
+      <p className="ap-admin__sub">
         {lista ? `${ativos.length} na vitrine de ${lista.length}` : "Carregando…"}
         {" · "}
         {impressoes.toLocaleString("pt-BR")} impressões · {cliques.toLocaleString("pt-BR")} cliques

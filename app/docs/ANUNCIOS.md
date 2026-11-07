@@ -1,14 +1,50 @@
-# Vitrine de afiliados — como abastecer automaticamente
+# Vitrine de afiliados — Shopee e Mercado Livre
 
-O Precifica mostra uma vitrine de produtos do ramo 3D (filamentos, bicos, mesas,
-secadores…) com seus links de afiliado: no rodapé de cada tela do app e na tela de
-login. A vitrine é a estrutura pronta: a tarefa automática só envia os dados de
-cada produto aprovado, e o app valida, grava, sorteia, conta impressões e cliques.
+O Precifica mostra uma vitrine de produtos do ramo 3D com seus links de afiliado,
+no rodapé das telas do app e na tela de login. Só **Shopee** e **Mercado Livre** são
+aceitos. Cada produto pode ter um **cupom**, exibido junto e copiado com um toque.
 
-## Endpoint de carga
+A tarefa automática só manda os dados de cada produto. O app valida, gera o link de
+afiliado quando dá, grava, sorteia, conta impressões e cliques.
+
+## Como o link de afiliado é obtido
+
+| Loja | Automático? | Como |
+|---|---|---|
+| **Shopee** | **Sim** | Pela Open API do Shopee Afiliados. A tarefa pode buscar produtos já com o link de afiliado (`POST /api/anuncios/shopee`) ou mandar só o `url_produto`, que o servidor converte. Precisa dos segredos `SHOPEE_APP_ID` e `SHOPEE_APP_SECRET`. |
+| **Mercado Livre** | **Não** | O programa de afiliados do Mercado Livre não tem API pública. A tarefa manda o `url_produto`, o produto fica **aguardando link** e você cola o link gerado na barra de afiliados (ou no Gerador de links) em `/admin`. Leva segundos por produto. Depois de colado, o link é preservado mesmo quando a tarefa reenvia o produto. |
+
+Ferramentas de terceiros que geram links do Mercado Livre usando a sessão/cookies da
+sua conta existem, mas não são oficiais e podem violar os termos do programa — por
+isso não foram usadas.
+
+### Ativar a Open API da Shopee
+
+1. Em https://affiliate.shopee.com.br, entre na sua conta de afiliado e procure a área
+   **Open API** (em geral no menu da conta). Peça o acesso, se ainda não tiver.
+2. Copie o **AppId** e o **Secret**.
+3. Cadastre no Worker (no Windows, use `echo VALOR| npx wrangler secret put NOME`):
+   ```bash
+   npx wrangler secret put SHOPEE_APP_ID
+   npx wrangler secret put SHOPEE_APP_SECRET
+   ```
+
+## Buscar produtos da Shopee (pelo site)
 
 ```
-POST https://SEU-DOMINIO/api/anuncios
+POST https://precifica.dropcolor.com.br/api/anuncios/shopee
+Authorization: Bearer <ANUNCIOS_TOKEN>
+{ "termo": "filamento pla", "ordem": 2, "pagina": 1, "limite": 20 }
+```
+
+`ordem`: 1 relevância · 2 mais vendidos · 3 maior preço · 4 menor preço · 5 maior comissão.
+Cada produto volta pronto para o `POST /api/anuncios`, com `link_afiliado`, `preco`,
+`comissao_pct`, `vendas`, `avaliacao` e `desconto_pct`.
+
+## Gravar produtos
+
+```
+POST https://precifica.dropcolor.com.br/api/anuncios
 Authorization: Bearer <ANUNCIOS_TOKEN>
 Content-Type: application/json
 ```
@@ -18,20 +54,32 @@ Content-Type: application/json
   "desativar_ausentes": false,
   "produtos": [
     {
-      "origem_id": "mercadolivre:MLB123456789",
-      "loja": "Mercado Livre",
+      "origem_id": "shopee:22912345678",
+      "loja": "shopee",
       "titulo": "Filamento PLA Silk 1kg 1,75mm — Arco-íris",
-      "descricao": "Brilho acetinado, boa adesão na mesa.",
       "categoria": "filamentos",
-      "imagem_url": "https://http2.mlstatic.com/....jpg",
-      "link_afiliado": "https://mercadolivre.com/sec/xxxxx",
-      "preco": 119.9,
-      "preco_original": 149.9,
+      "imagem_url": "https://down-br.img.susercontent.com/....jpg",
+      "url_produto": "https://shopee.com.br/produto-i.123.456",
+      "link_afiliado": "https://s.shopee.com.br/xxxxx",
+      "preco": 89.9,
+      "preco_original": 119.9,
       "avaliacao": 4.8,
       "num_avaliacoes": 1520,
-      "selo": "-20%",
-      "pontuacao": 8.5,
-      "expira_em": "2026-12-31T23:59:59Z"
+      "vendas": 8000,
+      "comissao_pct": 8,
+      "selo": "-25%",
+      "cupom_codigo": "FILAMENTO10",
+      "cupom_descricao": "10% off em compras acima de R$ 80",
+      "cupom_validade": "2026-11-30T23:59:59-03:00",
+      "pontuacao": 8.5
+    },
+    {
+      "origem_id": "mercadolivre:MLB3456789012",
+      "loja": "mercado-livre",
+      "titulo": "Secador de filamento com controle de umidade",
+      "categoria": "secadores-armazenamento",
+      "url_produto": "https://produto.mercadolivre.com.br/MLB-3456789012-...",
+      "preco": 199
     }
   ]
 }
@@ -39,69 +87,80 @@ Content-Type: application/json
 
 | Campo | Obrigatório | Regra |
 |---|---|---|
-| `origem_id` | sim | Chave estável do produto na loja (ex.: `amazon:B0ABC123`). Reenviar o mesmo id **atualiza**, não duplica. |
-| `loja` | sim | Nome exibido (Amazon, Mercado Livre, Shopee, AliExpress…). |
+| `origem_id` | sim | Chave estável do produto (ex.: `shopee:<itemId>`, `mercadolivre:MLB…`). Reenviar o mesmo id **atualiza**, não duplica. |
+| `loja` | sim | `shopee` ou `mercado-livre`. Qualquer outra é recusada. |
 | `titulo` | sim | Até 160 caracteres. |
-| `link_afiliado` | sim | URL `https://` com sua tag de afiliado. |
-| `categoria` | não | Uma de: `filamentos`, `impressoras`, `pecas-reposicao`, `bicos-hotend`, `mesas-superficies`, `ferramentas`, `acabamento`, `resinas`, `secadores-armazenamento`, `eletronica`, `upgrades`, `outros`. Outro valor vira `outros`. |
-| `imagem_url` | não | `https://`. Sem imagem aparece um marcador "3D". |
-| `preco`, `preco_original` | não | Número em reais. Com `preco_original` maior, o preço antigo aparece riscado. |
-| `avaliacao`, `num_avaliacoes` | não | Nota de 0 a 5 e quantidade de avaliações. |
-| `selo` | não | Etiqueta curta (até 30 caracteres), ex.: `-20%`, `Mais vendido`. |
-| `pontuacao` | não | Prioridade de 0 a 10 dada pela tarefa. Pesa no sorteio da vitrine. |
+| `link_afiliado` / `url_produto` | um dos dois | `https://` e do domínio da própria loja (Shopee: `shopee.com.br`, `s.shopee.com.br`, `shp.ee`; Mercado Livre: `mercadolivre.com.br`, `meli.la`). Link de outro site é recusado. |
+| `categoria` | não | `filamentos`, `impressoras`, `pecas-reposicao`, `bicos-hotend`, `mesas-superficies`, `ferramentas`, `acabamento`, `resinas`, `secadores-armazenamento`, `eletronica`, `upgrades`, `outros`. |
+| `imagem_url` | não | `https://`. |
+| `preco`, `preco_original` | não | Reais. Com `preco_original` maior, o antigo aparece riscado. |
+| `avaliacao`, `num_avaliacoes`, `vendas`, `comissao_pct` | não | Usados no painel e para a tarefa decidir; só nota e avaliações aparecem na vitrine. |
+| `selo` | não | Etiqueta curta, ex.: `-25%`, `Frete grátis`. |
+| `cupom_codigo` | não | Código do cupom (até 40 caracteres, vira maiúsculo). |
+| `cupom_descricao` | não | O que o cupom dá, ex.: `R$ 20 off acima de R$ 150`. |
+| `cupom_validade` | não | Data ISO. Vencido, o cupom some sozinho (o produto continua). |
+| `pontuacao` | não | 0 a 10. Pesa no sorteio da vitrine. |
 | `ativo` | não | `false` tira da vitrine sem apagar. |
-| `expira_em` | não | Data ISO. Depois dela o anúncio some sozinho (bom para promoções). |
+| `expira_em` | não | Data ISO. Depois dela o anúncio inteiro some (bom para ofertas relâmpago). |
 
 - Até 200 produtos por chamada.
-- Numa atualização, só mudam os campos enviados. Mandar só `preco` não apaga a imagem.
-- `desativar_ausentes: true` desativa todo anúncio ativo que **não** veio no lote. Use
-  quando a tarefa enviar a vitrine completa a cada rodada.
-- Resposta: `{ "gravados": 12, "desativados": 3, "erros": ["xyz: link_afiliado precisa ser uma URL https"] }`.
+- Numa atualização só mudam os campos enviados.
+- `desativar_ausentes: true` desativa todo anúncio ativo que **não** veio no lote.
+- Resposta: `{ "gravados": 12, "desativados": 3, "pendentes_link": [...], "erros": [...] }`.
+  `pendentes_link` lista os que estão sem link de afiliado (os do Mercado Livre até você
+  colar o link no `/admin`).
 
-## Ler o desempenho (para a tarefa otimizar)
+## Ler o desempenho
 
 ```
-GET https://SEU-DOMINIO/api/anuncios?todos=1
+GET https://precifica.dropcolor.com.br/api/anuncios?todos=1
 Authorization: Bearer <ANUNCIOS_TOKEN>
 ```
 
-Devolve todos os anúncios com `impressoes`, `cliques`, `ativo`, `pontuacao` e
-`atualizado_em`. CTR = cliques ÷ impressões.
+Devolve todos os anúncios com `impressoes`, `cliques`, `ativo`, `link_afiliado`,
+`cupom_*`, e `shopee_api` (se a Open API está configurada). CTR = cliques ÷ impressões.
 
-Para ligar/desligar ou ajustar um só: `PATCH /api/anuncios/<id>` com `{ "ativo": false }`
-ou `{ "pontuacao": 3 }`. Para remover: `DELETE /api/anuncios/<id>`.
+`PATCH /api/anuncios/<id>` com `{ "ativo": false }`, `{ "pontuacao": 3 }` ou
+`{ "cupom_codigo": null }` ajusta um anúncio; `DELETE /api/anuncios/<id>` remove.
 
 ## Como a vitrine escolhe
 
-A cada exibição são sorteados até 4 anúncios ativos e não vencidos. O peso de cada um é:
+Entram só anúncios ativos, com link de afiliado e não vencidos. O peso de cada um é:
 
 ```
 (pontuacao + 1) × (1 + 20 × (cliques + 1) / (impressoes + 100)) × acaso(0,35–1,35)
 ```
 
-Ou seja: a nota da tarefa conta, o que é clicado de verdade sobe sozinho, e o acaso
-garante que produto novo também apareça. Todo clique passa por `/api/anuncios/<id>/ir`,
-que conta o clique e redireciona para o `link_afiliado`. Os links levam
-`rel="sponsored nofollow"` e o selo "Patrocinado" fica visível, como exigem as regras de
-publicidade (CONAR) e dos programas de afiliados.
+O clique passa por `/api/anuncios/<id>/ir`, que conta e redireciona para o link de
+afiliado. O selo "Patrocinado" e o `rel="sponsored"` identificam a publicidade.
 
 ## Prompt sugerido para a tarefa agendada do Claude
 
-> Você abastece a vitrine de afiliados do Precifica 3D (calculadora de preço para quem
-> vende impressão 3D FDM no Brasil).
+> Você abastece a vitrine de afiliados do Precifica 3D, uma calculadora de preço para quem
+> vende impressão 3D FDM no Brasil. Site: https://precifica.dropcolor.com.br. Token:
+> `{ANUNCIOS_TOKEN}`, sempre no cabeçalho `Authorization: Bearer`. Só Shopee e Mercado Livre.
 >
-> 1. Leia o desempenho atual: `GET {SITE}/api/anuncios?todos=1` com
->    `Authorization: Bearer {ANUNCIOS_TOKEN}`.
-> 2. Busque produtos do ramo de impressão 3D nas lojas onde tenho programa de afiliado
->    ({LISTA_DE_LOJAS}), com foco em: filamentos PLA/PETG/TPU, bicos e hotends, mesas PEI,
->    secadores de filamento, ferramentas de acabamento, peças de reposição e upgrades.
-> 3. Aprove só o que passar em **todos** os critérios: vendido no Brasil, em estoque, nota
->    ≥ 4,3 com ≥ 50 avaliações, preço competitivo e loja/vendedor confiável. Gere o link com
->    minha tag de afiliado ({TAGS}).
-> 4. Dê `pontuacao` de 0 a 10 (relevância para quem imprime em 3D × custo-benefício ×
->    desconto). Mantenha de 12 a 40 produtos ativos, variando as categorias.
-> 5. Desative (`ativo: false`) os que estão sem estoque, subiram de preço ou têm CTR muito
->    abaixo da média depois de 500 impressões.
-> 6. Envie tudo num `POST {SITE}/api/anuncios` (formato acima), usando um `origem_id`
->    estável por produto. Promoções levam `expira_em`.
-> 7. Termine com um resumo: quantos gravados, desativados, erros e o top 5 por CTR.
+> 1. **Leia o estado atual:** `GET /api/anuncios?todos=1`. Anote CTR, o que está sem link
+>    (`link_afiliado` nulo) e cupons vencidos.
+> 2. **Shopee:** busque com `POST /api/anuncios/shopee` (`ordem` 2 e 5) os termos: filamento
+>    PLA, PETG, TPU, bico hotend, mesa PEI, secador de filamento, espátula impressora 3D, kit
+>    acabamento, cola mesa impressora 3D. Os resultados já trazem `link_afiliado`.
+> 3. **Mercado Livre:** pesquise os mesmos termos em mercadolivre.com.br e pegue o link comum
+>    do produto (`url_produto`). Prefira lojas oficiais e Mercado Líder. O link de afiliado eu
+>    colo depois no /admin.
+> 4. **Cupons:** procure cupons válidos aplicáveis a esses produtos (página de cupons da loja,
+>    cupons da loja do vendedor, cupons de categoria). Só inclua cupom com código, regra e
+>    validade confirmados; nunca invente código.
+> 5. **Aprove só** o que passar em todos os critérios: vendido no Brasil, em estoque, nota
+>    ≥ 4,5 com ≥ 100 avaliações (ou ≥ 500 vendas), vendedor confiável, preço competitivo.
+>    Dê `pontuacao` de 0 a 10 (relevância para quem imprime em 3D × custo-benefício ×
+>    desconto × comissão). Mantenha 20 a 40 produtos ativos, misturando as duas lojas e
+>    as categorias, com no máximo 5 produtos do Mercado Livre novos por rodada (cada um
+>    exige que eu cole o link à mão).
+> 6. **Desative** (`ativo: false`) o que estiver sem estoque, mais caro, com nota menor ou
+>    com CTR bem abaixo da média depois de 500 impressões. Remova cupons vencidos
+>    (`cupom_codigo: null`).
+> 7. **Envie** tudo num `POST /api/anuncios` com `origem_id` estável (`shopee:<itemId>`,
+>    `mercadolivre:<MLB…>`). Ofertas relâmpago levam `expira_em`.
+> 8. **Resuma:** gravados, desativados, erros, a lista `pendentes_link` (para eu gerar os
+>    links do Mercado Livre) e o top 5 por CTR.

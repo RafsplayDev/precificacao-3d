@@ -40,7 +40,7 @@ export function Vitrine({ limite = 4, categoria, titulo = "Achados para impress√
       </div>
       <ul className="ap-vitrine__lista">
         {itens.map((a) => (
-          <li key={a.id}>
+          <li key={a.id} className="ap-vitrine__cartao">
             <a
               className="ap-vitrine__item"
               href={a.href}
@@ -60,7 +60,7 @@ export function Vitrine({ limite = 4, categoria, titulo = "Achados para impress√
                 {a.selo && <span className="ap-vitrine__etiqueta">{a.selo}</span>}
               </span>
               <span className="ap-vitrine__corpo">
-                <span className="ap-vitrine__loja">{a.loja}</span>
+                <span className={`ap-vitrine__loja ap-vitrine__loja--${a.loja_codigo}`}>{a.loja}</span>
                 <span className="ap-vitrine__titulo">{a.titulo}</span>
                 {a.avaliacao != null && (
                   <span className="ap-vitrine__nota">
@@ -77,9 +77,33 @@ export function Vitrine({ limite = 4, categoria, titulo = "Achados para impress√
                 <span className="ap-vitrine__cta">Ver oferta</span>
               </span>
             </a>
+            {a.cupom && <Cupom cupom={a.cupom} />}
           </li>
         ))}
       </ul>
     </section>
+  );
+}
+
+/**
+ * O cupom fica fora do link do an√∫ncio: tocar nele copia o c√≥digo, e n√£o
+ * leva para a loja. Quem usa o cupom cola no carrinho, depois de abrir a
+ * oferta.
+ */
+function Cupom({ cupom }) {
+  const [copiado, setCopiado] = React.useState(false);
+  async function copiar() {
+    try {
+      await navigator.clipboard.writeText(cupom.codigo);
+      setCopiado(true);
+      setTimeout(() => setCopiado(false), 2000);
+    } catch {}
+  }
+  return (
+    <button type="button" className="ap-vitrine__cupom" onClick={copiar} aria-label={`Copiar cupom ${cupom.codigo}`}>
+      <span className="ap-vitrine__cupom-rot">{copiado ? "Copiado!" : "Cupom"}</span>
+      <code>{cupom.codigo}</code>
+      {cupom.descricao && <span className="ap-vitrine__cupom-desc">{cupom.descricao}</span>}
+    </button>
   );
 }

@@ -15,3 +15,7 @@ ANUNCIOS_TOKEN=
 
 # No dev o cookie de sessão é "secure"; o localhost é aceito pelos navegadores.
 ADMIN_EMAILS=dropcolorec@gmail.com
+
+# Open API do Shopee Afiliados (affiliate.shopee.com.br). Opcional.
+SHOPEE_APP_ID=
+SHOPEE_APP_SECRET=

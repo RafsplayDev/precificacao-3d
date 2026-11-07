@@ -33,5 +33,6 @@
     "ADMIN_EMAILS": "dropcolorec@gmail.com,rafsplayofc@gmail.com"
   }
   // Segredos (NÃO ficam aqui): defina com `npx wrangler secret put NOME`
-  //   GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, ANUNCIOS_TOKEN
+  //   GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, ANUNCIOS_TOKEN,
+  //   SHOPEE_APP_ID, SHOPEE_APP_SECRET (Open API do Shopee Afiliados)
 }

@@ -12,7 +12,7 @@ export async function GET(req, { params }) {
   const { id } = await params;
   const banco = await db();
   const a = await banco.prepare("SELECT link_afiliado FROM anuncios WHERE id = ?").bind(id).first();
-  if (!a) return NextResponse.redirect(new URL("/", req.url));
+  if (!a?.link_afiliado) return NextResponse.redirect(new URL("/", req.url));
   await banco.prepare("UPDATE anuncios SET cliques = cliques + 1 WHERE id = ?").bind(id).run();
   const res = NextResponse.redirect(a.link_afiliado, 302);
   res.headers.set("cache-control", "no-store");

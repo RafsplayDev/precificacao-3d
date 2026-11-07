@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/servidor/cf";
-import { normalizarProduto, podeGerenciar, ehTarefa, paraVitrine, MAX_LOTE, CATEGORIAS } from "@/lib/servidor/anuncios";
+import { normalizarProduto, podeGerenciar, ehTarefa, paraVitrine, MAX_LOTE, CATEGORIAS, LOJAS } from "@/lib/servidor/anuncios";
+import { gerarLinkShopee, credenciaisShopee } from "@/lib/servidor/shopee";
 
 export const dynamic = "force-dynamic";
 
@@ -23,14 +24,20 @@ export async function GET(req) {
   if (p.get("todos")) {
     if (!(await podeGerenciar(req))) return json({ message: "Sem permissão." }, 403);
     const { results } = await banco.prepare("SELECT * FROM anuncios ORDER BY ativo DESC, pontuacao DESC").all();
-    return json({ anuncios: results, categorias: CATEGORIAS });
+    return json({
+      anuncios: results,
+      categorias: CATEGORIAS,
+      lojas: Object.keys(LOJAS),
+      shopee_api: !!(await credenciaisShopee()),
+    });
   }
 
   const limite = Math.min(Math.max(Number(p.get("limite")) || 4, 1), 12);
   const categoria = p.get("categoria");
   const agora = new Date().toISOString();
 
-  const filtros = ["ativo = 1", "(expira_em IS NULL OR expira_em > ?)"];
+  // Sem link de afiliado o anúncio não rende nada: fica guardado, fora da vitrine.
+  const filtros = ["ativo = 1", "link_afiliado IS NOT NULL", "(expira_em IS NULL OR expira_em > ?)"];
   const valores = [agora];
   if (categoria && CATEGORIAS.includes(categoria)) {
     filtros.push("categoria = ?");
@@ -65,9 +72,16 @@ export async function GET(req) {
  * { "produtos": [ {...}, ... ], "desativar_ausentes": false }
  *
  * Grava em lote. Produto com `origem_id` já existente é atualizado (as
- * métricas de impressões/cliques são preservadas). Com
- * `desativar_ausentes: true`, todo anúncio ativo que não veio no lote é
- * desativado — útil quando a tarefa manda a vitrine completa a cada rodada.
+ * métricas de impressões/cliques são preservadas, e só mudam os campos que
+ * vieram). Com `desativar_ausentes: true`, todo anúncio ativo que não veio
+ * no lote é desativado.
+ *
+ * Link de afiliado:
+ *  • Shopee: mandando só `url_produto`, o servidor gera o link de afiliado
+ *    pela Open API (precisa de SHOPEE_APP_ID/SHOPEE_APP_SECRET).
+ *  • Mercado Livre: não há API de afiliados. Sem `link_afiliado`, o produto
+ *    entra como pendente e você cola o link no /admin.
+ * Os pendentes voltam em `pendentes_link`.
  */
 export async function POST(req) {
   if (!(await ehTarefa(req))) return json({ message: "Token inválido." }, 401);
@@ -86,6 +100,20 @@ export async function POST(req) {
   }
 
   const banco = await db();
+
+  // Shopee sem link de afiliado: gera pela API, um por um (são poucos por lote).
+  const temShopeeApi = !!(await credenciaisShopee());
+  for (const v of validos) {
+    const l = v.linha;
+    if (l.loja !== "shopee" || l.link_afiliado || !l.url_produto || !temShopeeApi) continue;
+    try {
+      l.link_afiliado = await gerarLinkShopee(l.url_produto);
+      if (!v.enviados.includes("link_afiliado")) v.enviados.push("link_afiliado");
+    } catch (e) {
+      erros.push(`${l.origem_id}: não foi possível gerar o link da Shopee (${e.message})`);
+    }
+  }
+
   const agora = new Date().toISOString();
   const stmts = validos.map(({ linha, enviados }) => {
     const cols = Object.keys(linha);
@@ -100,8 +128,8 @@ export async function POST(req) {
       .bind(crypto.randomUUID(), ...cols.map((c) => linha[c]), agora);
   });
 
-  let desativados = 0;
-  if (corpo?.desativar_ausentes && validos.length) {
+  const desativar = corpo?.desativar_ausentes && validos.length;
+  if (desativar) {
     const ids = validos.map((v) => v.linha.origem_id);
     stmts.push(
       banco
@@ -113,10 +141,29 @@ export async function POST(req) {
     );
   }
 
+  let desativados = 0;
   if (stmts.length) {
     const res = await banco.batch(stmts);
-    if (corpo?.desativar_ausentes && validos.length) desativados = res[res.length - 1].meta?.changes || 0;
+    if (desativar) desativados = res[res.length - 1].meta?.changes || 0;
   }
 
-  return json({ gravados: validos.length, desativados, erros }, erros.length && !validos.length ? 400 : 200);
+  // O que ficou sem link — conferido no banco, porque o link pode ter sido
+  // colado antes no /admin e preservado nesta atualização.
+  let pendentes_link = [];
+  if (validos.length) {
+    const ids = validos.map((v) => v.linha.origem_id);
+    const { results } = await banco
+      .prepare(
+        `SELECT origem_id, loja, titulo, url_produto FROM anuncios
+          WHERE link_afiliado IS NULL AND origem_id IN (${ids.map(() => "?").join(",")})`
+      )
+      .bind(...ids)
+      .all();
+    pendentes_link = results;
+  }
+
+  return json(
+    { gravados: validos.length, desativados, pendentes_link, erros },
+    erros.length && !validos.length ? 400 : 200
+  );
 }

@@ -155,3 +155,21 @@
 .ap-admin__tabela td.num { text-align: right; font-variant-numeric: tabular-nums; }
 .ap-admin__tabela tr.is-off td { opacity: .5; }
 .ap-admin__rolar { overflow-x: auto; }
+
+/* ---- Páginas legais (privacidade e termos) ---- */
+.ap-legal {
+  max-width: 720px; margin: 0 auto;
+  padding: var(--space-10) var(--gutter-page) var(--space-20);
+  color: var(--text-body); line-height: 1.65;
+}
+.ap-legal h1 {
+  font-family: var(--font-display); font-size: var(--text-h1); letter-spacing: var(--ls-h1);
+  color: var(--text-strong); margin: var(--space-4) 0 var(--space-1);
+}
+.ap-legal h2 { font-size: var(--text-h4); color: var(--text-strong); margin: var(--space-8) 0 var(--space-2); }
+.ap-legal ul { padding-left: var(--space-5); }
+.ap-legal li { margin-bottom: var(--space-2); }
+.ap-legal a { color: var(--text-link); }
+.ap-legal__data { color: var(--text-faint); font-size: var(--text-body-sm); margin: 0 0 var(--space-6); }
+.ap-legal__voltar { font-size: var(--text-body-sm); color: var(--text-muted) !important; text-decoration: none; }
+.ap-auth__rodape a { color: var(--text-muted); text-decoration: underline; text-underline-offset: 3px; }

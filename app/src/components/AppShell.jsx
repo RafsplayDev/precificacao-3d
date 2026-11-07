@@ -21,10 +21,10 @@ const NAV = [
 ];
 
 /** Páginas que se bastam: sem menu do app e sem a vitrine no rodapé. */
-const SEM_MENU = ["/entrar", "/tutorial"];
+const SEM_MENU = ["/entrar", "/tutorial", "/privacidade", "/termos"];
 
 /** Onde a vitrine de afiliados não aparece no rodapé. */
-const SEM_VITRINE = ["/entrar", "/admin", "/tutorial"];
+const SEM_VITRINE = ["/entrar", "/admin", "/tutorial", "/privacidade", "/termos"];
 
 const ToastCtx = React.createContext(() => {});
 export const useToast = () => React.useContext(ToastCtx);

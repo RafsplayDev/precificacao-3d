@@ -1,5 +1,6 @@
 "use client";
 import React, { Suspense } from "react";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Card } from "@/design-system";
 import { caminhoInterno } from "@/lib/navegar";
@@ -45,8 +46,8 @@ function Formulario() {
             Entrar com Google
           </a>
           <p className="ap-auth__rodape">
-            Ao entrar, você concorda em guardarmos seu nome, e-mail e os dados que você
-            cadastrar no app, só para o app funcionar.
+            Ao entrar, você concorda com os <Link href="/termos">Termos de Uso</Link> e a{" "}
+            <Link href="/privacidade">Política de Privacidade</Link>.
           </p>
         </div>
       </Card>

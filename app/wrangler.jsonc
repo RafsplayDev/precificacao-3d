@@ -10,6 +10,13 @@
     "binding": "ASSETS"
   },
   "observability": { "enabled": true },
+  // Domínio próprio: o deploy liga o Worker a ele e a Cloudflare emite o
+  // certificado HTTPS. Exige a zona dropcolor.com.br ativa nesta conta.
+  "routes": [{ "pattern": "precifica.dropcolor.com.br", "custom_domain": true }],
+  // O endereço *.workers.dev continua respondendo (login dele redireciona
+  // para o domínio próprio, por causa de NEXT_PUBLIC_URL_SITE).
+  "workers_dev": true,
+  "preview_urls": false,
   "d1_databases": [
     {
       "binding": "DB",
@@ -21,7 +28,7 @@
   ],
   "vars": {
     // Domínio final, sem barra no fim. Vazio = usa a origem da requisição.
-    "NEXT_PUBLIC_URL_SITE": "",
+    "NEXT_PUBLIC_URL_SITE": "https://precifica.dropcolor.com.br",
     // E-mails que viram admin (painel /admin de anúncios), separados por vírgula.
     "ADMIN_EMAILS": "dropcolorec@gmail.com,rafsplayofc@gmail.com"
   }

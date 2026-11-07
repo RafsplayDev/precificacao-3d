@@ -2,6 +2,11 @@
    as classes .ap-* são só estrutura de página deste app. */
 @import "../design-system/styles.css";
 
+/* Sem sublinhado nos links: o design system sublinha todo link no hover,
+   inclusive os que têm cara de botão (Entrar com Google, cartões da
+   vitrine). Aqui o hover é só a mudança de cor. */
+a:hover { text-decoration: none; }
+
 html, body { padding: 0; }
 
 /* Nada pode esticar a página para os lados.
@@ -1113,8 +1118,8 @@ select.ap-cell {
 .ap-tour__espaco { flex: 1; }
 .ap-tour__voltar, .ap-tour__pular {
   border: 0; background: transparent; cursor: pointer; padding: 0;
-  color: var(--text-muted); font-size: var(--text-body-sm); text-decoration: underline;
-  text-underline-offset: 3px;
+  color: var(--text-muted); font-size: var(--text-body-sm); font-weight: var(--weight-medium);
+  text-decoration: none;
 }
 .ap-tour__voltar:hover, .ap-tour__pular:hover { color: var(--text-strong); }
 

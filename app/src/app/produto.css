@@ -15,7 +15,7 @@
 .ap-conta button, .ap-conta a {
   background: none; border: 0; padding: 0; cursor: pointer;
   font: inherit; font-size: var(--text-body-sm); color: var(--text-muted);
-  text-decoration: underline; text-underline-offset: 3px;
+  text-decoration: none;
 }
 .ap-conta button:hover, .ap-conta a:hover { color: var(--text-strong); }
 
@@ -50,7 +50,7 @@
 }
 .ap-auth__troca button {
   background: none; border: 0; padding: 0; cursor: pointer; font: inherit;
-  color: var(--action-accent); text-decoration: underline; text-underline-offset: 3px;
+  color: var(--action-accent); text-decoration: none; font-weight: var(--weight-medium);
 }
 
 /* ---- Botão do Google ---- */
@@ -62,7 +62,7 @@
   font: inherit; font-weight: var(--weight-medium); text-decoration: none;
   transition: background var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
 }
-.ap-google:hover { background: var(--surface-sunken); border-color: var(--border-strong); }
+.ap-google:hover { background: var(--surface-sunken); border-color: var(--border-strong); color: var(--text-strong); text-decoration: none; }
 .ap-google:focus-visible { outline: 2px solid var(--border-focus); outline-offset: 2px; }
 
 .ap-conta__foto { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; }
@@ -95,7 +95,7 @@
   margin-left: auto; font-size: var(--text-body-sm); font-weight: var(--weight-medium);
   color: var(--action-accent); text-decoration: none;
 }
-.ap-vitrine__todos:hover { text-decoration: underline; text-underline-offset: 3px; }
+.ap-vitrine__todos:hover { color: var(--text-link-hover); }
 
 /* Grade: colunas que se ajustam à largura. */
 .ap-vitrine__lista {
@@ -318,7 +318,8 @@
 .ap-legal a { color: var(--text-link); }
 .ap-legal__data { color: var(--text-faint); font-size: var(--text-body-sm); margin: 0 0 var(--space-6); }
 .ap-legal__voltar { font-size: var(--text-body-sm); color: var(--text-muted) !important; text-decoration: none; }
-.ap-auth__rodape a { color: var(--text-muted); text-decoration: underline; text-underline-offset: 3px; }
+.ap-auth__rodape a { color: var(--text-strong); font-weight: var(--weight-medium); text-decoration: none; }
+.ap-auth__rodape a:hover { color: var(--text-link-hover); }
 
 .ap-admin__pendentes { margin-bottom: var(--space-6); }
 .ap-admin__pendentes h2 { font-size: var(--text-h4); color: var(--text-strong); margin: 0 0 var(--space-1); }
